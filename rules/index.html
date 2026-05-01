@@ -1,0 +1,2597 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A diagnostic tool for Python Azure Functions">
+      
+      
+        <meta name="author" content="Yeongseon Choe">
+      
+      
+        <link rel="canonical" href="https://yeongseon.github.io/azure-functions-doctor/rules/">
+      
+      
+        <link rel="prev" href="../diagnostics/">
+      
+      
+        <link rel="next" href="../rule_inventory/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../logo_assets/logo_favicon_16px.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Rules - Azure Functions Doctor</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#rules" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Azure Functions Doctor" class="md-header__button md-logo" aria-label="Azure Functions Doctor" data-md-component="logo">
+      
+  <img src="../logo_assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Azure Functions Doctor
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Rules
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/yeongseon/azure-functions-doctor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../usage/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../choose-a-plan/" class="md-tabs__link">
+          
+  
+  
+  Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../examples/basic_check/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../development/" class="md-tabs__link">
+          
+  
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../release_process/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Release Process
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Azure Functions Doctor" class="md-nav__button md-logo" aria-label="Azure Functions Doctor" data-md-component="logo">
+      
+  <img src="../logo_assets/logo.png" alt="logo">
+
+    </a>
+    Azure Functions Doctor
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/yeongseon/azure-functions-doctor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rules
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#rule-execution-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule execution model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-vs-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required vs optional
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-rule-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in rule types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rule-by-rule-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule-by-rule reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-check_programming_model_v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1) check_programming_model_v2
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-check_blueprint_registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2) check_blueprint_registration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-check_python_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3) check_python_version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-check_venv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4) check_venv
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-check_python_executable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5) check_python_executable
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-check_requirements_txt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6) check_requirements_txt
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-check_azure_functions_library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7) check_azure_functions_library
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-check_native_dependency_risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7) check_native_dependency_risk
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-check_host_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8) check_host_json
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-check_local_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9) check_local_settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-check_func_cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10) check_func_cli
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-check_func_core_tools_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11) check_func_core_tools_version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-check_durabletask_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12) check_durabletask_config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-check_app_insights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13) check_app_insights
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-check_extension_bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14) check_extension_bundle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-check_asgi_wsgi_exposure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15) check_asgi_wsgi_exposure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-check_unused_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16) check_unused_files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rule-authoring-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule authoring template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guidance-for-custom-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance for custom rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#safety-and-trust-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Safety and trust model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rule_inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rule Inventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../minimal_profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimal Profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json_output_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSON Output Contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../handlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Handlers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../choose-a-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a Plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy to Azure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/basic_check/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Basic Check
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/ci_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/custom_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supported_versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Versions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../semver_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semver Policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release_process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#rule-execution-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule execution model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-vs-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required vs optional
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-rule-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in rule types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rule-by-rule-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule-by-rule reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-check_programming_model_v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1) check_programming_model_v2
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-check_blueprint_registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2) check_blueprint_registration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-check_python_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3) check_python_version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-check_venv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4) check_venv
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-check_python_executable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5) check_python_executable
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-check_requirements_txt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6) check_requirements_txt
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-check_azure_functions_library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7) check_azure_functions_library
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-check_native_dependency_risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7) check_native_dependency_risk
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-check_host_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8) check_host_json
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-check_local_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9) check_local_settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-check_func_cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10) check_func_cli
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-check_func_core_tools_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11) check_func_core_tools_version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-check_durabletask_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12) check_durabletask_config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-check_app_insights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13) check_app_insights
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-check_extension_bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14) check_extension_bundle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-check_asgi_wsgi_exposure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15) check_asgi_wsgi_exposure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-check_unused_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16) check_unused_files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rule-authoring-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule authoring template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guidance-for-custom-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance for custom rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#safety-and-trust-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Safety and trust model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="rules">Rules<a class="headerlink" href="#rules" title="Permanent link">&para;</a></h1>
+<p>Azure Functions Doctor executes declarative rules from a JSON ruleset.</p>
+<p>Built-in rules are defined in:</p>
+<p><code>src/azure_functions_doctor/assets/rules/v2.json</code></p>
+<p>You can replace the built-in set with <code>--rules &lt;file&gt;</code>.</p>
+<h2 id="rule-execution-model">Rule execution model<a class="headerlink" href="#rule-execution-model" title="Permanent link">&para;</a></h2>
+<p>Each rule contains:</p>
+<ul>
+<li>identity (<code>id</code>, <code>label</code>)</li>
+<li>grouping (<code>category</code>, <code>section</code>)</li>
+<li>behavior (<code>type</code>, <code>condition</code>)</li>
+<li>severity intent (<code>required</code>)</li>
+<li>ordering (<code>check_order</code>)</li>
+<li>remediation (<code>hint</code>, optional <code>hint_url</code>)</li>
+</ul>
+<p>Rules are validated by:</p>
+<p><code>src/azure_functions_doctor/schemas/rules.schema.json</code></p>
+<h2 id="required-vs-optional">Required vs optional<a class="headerlink" href="#required-vs-optional" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>required: true</code> + raw handler fail -&gt; item status <code>fail</code></li>
+<li><code>required: false</code> + raw handler fail -&gt; item status <code>warn</code></li>
+</ul>
+<p>Only required failures produce non-zero process exit code.</p>
+<h2 id="built-in-rule-types">Built-in rule types<a class="headerlink" href="#built-in-rule-types" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>compare_version</code></li>
+<li><code>env_var_exists</code></li>
+<li><code>path_exists</code></li>
+<li><code>file_exists</code></li>
+<li><code>package_installed</code></li>
+<li><code>package_declared</code></li>
+<li><code>native_dependency_risk</code></li>
+<li><code>source_code_contains</code></li>
+<li><code>conditional_exists</code></li>
+<li><code>callable_detection</code></li>
+<li><code>executable_exists</code></li>
+<li><code>any_of_exists</code></li>
+<li><code>file_glob_check</code></li>
+<li><code>host_json_property</code></li>
+<li><code>blueprint_registration</code></li>
+</ul>
+<h2 id="rule-by-rule-reference">Rule-by-rule reference<a class="headerlink" href="#rule-by-rule-reference" title="Permanent link">&para;</a></h2>
+<h2 id="1-check_programming_model_v2">1) <code>check_programming_model_v2</code><a class="headerlink" href="#1-check_programming_model_v2" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> Source contains Azure Functions decorator usage (<code>@app.</code>) via AST detection.</li>
+<li><strong>Why it matters:</strong> Doctor targets Python v2 projects; this check protects model compatibility.</li>
+<li><strong>How to fix:</strong> Use <code>func.FunctionApp()</code> and decorator-based triggers.</li>
+</ul>
+<p>Example failing detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Keyword &#39;@app.&#39; not found in source code (AST)
+</code></pre></div>
+<h2 id="2-check_blueprint_registration">2) <code>check_blueprint_registration</code><a class="headerlink" href="#2-check_blueprint_registration" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> Blueprint aliases declared with <code>func.Blueprint()</code> and used in decorators are also registered via <code>app.register_functions(bp)</code> somewhere in the project. Only the official Azure Functions Python v2 API is recognized; Flask/FastAPI-style <code>register_blueprint(...)</code> calls are not treated as registration.</li>
+<li><strong>Why it matters:</strong> Unregistered Blueprints look valid in code but their routes never index at runtime.</li>
+<li><strong>How to fix:</strong> Register each Blueprint on your <code>FunctionApp</code>, typically from <code>function_app.py</code>.</li>
+</ul>
+<p>Example warning detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Detected:
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>- bp = func.Blueprint()
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>- @bp.route(...)
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>Missing:
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>- app.register_functions(bp)
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>Fix: add `app.register_functions(bp)` in function_app.py.
+</code></pre></div>
+<h2 id="3-check_python_version">3) <code>check_python_version</code><a class="headerlink" href="#3-check_python_version" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> Python version evaluated for the app target is <code>&gt;=3.10</code>.</li>
+<li><strong>Why it matters:</strong> Azure Functions Python runtime compatibility depends on the deployed target version, not just the interpreter running the doctor.</li>
+<li><strong>How to fix:</strong> Use Python 3.10+ locally and in CI, or pass <code>--target-python &lt;3.10|3.11|3.12|3.13|3.14&gt;</code> when your deploy target differs from the tool runtime. Note that on the Linux Consumption plan the maximum supported runtime is Python 3.12.</li>
+</ul>
+<p>Example output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Python 3.9.18 (tool runtime, &gt;=3.10)
+</code></pre></div>
+<p>With override:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Target Python: 3.12 (override) — Tool runtime: 3.13.0
+</code></pre></div>
+<h2 id="4-check_venv">4) <code>check_venv</code><a class="headerlink" href="#4-check_venv" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> Environment variable <code>VIRTUAL_ENV</code> exists.</li>
+<li><strong>Why it matters:</strong> Virtual environments reduce dependency drift and environment pollution.</li>
+<li><strong>How to fix:</strong> Create and activate <code>.venv</code> before running diagnostics.</li>
+</ul>
+<p>Example failing detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>VIRTUAL_ENV is not set
+</code></pre></div>
+<h2 id="5-check_python_executable">5) <code>check_python_executable</code><a class="headerlink" href="#5-check_python_executable" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> <code>sys.executable</code> points to an existing path.</li>
+<li><strong>Why it matters:</strong> Broken interpreter paths indicate unstable runtime environment.</li>
+<li><strong>How to fix:</strong> Reinstall or reactivate Python environment.</li>
+</ul>
+<p>Example detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>/usr/bin/python3 exists
+</code></pre></div>
+<h2 id="6-check_requirements_txt">6) <code>check_requirements_txt</code><a class="headerlink" href="#6-check_requirements_txt" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> <code>requirements.txt</code> exists at project root.</li>
+<li><strong>Why it matters:</strong> Deployability and reproducibility depend on declared dependencies.</li>
+<li><strong>How to fix:</strong> Add <code>requirements.txt</code> and include runtime dependencies.</li>
+</ul>
+<p>Example failing detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>/workspace/app/requirements.txt not found
+</code></pre></div>
+<h2 id="7-check_azure_functions_library">7) <code>check_azure_functions_library</code><a class="headerlink" href="#7-check_azure_functions_library" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> <code>azure-functions</code> appears in <code>requirements.txt</code>.</li>
+<li><strong>Why it matters:</strong> Function app code depends on Azure Functions Python library.</li>
+<li><strong>How to fix:</strong> Add <code>azure-functions</code> to dependency declarations.</li>
+</ul>
+<p>Example failing detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Package &#39;azure-functions&#39; not declared in requirements.txt
+</code></pre></div>
+<h2 id="7-check_native_dependency_risk">7) <code>check_native_dependency_risk</code><a class="headerlink" href="#7-check_native_dependency_risk" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> <code>requirements.txt</code> for packages with common native-extension deployment risk.</li>
+<li><strong>Why it matters:</strong> These packages are valid, but Azure Functions Python deployments often fail when Linux wheels or system libraries do not match the build environment.</li>
+<li><strong>How to fix:</strong> Build against the Azure Functions Linux runtime. Prefer remote build with <code>func azure functionapp publish --build remote</code>.</li>
+<li><strong>Current package list:</strong> <code>pyodbc</code>, <code>cryptography</code>, <code>lxml</code>, <code>pillow</code>, <code>numpy</code>, <code>pandas</code>, <code>scipy</code>, <code>opencv-python</code>, <code>psycopg2</code>, <code>grpcio</code>, <code>ujson</code>, <code>orjson</code>.</li>
+<li><strong>Severity:</strong> Warning only (<code>required: false</code>). It never produces a hard failure.</li>
+</ul>
+<p>Example warning detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Native dependencies detected: pyodbc, pillow
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>These packages depend on platform-specific native libraries.
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>Ensure your build environment matches the Azure Functions Linux runtime.
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>Recommended: use remote build (`func azure functionapp publish --build remote`).
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>- pyodbc: requires unixODBC and a matching wheel
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>- pillow: ensure libjpeg/zlib-compatible wheels for Linux deployment
+</code></pre></div>
+<h2 id="8-check_host_json">8) <code>check_host_json</code><a class="headerlink" href="#8-check_host_json" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> <code>host.json</code> exists at project root.</li>
+<li><strong>Why it matters:</strong> Azure Functions host configuration is required for valid app structure.</li>
+<li><strong>How to fix:</strong> Add a valid <code>host.json</code> (at minimum <code>{ "version": "2.0" }</code>).</li>
+</ul>
+<p>Example failing detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>/workspace/app/host.json not found
+</code></pre></div>
+<h2 id="9-check_local_settings">9) <code>check_local_settings</code><a class="headerlink" href="#9-check_local_settings" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> <code>local.settings.json</code> exists.</li>
+<li><strong>Why it matters:</strong> Local development often needs this file for settings and connection values.</li>
+<li><strong>How to fix:</strong> Create local settings file for local runs (do not commit secrets).</li>
+</ul>
+<p>Example warning detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>/workspace/app/local.settings.json not found (optional)
+</code></pre></div>
+<h2 id="10-check_func_cli">10) <code>check_func_cli</code><a class="headerlink" href="#10-check_func_cli" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> <code>func</code> executable is available on <code>PATH</code>.</li>
+<li><strong>Why it matters:</strong> Core Tools enable local hosting and rich runtime tooling.</li>
+<li><strong>How to fix:</strong> Install Azure Functions Core Tools v4+.</li>
+</ul>
+<p>Example warning detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>func not found
+</code></pre></div>
+<h2 id="11-check_func_core_tools_version">11) <code>check_func_core_tools_version</code><a class="headerlink" href="#11-check_func_core_tools_version" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> Core Tools version is <code>&gt;=4.0</code>.</li>
+<li><strong>Why it matters:</strong> Older versions can diverge from current host/runtime expectations.</li>
+<li><strong>How to fix:</strong> Upgrade Core Tools installation.</li>
+</ul>
+<p>Example warning detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>func 3.0.3904 (&gt;=4.0)
+</code></pre></div>
+<h2 id="12-check_durabletask_config">12) <code>check_durabletask_config</code><a class="headerlink" href="#12-check_durabletask_config" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> If durable usage is detected in source, <code>$.extensions.durableTask</code> exists in <code>host.json</code>.</li>
+<li><strong>Why it matters:</strong> Durable Functions need matching host configuration.</li>
+<li><strong>How to fix:</strong> Add durableTask configuration when using durable features.</li>
+</ul>
+<p>Example details:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>No Durable Functions usage detected; check skipped
+</code></pre></div>
+<p>or</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Required host.json property &#39;$.extensions.durableTask&#39; not found
+</code></pre></div>
+<h2 id="13-check_app_insights">13) <code>check_app_insights</code><a class="headerlink" href="#13-check_app_insights" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> At least one telemetry signal exists:</li>
+<li><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></li>
+<li><code>APPINSIGHTS_INSTRUMENTATIONKEY</code></li>
+<li><code>host.json:instrumentationKey</code></li>
+<li><strong>Why it matters:</strong> Telemetry is critical for production diagnostics.</li>
+<li><strong>How to fix:</strong> Configure one supported telemetry source.</li>
+</ul>
+<p>Example warning detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Targets not found
+</code></pre></div>
+<h2 id="14-check_extension_bundle">14) <code>check_extension_bundle</code><a class="headerlink" href="#14-check_extension_bundle" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> <code>$.extensionBundle</code> exists in <code>host.json</code>.</li>
+<li><strong>Why it matters:</strong> Extension bundles help ensure binding dependencies are available.</li>
+<li><strong>How to fix:</strong> Add extensionBundle section to host config.</li>
+</ul>
+<p>Example warning detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>host.json property &#39;$.extensionBundle&#39; not found
+</code></pre></div>
+<h2 id="15-check_asgi_wsgi_exposure">15) <code>check_asgi_wsgi_exposure</code><a class="headerlink" href="#15-check_asgi_wsgi_exposure" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> Source has ASGI/WSGI exposure patterns.</li>
+<li><strong>Why it matters:</strong> Useful signal for framework-host integration readiness.</li>
+<li><strong>How to fix:</strong> Ensure framework callable exposure follows expected patterns.</li>
+</ul>
+<p>Example warning detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>No ASGI/WSGI callable detected in project source
+</code></pre></div>
+<h2 id="16-check_unused_files">16) <code>check_unused_files</code><a class="headerlink" href="#16-check_unused_files" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>What it checks:</strong> Presence of unwanted patterns (for example <code>**/*.pyc</code>, <code>**/__pycache__</code>, <code>.venv</code>, <code>tests/</code>).</li>
+<li><strong>Why it matters:</strong> Reduces deployment package clutter and risk.</li>
+<li><strong>How to fix:</strong> Clean or exclude unwanted files from deployment artifacts.</li>
+</ul>
+<p>Example warning detail:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>Found unwanted files: [&#39;tests/&#39;, &#39;.venv&#39;]
+</code></pre></div>
+<h2 id="rule-authoring-template">Rule authoring template<a class="headerlink" href="#rule-authoring-template" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="p">{</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;check_example&quot;</span><span class="p">,</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;structure&quot;</span><span class="p">,</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">  </span><span class="nt">&quot;section&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;project_structure&quot;</span><span class="p">,</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">  </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;host.json&quot;</span><span class="p">,</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Checks host.json exists.&quot;</span><span class="p">,</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;file_exists&quot;</span><span class="p">,</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="w">  </span><span class="nt">&quot;condition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="w">    </span><span class="nt">&quot;target&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;host.json&quot;</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="w">  </span><span class="nt">&quot;hint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Add host.json to project root.&quot;</span><span class="p">,</span>
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="w">  </span><span class="nt">&quot;check_order&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span>
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="guidance-for-custom-rules">Guidance for custom rules<a class="headerlink" href="#guidance-for-custom-rules" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Keep IDs stable and descriptive</li>
+<li>Use deterministic <code>check_order</code> values</li>
+<li>Start policy experiments as optional rules</li>
+<li>Promote to required only after false-positive review</li>
+<li>Include clear <code>hint</code> text for faster remediation</li>
+</ul>
+<p>Custom rules docs: <a href="../examples/custom_rules/">Examples: Custom Rules</a></p>
+<h2 id="safety-and-trust-model">Safety and trust model<a class="headerlink" href="#safety-and-trust-model" title="Permanent link">&para;</a></h2>
+<p>Rules may inspect local files, source code, environment variables, executable presence, and importable modules.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Only run trusted custom rules files, especially in shared CI environments.</p>
+</div>
+<h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../diagnostics/">Diagnostics</a></li>
+<li><a href="../rule_inventory/">Rule Inventory</a></li>
+<li><a href="../minimal_profile/">Minimal Profile</a></li>
+<li><a href="../semver_policy/">Semver Policy</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/yeongseon/azure-functions-doctor" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@11.14.0/dist/mermaid.min.js"></script>
+      
+        <script src="../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>
