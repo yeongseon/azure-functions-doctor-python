@@ -1,6 +1,6 @@
 # Azure Functions Doctor
 
-> Part of the [Azure Functions Python DX Toolkit](https://github.com/yeongseon/azure-functions-python-dx) — a collection of small tools for improving Azure Functions Python developer experience.
+> Part of the [Azure Functions Python Cookbook](https://github.com/yeongseon/azure-functions-cookbook-python) — a collection of small tools for improving Azure Functions Python developer experience.
 
 [![PyPI](https://img.shields.io/pypi/v/azure-functions-doctor.svg)](https://pypi.org/project/azure-functions-doctor/)
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://pypi.org/project/azure-functions-doctor/)
@@ -18,7 +18,7 @@ Read this in: [한국어](README.ko.md) | [日本語](README.ja.md) | [简体中
 
 ---
 
-Part of the **Azure Functions Python DX Toolkit**
+Part of the **Azure Functions Python Cookbook**
 → Bring FastAPI-like developer experience to Azure Functions
 
 ## Why this exists
@@ -239,7 +239,7 @@ The default ruleset includes checks for:
 
 ## Ecosystem
 
-This package is part of the **Azure Functions Python DX Toolkit**.
+This package is part of the **Azure Functions Python Cookbook**.
 
 **Design principle:** `azure-functions-doctor` owns pre-deploy diagnostics. It does not fix issues or generate code — it surfaces actionable findings so developers can fix them. Runtime behavior belongs to [`azure-functions-openapi`](https://github.com/yeongseon/azure-functions-openapi-python) (API documentation and spec generation), [`azure-functions-validation`](https://github.com/yeongseon/azure-functions-validation-python) (request/response validation), and [`azure-functions-langgraph`](https://github.com/yeongseon/azure-functions-langgraph-python) (LangGraph runtime exposure).
 
