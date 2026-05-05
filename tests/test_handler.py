@@ -6,7 +6,17 @@ from typing import cast
 
 from pytest import MonkeyPatch
 
-from azure_functions_doctor.handlers import Condition, Rule, generic_handler
+from azure_functions_doctor.handlers import (
+    Condition,
+    Rule,
+    _collect_blueprint_aliases,
+    _collect_register_functions_args,
+    _create_result,
+    _detect_native_dependency_risks,
+    _handle_exception,
+    _source_contains_blueprint_decorator,
+    generic_handler,
+)
 
 
 def test_compare_python_version_pass() -> None:
@@ -269,14 +279,17 @@ def test_unknown_check_type() -> None:
     """Test that an unknown check type returns a fail status."""
     rule = cast(
         Rule,
-        {
-            "type": "unknown_type",
-            "id": "invalid_type",
-            "label": "Invalid check",
-            "section": "misc",
-            "category": "misc",
-            "condition": {"target": "anything"},
-        },
+        cast(
+            object,
+            {
+                "type": "unknown_type",
+                "id": "invalid_type",
+                "label": "Invalid check",
+                "section": "misc",
+                "category": "misc",
+                "condition": {"target": "anything"},
+            },
+        ),
     )
 
     result = generic_handler(rule, Path("."))
@@ -347,7 +360,7 @@ def test_callable_detection_pass_and_fail() -> None:
 
 def _make_rule(rule_type: str, condition: Condition) -> Rule:
     # Helper to build a Rule object for new adapter handlers (partial Rule)
-    return {"type": rule_type, "condition": condition}  # type: ignore[typeddict-item]
+    return cast(Rule, cast(object, {"type": rule_type, "condition": condition}))
 
 
 def test_executable_exists_pass_and_fail(tmp_path: Path) -> None:
@@ -413,13 +426,15 @@ def test_package_installed_uses_find_spec_no_side_effects() -> None:
     import importlib.util
     from unittest.mock import patch
 
-    call_log: list[str] = []
+    call_log: list[str | None] = []
 
     original_find_spec = importlib.util.find_spec
 
-    def spy_find_spec(name: str, *args: object, **kwargs: object) -> object:
+    def spy_find_spec(name: str | None, *args: object, **kwargs: object) -> object:
         call_log.append(name)
-        return original_find_spec(name, *args, **kwargs)  # type: ignore[arg-type]
+        if name is None:
+            return None
+        return original_find_spec(name)
 
     with patch("importlib.util.find_spec", side_effect=spy_find_spec):
         rule: Rule = {
@@ -619,7 +634,10 @@ def test_package_forbidden_fail(tmp_path: Path) -> None:
     """package_forbidden fails when the forbidden package IS in requirements.txt."""
     req = tmp_path / "requirements.txt"
     req.write_text("azure-functions\nazure-functions-worker==1.0\n")
-    condition = cast(Condition, {"package": "azure-functions-worker", "file": "requirements.txt"})
+    condition = cast(
+        Condition,
+        cast(object, {"package": "azure-functions-worker", "file": "requirements.txt"}),
+    )
     rule = _make_rule("package_forbidden", condition)
     res = generic_handler(rule, tmp_path)
     assert res["status"] == "fail"
@@ -628,7 +646,10 @@ def test_package_forbidden_fail(tmp_path: Path) -> None:
 
 def test_package_forbidden_no_requirements_file(tmp_path: Path) -> None:
     """package_forbidden fails when the requirements file is missing."""
-    condition_2: Condition = {"package": "azure-functions-worker", "file": "requirements.txt"}
+    condition_2 = cast(
+        Condition,
+        cast(object, {"package": "azure-functions-worker", "file": "requirements.txt"}),
+    )
     rule = _make_rule("package_forbidden", condition_2)
     res = generic_handler(rule, tmp_path)
     assert res["status"] == "fail"
@@ -643,3 +664,64 @@ def test_package_forbidden_missing_package_field(tmp_path: Path) -> None:
     res = generic_handler(rule, tmp_path)
     assert res["status"] == "fail"
     assert "Missing" in res.get("detail", "")
+
+
+def test_ast_collection_helpers_handle_syntax_error() -> None:
+    broken_source = "def bad(:\n"
+    assert _collect_blueprint_aliases(broken_source) == set()
+    assert _collect_register_functions_args(broken_source) == set()
+    assert _source_contains_blueprint_decorator(broken_source, {"bp"}) == set()
+
+
+def test_source_contains_blueprint_decorator_returns_empty_for_non_matching_decorator() -> None:
+    source = """
+bp = Blueprint()
+
+@something_else.route()
+def main(req):
+    return 'ok'
+"""
+    assert _source_contains_blueprint_decorator(source, {"bp"}) == set()
+
+
+def test_create_result_includes_internal_error_flag() -> None:
+    res = _create_result("fail", "detail", internal_error=True)
+    assert res["internal_error"] == "true"
+
+
+def test_handle_exception_returns_internal_error_result() -> None:
+    result = _handle_exception("unit-test", RuntimeError("boom"))
+    assert result["status"] == "fail"
+    assert result["internal_error"] == "true"
+    assert "Error during unit-test" in result["detail"]
+
+
+def test_detect_native_dependency_risk_skips_includes_and_flags_and_parses_editable() -> None:
+    requirements = """
+-r base.txt
+--constraint constraints.txt
+--index-url https://example.invalid/simple
+-e git+https://example.invalid/repo.git#egg=pyodbc
+totally@@broken-spec
+"""
+    matches = _detect_native_dependency_risks(requirements)
+    assert [name for name, _ in matches] == ["pyodbc"]
+
+
+def test_any_of_exists_invalid_host_json_is_ignored(tmp_path: Path) -> None:
+    (tmp_path / "host.json").write_text("{ broken", encoding="utf-8")
+    rule = _make_rule(
+        "any_of_exists", {"targets": ["host.json:.extensions.durableTask", "NOT_SET"]}
+    )
+    result = generic_handler(rule, tmp_path)
+    assert result["status"] == "fail"
+
+
+def test_file_glob_check_caps_matches_at_five(tmp_path: Path) -> None:
+    for i in range(7):
+        (tmp_path / f"secret-{i}.txt").write_text("x", encoding="utf-8")
+
+    rule = _make_rule("file_glob_check", {"patterns": ["secret-*.txt"]})
+    result = generic_handler(rule, tmp_path)
+    assert result["status"] == "fail"
+    assert result["detail"].count("secret-") <= 5

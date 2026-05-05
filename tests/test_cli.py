@@ -2,10 +2,12 @@ import json
 from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
+from unittest.mock import Mock
 
 from typer.testing import CliRunner
 
 from azure_functions_doctor.cli import cli as app
+import azure_functions_doctor.cli as cli_module
 
 runner = CliRunner()
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
@@ -230,3 +232,38 @@ def test_cli_sarif_output_includes_target_python_override() -> None:
         "programming_model": "v2",
         "target_python": "3.11",
     }
+
+
+def test_write_output_prints_success_message_for_file_output(tmp_path: Path, monkeypatch) -> None:
+    output_path = tmp_path / "out.json"
+    print_mock = Mock()
+    monkeypatch.setattr(cli_module.console, "print", print_mock)
+
+    cli_module._write_output('{"ok": true}', output_path, "JSON")
+
+    assert output_path.read_text(encoding="utf-8") == '{"ok": true}'
+    print_mock.assert_called()
+
+
+def test_validate_inputs_invalid_output_path_raises(monkeypatch, tmp_path: Path) -> None:
+    base = tmp_path / "project"
+    base.mkdir()
+
+    original_resolve = Path.resolve
+
+    def fake_resolve(self: Path, *args, **kwargs):
+        if str(self).endswith("bad.out"):
+            raise OSError("resolve failed")
+        return original_resolve(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", fake_resolve)
+
+    result = runner.invoke(app, ["doctor", "--path", str(base), "--output", str(base / "bad.out")])
+
+    assert result.exit_code != 0
+    assert "Invalid output path" in result.output
+
+
+def test_cli_debug_mode_prints_debug_banner() -> None:
+    result = runner.invoke(app, ["doctor", "--debug"])
+    assert "Debug logging enabled" in result.output

@@ -138,7 +138,7 @@ source = ["src/azure_functions_doctor"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-fail_under = 90
+fail_under = 95
 
 [tool.bandit]
 exclude_dirs = ["tests"]

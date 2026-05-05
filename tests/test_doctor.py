@@ -25,7 +25,9 @@ def test_doctor_checks_pass() -> None:
         assert all("title" in section and "items" in section for section in results)
 
         item_map = {
-            item["label"]: item["status"] for section in results for item in section["items"]
+            str(item.get("label", "")): str(item.get("status", ""))
+            for section in results
+            for item in section["items"]
         }
 
         assert "Python version" in item_map
@@ -41,7 +43,11 @@ def test_missing_files() -> None:
         doctor = Doctor(tmp)
         results = doctor.run_all_checks()
 
-    item_map = {item["label"]: item["status"] for section in results for item in section["items"]}
+    item_map = {
+        str(item.get("label", "")): str(item.get("status", ""))
+        for section in results
+        for item in section["items"]
+    }
 
     assert item_map == {"Python v2 programming model was not detected": "fail"}
 
@@ -72,7 +78,7 @@ def test_custom_rules_path() -> None:
         results = Doctor(tmp, rules_path=rules_path).run_all_checks()
 
         assert len(results) == 1
-        assert results[0]["items"][0]["label"] == "Custom env"
+        assert results[0]["items"][0].get("label") == "Custom env"
 
 
 def test_custom_rules_path_invalid_raises() -> None:
@@ -97,7 +103,9 @@ def test_profile_minimal_filters_optional_rules() -> None:
         doctor = Doctor(tmp, profile="minimal")
         results = doctor.run_all_checks()
 
-        item_labels = {item["label"] for section in results for item in section["items"]}
+        item_labels = {
+            str(item.get("label", "")) for section in results for item in section["items"]
+        }
         assert "local.settings.json" not in item_labels
 
 
@@ -141,3 +149,27 @@ def test_v2_compatibility_check() -> None:
 
         # Should have normal results (no function mode check)
         assert len(results) > 0
+
+
+def test_v1_signal_ignores_excluded_directories(tmp_path: Path) -> None:
+    excluded = tmp_path / "dist" / "legacy"
+    excluded.mkdir(parents=True)
+    (excluded / "function.json").write_text("{}", encoding="utf-8")
+
+    doctor = Doctor(str(tmp_path))
+
+    assert doctor._has_v1_signals() is False
+
+
+def test_load_rules_invalid_schema_raises_value_error(tmp_path: Path) -> None:
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\napp = func.FunctionApp()\n",
+        encoding="utf-8",
+    )
+    bad_rules = tmp_path / "bad_rules.json"
+    bad_rules.write_text(json.dumps([{"id": "r1"}]), encoding="utf-8")
+
+    doctor = Doctor(str(tmp_path), rules_path=bad_rules)
+
+    with pytest.raises(ValueError, match="Invalid rules file"):
+        doctor.load_rules()

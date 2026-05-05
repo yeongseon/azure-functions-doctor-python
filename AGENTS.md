@@ -9,6 +9,11 @@
 - `docs/agent-playbook.md`
 
 ## Working Rules
+
+### Test Coverage
+- Maintain test coverage at **95% or above** for committed changes and PRs.
+- Run `hatch run pytest --cov --cov-report=term-missing -q` to verify before submitting changes.
+- Any PR that drops coverage below 95% must include additional tests to compensate.
 - Keep diagnostics deterministic and user-facing messages actionable.
 - Prefer extending existing rule patterns over introducing one-off flows.
 - If a CLI option or exit code changes, update docs and tests in the same change.

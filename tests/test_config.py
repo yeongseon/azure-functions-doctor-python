@@ -153,3 +153,12 @@ def test_override_config() -> None:
 
     # Cleanup
     get_config().set("log_level", original_log_level)
+
+
+def test_config_invalid_float_environment_value(monkeypatch: "pytest.MonkeyPatch") -> None:
+    monkeypatch.setattr(Config, "_defaults", {**Config._defaults, "ratio": 1.5})
+    monkeypatch.setenv("FUNC_DOCTOR_RATIO", "not-a-float")
+
+    config = Config()
+
+    assert config.get("ratio") == 1.5

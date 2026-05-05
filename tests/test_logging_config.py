@@ -104,3 +104,24 @@ def test_log_helper_functions(monkeypatch: "pytest.MonkeyPatch") -> None:
     assert any("Encountered 1 unexpected errors" in msg for msg in dummy.warning_messages)
     assert any("completed with error" in msg for msg in dummy.warning_messages)
     assert any("-> pass" in msg for msg in dummy.debug_messages)
+
+
+def test_setup_logging_removes_stream_handlers_when_console_disabled() -> None:
+    logger = _reset_main_logger()
+    logger.addHandler(logging.StreamHandler())
+
+    configured = logging_config.setup_logging(level="INFO", enable_console_output=False)
+
+    assert configured.handlers == []
+
+
+def test_setup_logging_structured_formatter() -> None:
+    logger = _reset_main_logger()
+
+    configured = logging_config.setup_logging(level="INFO", format_style="structured")
+
+    assert configured.handlers
+    formatter = configured.handlers[0].formatter
+    assert formatter is not None
+    assert isinstance(formatter._fmt, str)
+    assert "%(asctime)s" in formatter._fmt
