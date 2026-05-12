@@ -1,4 +1,19 @@
 # Changelog
+## [Unreleased]
+
+- raise coverage to 95%+ and enforce via AGENTS.md and pyproject.toml (6673c7c90d725cc0190cd03cafdd6edd27e4872d)
+
+- fix ecosystem table names, badges, and Part of intro line (b030558fe0166ecc64bc3f439ade362fd74c7a65)
+
+- mark cookbook as dogfood, fix ecosystem table description (2d367d0ea9fc0ff4de81b5b730af561976f2f00a)
+
+- replace non-existent python-dx link with cookbook repo (fe4960bb3cb7eb22d013108bfdf463725fbe9433)
+
+- fix cross-repo links and README title (fa2509179ebea3aa415f28ce172260a1f9dc9ba6)
+
+- Add DX Toolkit hub link to README (073b16155d39da8e9b37fa4b08c17e8472b62fdb)
+
+- update changelog (9f5ce2cda749c5808d5c55239eec22c50cf9b3c8)
 
 - bump version to 0.17.0 (fd3389cc1eec3810cb952dd0354c22c4082244d2)
 
@@ -21,6 +36,7 @@ chore(deps): bump actions/github-script from 8.0.0 to 9.0.0 (eb04c418f15f56df9cd
 - Merge pull request #137 from yeongseon/dependabot/github_actions/actions/upload-artifact-7.0.1
 
 chore(deps): bump actions/upload-artifact from 7.0.0 to 7.0.1 (43938a745b6773db92984fbcf1a7be64e51c3145)
+## [0.16.3] - 2026-04-10
 
 - update changelog (8766d76ff321c9eed851af79453c15404f829f69)
 
@@ -93,6 +109,7 @@ docs: enable Mermaid diagram rendering on GitHub Pages (2245e8eae3cf4d26985daff0
 - add automatic GitHub Release creation on tag push (#103) (09476576f1b7b37bb75b5c1caf3393850f7c8a9a)
 
 - add release process to AGENTS.md (dda2bfaa5d653168fb9e257f7539e316b1468967)
+## [0.16.2] - 2026-03-29
 
 - Merge pull request #102 from yeongseon/chore/release-v0.16.2
 
@@ -103,6 +120,7 @@ chore: release v0.16.2 (2878efb29f2b80fe6bc512cd4e7aaa2546ad0601)
 - resolve 6 confirmed bugs (#95–#100) (#101) (e6d1957d0487c79d3dd956759a27beb5f792f19c)
 
 - use standard pypi environment name for Trusted Publisher (64f4af308b1f7646c9223d75dae40e7ac17a4c84)
+## [0.17.0] - 2026-03-22
 
 - update README with Azure Functions Python DX Toolkit branding (96c95bfb668fe4abc0abf21700e9eaf974df8026)
 
@@ -117,6 +135,7 @@ chore: rename publish environment from production to release (dccea9ee2cd495f472
 chore: unify CI/CD workflow configurations (896994e7922b4912b810296a7327b0b41233170d)
 
 - unify CI/CD workflow configurations (91afa2412dc123dee0d95dacce1e24f8587408a0)
+## [0.16.1] - 2026-03-21
 
 - Merge pull request #82 from yeongseon/release/v0.16.1
 
@@ -157,6 +176,7 @@ chore: release v0.16.1 (9cac09263d1faa0530bfacd46c67b03a601ae8e3)
 - remove .venv-review from tracking, add to .gitignore (8832f9a2d5385f7176d60a2efc1e699660f20630)
 
 - add AGENTS.md, Typing classifier, test_public_api, Dev Status 4-Beta (799d240ba806212a4c04e3ed4a54a47315c3eaff)
+## [0.16.0] - 2026-03-15
 
 - bump version to 0.16.0 (06730c43cc48fbd32e9f616fc1a9032e74a6b35c)
 
@@ -195,6 +215,7 @@ chore: release v0.16.1 (9cac09263d1faa0530bfacd46c67b03a601ae8e3)
 - add codex agent guidance (98dee22e9402190b0cd6dbc4e9a263df95126184)
 
 - unify CI workflow patterns with canonical validation repo (e251581c7c9cfede3718cac45b977178fe394cb1)
+## [0.15.1] - 2026-03-14
 
 - bump version to 0.15.1 (bbe08e531792c28e6b1483a2256312240ce985fc)
 
@@ -225,6 +246,7 @@ chore: release v0.16.1 (9cac09263d1faa0530bfacd46c67b03a601ae8e3)
 - move disclaimer before license section (3238017a2f6660f5c805524e5a26f6240659cc2c)
 
 - publish doctor releases from the production environment (5994bdcf7fe2dcda7e1e757581ecc304a7b96e71)
+## [0.15.0] - 2026-03-08
 
 - use trusted publishing for doctor releases (f855d1647f8090e661b946bfa8a8f5e7e122ba3d)
 
@@ -429,6 +451,7 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - Merge main into feat/sarif-junit (3efe287460f481cfc8177f4f9b0a022cfb96c828)
 
 - translate remaining Korean to English and enforce no-Korean hook (a8957774fd03584742080fec0aa91b0b7888ec79)
+## [0.14.0] - 2025-09-19
 
 - update changelog (3490ecacf06a7ab83c8f83728f59e41591f1eac3)
 
@@ -447,6 +470,7 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - correct indentation and typing for package_declared handler (d7768207bc95a420301c7ba1ab6643a0c851fe06)
 
 - require 'azure-functions' instead of deprecated 'azure-functions-python-library' (ad4bec2b431e81ef98c0d349dd812147bdd57b3c)
+## [0.13.0] - 2025-09-19
 
 - update changelog (d70a51bff1ddbcb3cfdac09b3c9aa4e9b128de3b)
 
@@ -487,12 +511,14 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - unify status icons using format_status_icon for JSON output and errors (e784df6e78178f2248e95d9d822b034f4e54708f)
 
 - add icons & status legend (pass/warn/fail) (101644291175c7c3b30c507a514d634dcfab6c2f)
+## [0.11.0] - 2025-09-07
 
 - update changelog (6a122dcd3351e3933514c33bfbd3027cb0397890)
 
 - bump version to 0.11.0 (9b64954b1ed7f1ad8fbc9c37fdecf759c6f17f1a)
 
 - merge handler tests into single file; remove duplicate; add type hints (f1367558997e6a2630ac4496157683cd23a2bf59)
+## [0.10.0] - 2025-09-06
 
 - update changelog (f6f40e2f48cbaa0fff33bea600480ec61d72aba5)
 
@@ -503,6 +529,7 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - accept 'jsonpath' in Condition TypedDict (fix mypy) (cbcf52850cdd1f86823008baaf267ee22d40f81c)
 
 - rename command to 'azure-functions doctor' and update UI; doctor: include severity metadata and normalize statuses (7b327f9f9dbceb5afc13e6d090be14f1daccadc3)
+## [0.9.0] - 2025-09-06
 
 - update changelog (7c01e2cba5f71ebd4326bc8a441e4a81d278bf76)
 
@@ -513,12 +540,14 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - update CLI tests to use 'doctor' subcommand (25423c5fb1ea81f3a6401cb9a6f0bfbb9adce300)
 
 - rename subcommand to 'doctor' and add 'azure-functions' console script entrypoints (7101e7f92ecb25f3c9d382674048bb94adc628c7)
+## [0.8.0] - 2025-09-06
 
 - update changelog (c0cb87053d831b1003518e78768f4645ee570dc7)
 
 - bump version to 0.8.0 (52b07238fbc699434e615e00b7828ab06e5dbe82)
 
 - Run formatters (black/ruff) adjustments (1895c63c1d014ba42b6c8e2d899c9178227637f1)
+## [0.7.0] - 2025-09-05
 
 - update changelog (31e2c19f216b44d7a60c33e31cbad87e3561fad4)
 
@@ -533,6 +562,7 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - add v1/v2 rule stubs and severities (fcbe157ac2c3246b9171a56b4ee5075ca89dfc89)
 
 - add Severity column to v2 programming model checks (ad021874bc78d42369346f81a2c9b4d7e9bdf0f6)
+## [0.6.0] - 2025-09-05
 
 - update changelog (ffc692f5465f58c8816e9ff28d2e7841d5a5196e)
 
@@ -555,12 +585,14 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - Update CHANGELOG.md with fix details (a6a8690e8f5ac10e9092d2783ecba200403f5caa)
 
 - separate verbose option from logging level control (9b373a91243fcf5668afec8491beea95b258fa7d)
+## [0.5.0] - 2025-09-03
 
 - update changelog (deeb342676ef59776d8812758b64632bc730e9ee)
 
 - bump version to 0.5.0 (248da2a31fa91b09270d72627a2d20569526360d)
 
 - improve error handling and robustness (1c90078671dbee99ce13d3c0a1920447bcfc141f)
+## [0.4.1] - 2025-09-03
 
 - bump version to 0.4.1 (a9fc413faef0efb421ce93cafcc267bb349ada39)
 
@@ -571,6 +603,7 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - add v1/v2 compatibility check at initialization (af3621b35dcef7513839f8e0b8f07b329cf82a9a)
 
 - mark local.settings.json implemented; test: assert optional local.settings.json passes (ab2c16d5dfdab13720a66bf539c61998a0bc8dc6)
+## [0.3.0] - 2025-08-30
 
 - update changelog (1fef4982e53a40df6ac191e8d11aea3607d1d015)
 
@@ -581,8 +614,10 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - resolve diagnostic failures and pre-commit issues (cc2a27eedd63c0dbf6d0c35ab2ca93a98b7bf26b)
 
 - implement major code structure improvements (18c3d60ef104003ebc93788a25db5e7fcc34b0cd)
+## [0.2.0] - 2025-08-30
 
 - align local version with PyPI release (0.2.0) (68a011cfc517751eda20de5b19d9a1f378296187)
+## [0.1.11] - 2025-08-30
 
 - update changelog (afdf7359dafaf8ff444552b08152a5d9cd25271b)
 
@@ -621,10 +656,12 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - configure default and test PyPI repositories for hatch publish (931563cf2e6d5b463863fed12f7ffe0da79443b9)
 
 - add publish-pypi and publish-test targets for PyPI release (f769088317f3e23dafaf4b0f3b3aa90ab98db31a)
+## [0.1.10] - 2025-06-22
 
 - bump version to 0.1.10 (e7b53af13a317f886e95c88d3c5cce26a5e36ba0)
 
 - use Hatch inside virtualenv with automatic bootstrap (e2bec3f660a7366a3255888bde1a519756bfa523)
+## [0.1.9] - 2025-06-03
 
 - update changelog (95e1596371c72e478a87a1d06846b14fa8877bb9)
 
@@ -639,12 +676,14 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - improve README usage section with clearer structure and sample image (2af7acbe4c389aaf79890dbdcf3422beb41f1192)
 
 - simplify changelog template to fix template errors (8bf9f9905508a44d4ad8e384ca670ce34e0036f3)
+## [0.1.8] - 2025-06-02
 
 - update changelog (a973c03fb168c8b2df2231260dba9a030f6310e1)
 
 - bump version to 0.1.8 (a339eb5cf40530e8b64a50ec5e8cb88db1453ed2)
 
 - fix packaging path and changelog format issues (fb98bd2333be27ae023a7f62083f8468cf4640be)
+## [0.1.7] - 2025-06-02
 
 - update changelog (1dbd7c5fc35cad09b973b524fea8fd7ef3e46a02)
 
@@ -653,12 +692,14 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - remove unnecessary wheel target config for src layout (b1b8e60a37b4d11a8806bddc2f8a4ad598c3393b)
 
 - fix ModuleNotFoundError by adding src to pytest PYTHONPATH (9e2b07136523a3ffeabfddec1263521918dd344b)
+## [0.1.6] - 2025-06-02
 
 - update changelog (047381f9717d6989ed81f3c08dc06c29ea83dee1)
 
 - bump version to 0.1.6 (4261829476f5868ecabd103cea5cff926fec7a48)
 
 - replace 'import' with 'target' in package_installed condition (1ab3d0aa88019688f7c515248899828535818e7e)
+## [0.1.5] - 2025-06-02
 
 - update changelog (f5485f8a54eb91bca222a081ff8bb6837e9b5f0f)
 
@@ -689,12 +730,14 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - move rules.json to project root and update loader path (35d76849728f45aaef0d2b2d643f12a641696eda)
 
 - add packaging dependency for Windows CLI compatibility (30e0161ab33e5bf33211fdf0cf22f40be2989f72)
+## [0.1.4] - 2025-06-02
 
 - update changelog (a1765777b493cc5cba2a7ddb548762659588f0dc)
 
 - bump version to 0.1.4 (dfc1a2aeec65297d5a91fa42a7a1eded1a196ad2)
 
 - fix packaging path and add missing dependency (40ae5e2d04a0362dffec03d5ac3992ad8565ee22)
+## [0.1.3] - 2025-06-02
 
 - update changelog (3df3a2eb351dc39ba81d287902f48d3e08b6eae1)
 
@@ -703,6 +746,7 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - add automatic commit after version bump in release targets (69ba5da761dcd850ad96f9eb792b37a3b762e9b4)
 
 - correct wheel target package path for src layout (86239d9c10037f2ec4aa635a108f42e5764c6888)
+## [0.1.2] - 2025-06-02
 
 - bump version to 0.1.2 (4b1546283c0351c2fd5ad967452b39120564e7c9)
 
@@ -723,6 +767,7 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - generate changelog for v0.1.1 (d96c275d907f28f696f6128d7431b04e21ba86a8)
 
 - switch to dynamic versioning and fix Makefile targets (7cdee62a6f7fe7a8a2f7220ae0a41a602b54403f)
+## [0.1.1] - 2025-06-02
 
 - update changelog (916ee3d1b4d643192a9bcad2896a1b8d498c6482)
 
@@ -731,6 +776,7 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - use twine for PyPI upload on tag push (9af1dbe7778fd2c301e4ce48848285a902f86538)
 
 - trigger PyPI publish on tag push (054d22632b406b5874f7240208654ca56b4840b5)
+## [0.1.0] - 2025-06-02
 
 - reflect latest commits in CHANGELOG.md (bd094b00f7d5fe646d1b1f830e3adbb05fefbe8b)
 
