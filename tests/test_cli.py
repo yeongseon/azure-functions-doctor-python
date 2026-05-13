@@ -1,13 +1,15 @@
 import json
 from pathlib import Path
 import re
-import xml.etree.ElementTree as ET
+from typing import Any
 from unittest.mock import Mock
+import xml.etree.ElementTree as ET
 
+import pytest
 from typer.testing import CliRunner
 
-from azure_functions_doctor.cli import cli as app
 import azure_functions_doctor.cli as cli_module
+from azure_functions_doctor.cli import cli as app
 
 runner = CliRunner()
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
@@ -234,7 +236,10 @@ def test_cli_sarif_output_includes_target_python_override() -> None:
     }
 
 
-def test_write_output_prints_success_message_for_file_output(tmp_path: Path, monkeypatch) -> None:
+def test_write_output_prints_success_message_for_file_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     output_path = tmp_path / "out.json"
     print_mock = Mock()
     monkeypatch.setattr(cli_module.console, "print", print_mock)
@@ -245,13 +250,16 @@ def test_write_output_prints_success_message_for_file_output(tmp_path: Path, mon
     print_mock.assert_called()
 
 
-def test_validate_inputs_invalid_output_path_raises(monkeypatch, tmp_path: Path) -> None:
+def test_validate_inputs_invalid_output_path_raises(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     base = tmp_path / "project"
     base.mkdir()
 
     original_resolve = Path.resolve
 
-    def fake_resolve(self: Path, *args, **kwargs):
+    def fake_resolve(self: Path, *args: Any, **kwargs: Any) -> Path:
         if str(self).endswith("bad.out"):
             raise OSError("resolve failed")
         return original_resolve(self, *args, **kwargs)

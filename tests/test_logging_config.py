@@ -116,7 +116,7 @@ def test_setup_logging_removes_stream_handlers_when_console_disabled() -> None:
 
 
 def test_setup_logging_structured_formatter() -> None:
-    logger = _reset_main_logger()
+    _reset_main_logger()
 
     configured = logging_config.setup_logging(level="INFO", format_style="structured")
 
