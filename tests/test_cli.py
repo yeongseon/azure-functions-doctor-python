@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 import re
-from typing import Any
 from unittest.mock import Mock
 import xml.etree.ElementTree as ET
 
@@ -259,10 +258,10 @@ def test_validate_inputs_invalid_output_path_raises(
 
     original_resolve = Path.resolve
 
-    def fake_resolve(self: Path, *args: Any, **kwargs: Any) -> Path:
+    def fake_resolve(self: Path, strict: bool = False) -> Path:
         if str(self).endswith("bad.out"):
             raise OSError("resolve failed")
-        return original_resolve(self, *args, **kwargs)
+        return original_resolve(self, strict=strict)
 
     monkeypatch.setattr(Path, "resolve", fake_resolve)
 
