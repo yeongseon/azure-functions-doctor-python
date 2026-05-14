@@ -1,0 +1,2266 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A diagnostic tool for Python Azure Functions">
+      
+      
+        <meta name="author" content="Yeongseon Choe">
+      
+      
+        <link rel="canonical" href="https://yeongseon.github.io/azure-functions-doctor/RULE_POLICY/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../logo_assets/logo_favicon_16px.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Rule Policy for azure-functions-doctor - Azure Functions Doctor</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#rule-policy-for-azure-functions-doctor" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Azure Functions Doctor" class="md-header__button md-logo" aria-label="Azure Functions Doctor" data-md-component="logo">
+      
+  <img src="../logo_assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Azure Functions Doctor
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Rule Policy for azure-functions-doctor
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/yeongseon/azure-functions-doctor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../usage/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../choose-a-plan/" class="md-tabs__link">
+          
+  
+  
+  Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../examples/basic_check/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../development/" class="md-tabs__link">
+          
+  
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../release_process/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Release Process
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Azure Functions Doctor" class="md-nav__button md-logo" aria-label="Azure Functions Doctor" data-md-component="logo">
+      
+  <img src="../logo_assets/logo.png" alt="logo">
+
+    </a>
+    Azure Functions Doctor
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/yeongseon/azure-functions-doctor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rule_inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rule Inventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../minimal_profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimal Profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json_output_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSON Output Contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../handlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Handlers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../choose-a-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a Plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy to Azure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/basic_check/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Basic Check
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/ci_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/custom_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supported_versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Versions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../semver_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semver Policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release_process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#philosophy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Philosophy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rule-classification-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule Classification Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rule Classification Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tier-1-core-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1 — Core Rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-2-extended-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 2 — Extended Rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-3-experimental-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 3 — Experimental Rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deterministic-rule-requirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deterministic Rule Requirement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ci-safety-principle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI Safety Principle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#microsoft-learn-anchoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microsoft Learn Anchoring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Microsoft Learn Anchoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#relevant-reference-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relevant Reference Pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proposed-future-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proposed Future Metadata
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rule-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule Lifecycle
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rule Lifecycle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#promoting-a-rule-from-extended-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Promoting a rule from Extended → Core
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#demoting-a-rule-from-core-extended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demoting a rule from Core → Extended
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="rule-policy-for-azure-functions-doctor">Rule Policy for <code>azure-functions-doctor</code><a class="headerlink" href="#rule-policy-for-azure-functions-doctor" title="Permanent link">&para;</a></h1>
+<h2 id="philosophy">Philosophy<a class="headerlink" href="#philosophy" title="Permanent link">&para;</a></h2>
+<p><code>azure-functions-doctor</code> is designed as a <strong>conservative static preflight checker</strong>
+for Azure Functions Python projects.</p>
+<p>The goal is <strong>not to enforce project style or preferences</strong>, but to detect
+<strong>clear configuration problems</strong> that are directly specified in official documentation.</p>
+<p>The tool prioritizes:</p>
+<ul>
+<li><strong>Low false positive rate</strong></li>
+<li><strong>Deterministic checks</strong></li>
+<li><strong>Strong grounding in Microsoft Learn documentation</strong></li>
+<li><strong>Safe usage in CI pipelines</strong></li>
+</ul>
+<blockquote>
+<p>Prefer fewer rules with high confidence over many rules with uncertainty.</p>
+</blockquote>
+<hr />
+<h2 id="rule-classification-model">Rule Classification Model<a class="headerlink" href="#rule-classification-model" title="Permanent link">&para;</a></h2>
+<p>All built-in rules belong to one of three tiers.
+The tier determines default severity (<code>required: true/false</code>) and lifecycle expectations.</p>
+<h3 id="tier-1-core-rules">Tier 1 — Core Rules<a class="headerlink" href="#tier-1-core-rules" title="Permanent link">&para;</a></h3>
+<p>Core rules represent <strong>hard validation checks</strong>.</p>
+<p>They must satisfy <strong>all</strong> of the following:</p>
+<ul>
+<li>Directly required or explicitly specified in <strong>Microsoft Learn documentation</strong></li>
+<li>Deterministic static check (file existence, package declaration, version comparison)</li>
+<li>Near-zero false positives across all valid project layouts</li>
+<li>Safe to fail CI builds — the fix is always unambiguous</li>
+</ul>
+<p>Core rules are marked <code>"required": true</code> in <code>v2.json</code> and are always included in the
+<code>--profile minimal</code> set. Adding or removing a core rule is a <strong>semver-breaking change</strong>.</p>
+<h4 id="current-core-rules">Current Core Rules<a class="headerlink" href="#current-core-rules" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Rule ID</th>
+<th>Check Type</th>
+<th>MS Learn Reference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>check_python_version</code></td>
+<td><code>compare_version</code></td>
+<td><a href="https://learn.microsoft.com/azure/azure-functions/functions-reference-python#supported-python-versions">Supported Python versions</a></td>
+</tr>
+<tr>
+<td><code>check_requirements_txt</code></td>
+<td><code>file_exists</code></td>
+<td><a href="https://learn.microsoft.com/azure/azure-functions/functions-reference-python#managing-dependencies">Managing dependencies</a></td>
+</tr>
+<tr>
+<td><code>check_azure_functions_library</code></td>
+<td><code>package_declared</code></td>
+<td><a href="https://learn.microsoft.com/azure/azure-functions/functions-reference-python">Python developer reference</a></td>
+</tr>
+<tr>
+<td><code>check_host_json</code></td>
+<td><code>file_exists</code></td>
+<td><a href="https://learn.microsoft.com/azure/azure-functions/functions-host-json">host.json reference</a></td>
+</tr>
+<tr>
+<td><code>check_host_json_version</code></td>
+<td><code>host_json_version</code></td>
+<td><a href="https://learn.microsoft.com/azure/azure-functions/functions-host-json">host.json reference</a></td>
+</tr>
+</tbody>
+</table>
+<p>These rules detect <strong>unambiguous misconfiguration</strong> — a project missing any of these
+will fail to deploy or run regardless of environment.</p>
+<hr />
+<h3 id="tier-2-extended-rules">Tier 2 — Extended Rules<a class="headerlink" href="#tier-2-extended-rules" title="Permanent link">&para;</a></h3>
+<p>Extended rules are <strong>officially recommended</strong> configurations but not universally required.</p>
+<p>These rules:</p>
+<ul>
+<li>May depend on local development environment (not deployment-time requirements)</li>
+<li>May be documented as "recommended" rather than "required" in Microsoft Learn</li>
+<li>Should produce <strong>warnings</strong> (<code>"required": false</code>), not hard failures</li>
+<li>Must not break CI builds unless explicitly opted-in via a custom rules file</li>
+</ul>
+<p>Extended rules are included in <code>--profile full</code> but excluded from <code>--profile minimal</code>.</p>
+<h4 id="current-extended-rules">Current Extended Rules<a class="headerlink" href="#current-extended-rules" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Rule ID</th>
+<th>Reason for Extended (not Core) tier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>check_programming_model_v2</code></td>
+<td>Decorator detection uses AST heuristics; false positives possible in non-standard layouts</td>
+</tr>
+<tr>
+<td><code>check_venv</code></td>
+<td>Recommended for local development; not a deployment-time requirement</td>
+</tr>
+<tr>
+<td><code>check_python_executable</code></td>
+<td>Interpreter path issues are environment-specific; not caused by project misconfiguration</td>
+</tr>
+<tr>
+<td><code>check_local_settings</code></td>
+<td>Local development convenience; not required for deployment</td>
+</tr>
+<tr>
+<td><code>check_func_cli</code></td>
+<td>Core Tools useful locally; not required by Functions runtime</td>
+</tr>
+<tr>
+<td><code>check_func_core_tools_version</code></td>
+<td>Version guidance; not a runtime deployment requirement</td>
+</tr>
+<tr>
+<td><code>check_extension_bundle</code></td>
+<td>Binding support recommendation; not universally required</td>
+</tr>
+<tr>
+<td><code>check_app_insights</code></td>
+<td>Observability recommendation; not required for app to run</td>
+</tr>
+<tr>
+<td><code>check_durabletask_config</code></td>
+<td>Conditional on Durable usage; heuristic detection</td>
+</tr>
+<tr>
+<td><code>check_asgi_wsgi_exposure</code></td>
+<td>Framework heuristic; non-standard callables may produce false positives</td>
+</tr>
+<tr>
+<td><code>check_extension_bundle_v4</code></td>
+<td>Version recommendation; not a hard requirement</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="tier-3-experimental-rules">Tier 3 — Experimental Rules<a class="headerlink" href="#tier-3-experimental-rules" title="Permanent link">&para;</a></h3>
+<p>Experimental rules are based on:</p>
+<ul>
+<li>Real-world troubleshooting experience</li>
+<li>Heuristic detection of common patterns</li>
+<li>Operational best practices not codified in Microsoft Learn</li>
+</ul>
+<p>These rules <strong>may produce false positives</strong> and must be <strong>opt-in only</strong> — they must
+never appear in the built-in <code>v2.json</code> with <code>"required": true</code>, and are better suited
+for community-contributed custom rule files.</p>
+<p>Experimental rules must not be promoted to Extended or Core without:</p>
+<ol>
+<li>A documented Microsoft Learn or Azure SDK reference</li>
+<li>At least one cycle of community feedback confirming low false-positive rate</li>
+<li>A test covering both pass and non-pass outcomes</li>
+</ol>
+<h4 id="examples-not-yet-built-in">Examples (not yet built-in)<a class="headerlink" href="#examples-not-yet-built-in" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>blueprint_registration_missing</code></td>
+<td>Project structure heuristic; high false-positive risk</td>
+</tr>
+<tr>
+<td><code>deployment_layout_warning</code></td>
+<td>Packaging layout suggestion; project-specific</td>
+</tr>
+<tr>
+<td><code>logging_configuration_missing</code></td>
+<td>Operational recommendation; not in official required config</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="deterministic-rule-requirement">Deterministic Rule Requirement<a class="headerlink" href="#deterministic-rule-requirement" title="Permanent link">&para;</a></h2>
+<p>Core rules must rely on <strong>deterministic, static checks</strong>.</p>
+<p><strong>Allowed check types for Core rules:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>file_exists</code></td>
+<td>File present at project root</td>
+</tr>
+<tr>
+<td><code>host_json_version</code></td>
+<td>JSON property equality</td>
+</tr>
+<tr>
+<td><code>package_declared</code></td>
+<td>Package name appears in requirements.txt</td>
+</tr>
+<tr>
+<td><code>compare_version</code></td>
+<td>Version comparison against a fixed minimum</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Not allowed in Core rules:</strong></p>
+<ul>
+<li><code>source_code_contains</code> — source pattern matching can match unrelated code</li>
+<li><code>callable_detection</code> — heuristic; non-standard callables may not be detected</li>
+<li><code>file_glob_check</code> — glob patterns can match intentionally kept files</li>
+<li><code>conditional_exists</code> — result depends on heuristic detection of features in source</li>
+<li><code>any_of_exists</code> with environment variables — environment-dependent; not static</li>
+</ul>
+<p>Rules using these check types belong in Extended or Experimental tiers.</p>
+<hr />
+<h2 id="ci-safety-principle">CI Safety Principle<a class="headerlink" href="#ci-safety-principle" title="Permanent link">&para;</a></h2>
+<p>Core rules must be <strong>safe to enforce as CI hard blockers</strong>.</p>
+<p>A rule should produce a <code>fail</code> result (and non-zero exit code) only when:</p>
+<ol>
+<li>The configuration is clearly invalid per official documentation</li>
+<li>The fix is unambiguous (no judgment required)</li>
+<li>The rule is grounded in a specific Microsoft Learn page</li>
+</ol>
+<p>If any of those conditions is not met, the rule must be <code>"required": false</code>
+so it produces a <code>warn</code> result that does not fail CI by default.</p>
+<hr />
+<h2 id="microsoft-learn-anchoring">Microsoft Learn Anchoring<a class="headerlink" href="#microsoft-learn-anchoring" title="Permanent link">&para;</a></h2>
+<p>Every built-in rule should reference its documentation basis via <code>hint_url</code>.
+Rules without a documentation anchor belong in the Experimental tier until a reference is found.</p>
+<h3 id="relevant-reference-pages">Relevant Reference Pages<a class="headerlink" href="#relevant-reference-pages" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>host.json reference</td>
+<td>https://learn.microsoft.com/azure/azure-functions/functions-host-json</td>
+</tr>
+<tr>
+<td>Python developer reference</td>
+<td>https://learn.microsoft.com/azure/azure-functions/functions-reference-python</td>
+</tr>
+<tr>
+<td>Supported Python versions</td>
+<td>https://learn.microsoft.com/azure/azure-functions/functions-reference-python#supported-python-versions</td>
+</tr>
+<tr>
+<td>Managing dependencies</td>
+<td>https://learn.microsoft.com/azure/azure-functions/functions-reference-python#managing-dependencies</td>
+</tr>
+<tr>
+<td>Programming model v2 (decorators)</td>
+<td>https://learn.microsoft.com/azure/azure-functions/functions-reference-python?pivots=python-mode-decorators</td>
+</tr>
+<tr>
+<td>Extension bundles</td>
+<td>https://learn.microsoft.com/azure/azure-functions/functions-extension-bundles</td>
+</tr>
+<tr>
+<td>local.settings.json</td>
+<td>https://learn.microsoft.com/azure/azure-functions/functions-develop-local#local-settings-file</td>
+</tr>
+<tr>
+<td>Application Insights</td>
+<td>https://learn.microsoft.com/azure/azure-monitor/app/azure-functions</td>
+</tr>
+<tr>
+<td>Core Tools v4</td>
+<td>https://learn.microsoft.com/azure/azure-functions/functions-run-local#v4</td>
+</tr>
+<tr>
+<td>Durable Functions</td>
+<td>https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview</td>
+</tr>
+<tr>
+<td>.funcignore</td>
+<td>https://learn.microsoft.com/azure/azure-functions/functions-run-local#funcignore</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="proposed-future-metadata">Proposed Future Metadata<a class="headerlink" href="#proposed-future-metadata" title="Permanent link">&para;</a></h2>
+<p>The following optional fields are reserved for future schema extensions.
+They are <strong>not currently enforced</strong> by the schema or handler runtime.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;check_host_json&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;source_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ms_learn&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;source_title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Azure Functions host.json reference&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">&quot;source_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://learn.microsoft.com/azure/azure-functions/functions-host-json&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">&quot;tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;core&quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">}</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Values</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>source_type</code></td>
+<td><code>ms_learn</code>, <code>derived</code>, <code>heuristic</code></td>
+<td>Classification of rule's documentation basis</td>
+</tr>
+<tr>
+<td><code>source_title</code></td>
+<td>String</td>
+<td>Human-readable title of the source document</td>
+</tr>
+<tr>
+<td><code>source_url</code></td>
+<td>URI</td>
+<td>Direct link to the authoritative reference</td>
+</tr>
+<tr>
+<td><code>tier</code></td>
+<td><code>core</code>, <code>extended</code>, <code>experimental</code></td>
+<td>Explicit tier classification</td>
+</tr>
+</tbody>
+</table>
+<p>To adopt these fields, update <code>rules.schema.json</code>, the <code>Rule</code> TypedDict in <code>handlers.py</code>,
+and all entries in <code>v2.json</code>.</p>
+<hr />
+<h2 id="rule-lifecycle">Rule Lifecycle<a class="headerlink" href="#rule-lifecycle" title="Permanent link">&para;</a></h2>
+<h3 id="promoting-a-rule-from-extended-core">Promoting a rule from Extended → Core<a class="headerlink" href="#promoting-a-rule-from-extended-core" title="Permanent link">&para;</a></h3>
+<p>A rule may be promoted to Core (i.e., <code>"required": true</code>) only when:</p>
+<ul>
+<li>[ ] It passes all Tier 1 requirements above (deterministic, MS Learn anchor, near-zero FP)</li>
+<li>[ ] A test covers the pass, fail, and edge-case outcomes</li>
+<li>[ ] The change is documented in <code>CHANGELOG.md</code> as a <strong>breaking change</strong> (semver major)</li>
+<li>[ ] <code>minimal_profile.md</code> is updated to reflect the new minimal rule set</li>
+</ul>
+<h3 id="demoting-a-rule-from-core-extended">Demoting a rule from Core → Extended<a class="headerlink" href="#demoting-a-rule-from-core-extended" title="Permanent link">&para;</a></h3>
+<p>A rule must be demoted to Extended (i.e., <code>"required": false</code>) when:</p>
+<ul>
+<li>Evidence of false positives in real projects emerges</li>
+<li>The underlying check becomes environment-dependent (not project-static)</li>
+<li>The Microsoft Learn reference changes or is removed</li>
+</ul>
+<p>Demotions are also <strong>breaking changes</strong> because they change the <code>--profile minimal</code> set
+and affect the exit code behavior of CI pipelines that relied on the rule to fail.</p>
+<hr />
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>The guiding principle for rule design is:</p>
+<blockquote>
+<p><strong>Prefer fewer rules with high confidence over many rules with uncertainty.</strong></p>
+</blockquote>
+<p><code>azure-functions-doctor</code> should remain:</p>
+<ul>
+<li><strong>Predictable</strong> — the same project produces the same result on any machine</li>
+<li><strong>Low-noise</strong> — warnings should be meaningful, not routine</li>
+<li><strong>Grounded in official documentation</strong> — every rule should have a citable source</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/yeongseon/azure-functions-doctor" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@11.14.0/dist/mermaid.min.js"></script>
+      
+        <script src="../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>
