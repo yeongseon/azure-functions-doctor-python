@@ -1,5 +1,17 @@
 # Changelog
-## [Unreleased]
+## [0.17.1] - 2026-05-14
+
+- bump version to 0.17.1 (b3fec870f1f37860109d837ee6854001b0423e32)
+
+- Merge pull request #151 from yeongseon/dependabot/pip/mypy-2.0.0
+
+chore(deps): bump mypy from 1.20.2 to 2.0.0 (de86a742dca99b2299ca318e9f566d957af7a1f4)
+
+- add type annotations for mypy 2.x compatibility (13dcee0b85502bf3946ffa224f342bd884a843d0)
+
+- clean up test_cli annotations and remove unused logger binding (0913c67a996c7c70fda6576f66954c5818cf7ade)
+
+- fix changelog template and decouple version test from literals (c717490f29f7fc250bba6a590ee6ca104bfdbe53)
 
 - raise coverage to 95%+ and enforce via AGENTS.md and pyproject.toml (6673c7c90d725cc0190cd03cafdd6edd27e4872d)
 
