@@ -68,3 +68,23 @@ def format_detail(status: str, value: str) -> Text:
     """
     color = DETAIL_COLOR_MAP.get(status, "white")
     return Text(value, style=color)
+
+
+def format_freshness_line(last_verified: str, source_url: str = "") -> str:
+    """Render the Finding Contract v2 freshness line for date/compat findings.
+
+    Args:
+        last_verified: The ``YYYY-MM-DD`` date the underlying fact was verified.
+        source_url: Optional authoritative source URL for the fact.
+
+    Returns:
+        A human-readable ``verified as of YYYY-MM-DD`` string, with the source
+        URL appended when available. Returns an empty string when
+        ``last_verified`` is missing so callers can skip rendering.
+    """
+    if not last_verified:
+        return ""
+    line = f"verified as of {last_verified}"
+    if source_url:
+        line += f" — {source_url}"
+    return line

@@ -74,6 +74,7 @@ check: ensure-hatch
 lint-workflows: ensure-hatch
 	@$(HATCH) run python tools/lint_release_workflows.py
 	@$(HATCH) run python tools/lint_workflow_pins.py
+	@$(HATCH) run python tools/lint_hatch_matrix.py
 
 .PHONY: check-all
 check-all: ensure-hatch
@@ -134,7 +135,10 @@ endif
 	@git push origin HEAD
 	@git tag -a v$(VERSION) -m "Release v$(VERSION)"
 	@git push origin v$(VERSION)
-	@echo "Tagged release v$(VERSION)"
+	# Keep the moving v1 major branch (used by the GitHub Action pin
+	# yeongseon/azure-functions-doctor@v1) fast-forwarded to this release.
+	@git push origin HEAD:refs/heads/v1
+	@echo "Tagged release v$(VERSION) and fast-forwarded the v1 action branch"
 
 .PHONY: release
 release: ensure-hatch

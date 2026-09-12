@@ -49,7 +49,7 @@ if __name__ == "__main__":
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `path` | `str` | Yes | File system path to the Azure Functions app root. |
-| `profile` | `str | None` | No | `"full"` (default behavior) or `"minimal"` (required checks only). |
+| `profile` | `str \| None` | No | Rule profile: `"minimal"` (required checks only), `"deploy"` (runtime/hosting/deployment correctness), `"development"` (dev-environment checks), or `"full"` (default behavior: all rules). |
 | `rules_path` | `pathlib.Path | None` | No | Optional path to a custom rules file matching the rules schema. |
 | `target_python` | `str | None` | No | Override target Python runtime version (e.g. `"3.12"`). Defaults to `None` (use tool runtime). |
 

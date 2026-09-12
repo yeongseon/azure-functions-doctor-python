@@ -5,7 +5,7 @@
 ## Package Info
 
 - PyPI: `pip install azure-functions-doctor`
-- Version: 0.19.2
+- Version: 0.20.0
 - Python: >=3.10, <3.15
 - License: MIT
 - Docs: https://yeongseon.dev/azure-functions-python/doctor/
@@ -24,16 +24,17 @@ Outputs to table, JSON, SARIF, or JUnit formats. Integrates with CI/CD pipelines
 ## CLI Commands
 
 Main entry points (all aliases):
-- `azure-functions doctor` — Run all diagnostics
+- `azure-functions-doctor doctor  # the `doctor` subcommand is optional` — Run all diagnostics
 - `azure-functions-doctor doctor` — Same as above
 - `fdoctor doctor` — Short alias
 
 ### Key Options
 
+- `--version` — Print the installed azure-functions-doctor version and exit
 - `--path <PATH>` — Path to the Azure Functions app (default: current directory)
 - `--format <FORMAT>` — Output format: table (default), json, sarif, junit
 - `--output <PATH>` — Save output to file
-- `--profile <PROFILE>` — Rule profile: minimal (required only) or full (default)
+- `--profile <PROFILE>` — Rule profile: minimal (required only), deploy (runtime/hosting/deployment correctness), development (dev-environment checks), or full (all rules; default when omitted)
 - `--rules <PATH>` — Custom rules file (JSON)
 - `--summary-json <PATH>` — Write JSON summary (passed/warned/failed counts)
 - `--verbose` — Show detailed hints for failed checks
@@ -80,8 +81,10 @@ azure-functions-doctor --format junit --output test-results.xml
 - **Triggers** — Proper HTTP/Timer/Storage trigger usage and configuration
 - **Core Tools** — Local Azure Functions Core Tools availability
 
-Rules support two profiles:
+Rules support four profiles:
 - **minimal** — Required checks only
+- **deploy** — Runtime/hosting/deployment correctness (core group, minus dev-environment checks)
+- **development** — Dev-environment checks (venv, Python executable, Core Tools, local.settings)
 - **full** — All checks including recommended best practices
 
 ## Documentation

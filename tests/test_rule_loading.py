@@ -109,6 +109,59 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             check_orders = [rule.get("check_order", 999) for rule in rules]
             assert check_orders == sorted(check_orders)
 
+    def test_integration_rules_are_grouped(self) -> None:
+        """The ecosystem-integration rules carry group='integration' (#355)."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            self._write_v2_app(temp_path)
+
+            doctor = Doctor(str(temp_path))
+            rules = doctor.load_rules()
+
+            integration_ids = {rule["id"] for rule in rules if rule.get("group") == "integration"}
+            assert integration_ids == {
+                "check_endpoint_metadata",
+                "check_openapi_version_mixing",
+                "check_scan_before_spec",
+                "check_langgraph_anonymous_auth",
+                "check_otel_trace_context_activation",
+            }
+
+    def test_core_rules_default_group(self) -> None:
+        """Rules without an explicit group are treated as core (#355)."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            self._write_v2_app(temp_path)
+
+            doctor = Doctor(str(temp_path))
+            rules = doctor.load_rules()
+
+            # A representative Azure-correctness rule ships no group and is core.
+            python_version = next(rule for rule in rules if rule["id"] == "check_python_version")
+            assert python_version.get("group", "core") == "core"
+            # Every rule's group is one of the two allowed values.
+            assert all(rule.get("group", "core") in {"core", "integration"} for rule in rules)
+
+    def test_hint_urls_point_at_central_mechanism_pages(self) -> None:
+        """Platform-mechanic rules link to the central mechanism pages (#333)."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            self._write_v2_app(temp_path)
+
+            doctor = Doctor(str(temp_path))
+            rules = doctor.load_rules()
+
+            by_id = {rule["id"]: rule for rule in rules}
+            binding_section = (
+                "https://yeongseon.dev/azure-functions-python/platform"
+                "/how-the-worker-binds-handlers/#binding"
+            )
+            assert by_id["check_decorator_order"]["hint_url"] == binding_section
+            assert by_id["check_endpoint_metadata"]["hint_url"] == binding_section
+            assert by_id["check_otel_trace_context_activation"]["hint_url"] == (
+                "https://yeongseon.dev/azure-functions-python/logging/opentelemetry/"
+            )
+
     def test_rule_loading_with_no_rules_files(self) -> None:
         """Test that rule loading fails gracefully when no rule files exist."""
         with tempfile.TemporaryDirectory() as temp_dir:

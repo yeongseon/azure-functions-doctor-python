@@ -1,5 +1,128 @@
 # Changelog
+## [0.20.0] - 2026-09-06
+
+- 0.20.0 migration notes (56f38936ac6520e9f19a91f63e18df11e091957f)
+
+- bump version to 0.20.0 (dea454b71b4eb375050f99ba9ab96f893d1799f7)
+
+- correct stale rule counts and widen the drift guard for 0.20.0 (#407) (f083b21672af3424e523c7502f6bde225fbc5474)
+
+- accept the doctor invocation without the redundant subcommand (#406) (e94730bcdcb57bd98ee4035477f7f85787d0c20f)
+
+- emit per-finding results and wire line locations (#405) (f269373821784e6c32fc888f7200741f4c06787f)
+
+- guard the silent no-op upload and pin the default install (#404) (1d11fc9f4a3fa84f6b8c6a93e349568382a6019b)
+
+- add --version flag (#403) (1c0064a6b4398596fe2f8b5c237ad3a1978f4d9a)
+
+- pin the reference examples' requirements (#402) (047f44c1dc914c50aef532d8b1f1b5af3a16cb05)
+
+- route all file traversal through the shared exclusion helper (#401) (1d978e5f56b50f44cf29af06a8b29530f2496bbc)
+
+- emit repo-root-relative artifactLocation URIs in every branch (#400) (1410f3c0ecee8c22c32cbe4c7bd3e70000dd7ff0)
+
+- split the registry god-module into domain modules (#391) (2b33c92f6446b39371fc37e56ce0de874191f747)
+
+- fast-forward the moving v1 action branch on each release (#390) (4a0b86a9a904b465931cb5feca6cb03d32a31b1d)
+
+- restore the full upload-sarif commit SHA (#389) (5e95f9258259a5a916e434af3a44661f71f12894)
+
+- gate weekly checks on compatibility-catalog freshness (#388) (755be4746a5838fb3e7ebe82870fa32100fa5be2)
+
+- align JSON contract, architecture, and LLM docs with the shipped code (#386) (72e858f6368800fcedd598196b90318379dae261)
+
+- derive the Python upgrade recommendation from the catalog (#385) (f1e039537795a7b1b645aab7cf87dcc38af004d2)
+
+- default profile to deploy and SHA-pin upload-sarif (#384) (c692d99236ecbce9569e265a62218cd416000523)
+
+- run each matrix cell on its real interpreter (#383) (cd02ace627789373ca87e44da79f3c59fc2badbf)
+
+- add 3-day maturation cooldown before auto-merge (#381) (1f8e5591cb8f11b95d2010009575bf1499fd2b3c)
+
+- point platform-mechanic hint_urls at the central mechanism pages (#380) (6f4528bd6b244d6de1287437f8d870772e1882b3)
+
+- add per-rule reference pages for the deploy-risk rule group (#379) (ec6e8646943d546e7694088010dd4022aa204695)
+
+- document all four rule profiles in action.yml inputs (#378) (acd726dee05182716840801a1eb4a2a3b64d647f)
+
+- add deploy and development profiles alongside minimal/full (#377) (9ef43fcb6f1513d293724873dfd8233a1e40e4b3)
+
+- label ecosystem rules as integration group (#376) (fd69b7ac2a1b335129c9bba6b7e0bf28c7004493)
+
+- add positioning/comparison page vs official azure-functions-skills doctor (#374) (43c916eebb35b2655ea514d596076a66ab6602ef)
+
+- canonicalize stale command examples to azure-functions-doctor doctor (#373) (22ddf06a9ae8de78b35b57584bff08fd9902afcc)
+
+- add config-based rule suppression and path exclusion (#372) (005ce30d44d5f835c3fbac29180657c0ff01f640)
+
+- replace hardcoded diagnostic-check count with a drift-guarded count (#354) (#371) (da708cec8241d88b10122c7e6dcd4abea362df50)
+
+- add binding-to-connection resolution check (#352) (#370) (09a16a534d0b60c81902021f07d383689d29eb3f)
+
+- add Flex Consumption deployment storage configuration check (#351) (#369) (49b333382ded32a8814f7b3535a3af446351137a)
+
+- add Flex Consumption deprecated app settings check (#350) (#368) (427f822366d366052e75921ee6c4e9388a56f338)
+
+- make FUNCTIONS_EXTENSION_VERSION check Flex-aware (#346) (#367) (e756a0a74148bb3b2472c71ec3e4ae8e4830910b)
+
+- resolve Flex Consumption runtime from functionAppConfig.runtime (#345) (#366) (78626ea4d2a6a2fd1ebef54dbd4be296ed70d68a)
+
+- add Functions runtime and hosting-plan lifecycle checks (#344) (#365) (f404ccae240f0b28bc5c9b4b4e779e0c68e1fa3b)
+
+- add date-based Python runtime lifecycle check (#364) (147248cd23a04651c91b3da4f92fd6cece5d7b9c)
+
+- add Finding Contract v2 with evidence and freshness fields (#348) (#363) (b7f53c05927b48e6e7729064d1c3e320188a23a2)
+
+- ingest target Azure config into a single TargetConfig (#362) (2289929dd141520b2e0cee820bb774dcba1ad62c)
+
+- add version-controlled compatibility catalog with source and freshness metadata (#359) (fa75dbcebd31bfa28cf46ede9610eb2ab477f22b)
+
+- reframe PRD for runtime/deployment positioning and fix stale commands (#360) (c34b1a495e7728ee4d5d1146faf7232bb5995784)
+
+- promote azure/login canonical pin to v3.0.2 (#361) (04cdb9f31ae7c4fb48103589e6e4bd845153f18b)
+
+- repoint decorator-order and endpoint-metadata rule hints to hub (#334) (e3588feb21c3242bf04949a502514f449ece6134)
+
+- notify cookbook to re-run e2e after PyPI release (#332) (ffa26c4f479cf03d6098e69ec24081fdbd6c900d)
+
+- copy-paste SARIF -> GitHub code scanning recipe (#327) (66ffe844bc34ea97d7842c6923de534e42ba7d47)
+
+- group dependabot updates + auto-merge patch/minor (#323) (76df77aba36cb11a9e14c0ebd03b3dff09bdcc63)
+
+- add Azure runtime and deploy-risk diagnostic rules (#289) (#322) (5525cf561e8ccaa3bd9dc18d074bf16e27713a8b)
+
+- resolve deferred review nits from #313/#314 (#321) (1d03bb8490ba7592ac93371241c1cc8e58b4dd72)
+
+- remove permanently no-op unsupported metadata version check (#320) (31c335ebbeecc6892e246e1cf5aeeadb38170ca3)
+
+- model rule identity, severity, and tiers explicitly (#319) (724d3b75813066788f89abca8be016aa2cf89095)
+
+- align metadata and version checks with OpenAPI 3.2 (#318) (019b2c75a0e2a9e8c9e0e46f1523692e98c5da34)
+
+- parse extensionBundle version ranges semantically (#317) (be7721c753f9e934479f192680098e1aed1f33d0)
+
+- suppress ASGI/WSGI warning for plain FunctionApp projects (#316) (6856254265a36c394b5eee9e11c269d38871f555)
+
+- require Application Insights connection string (#315) (120531c89a16dd1cbbd2d5d28a50441394ea0b5f)
+
+- distinguish remote-build requirements from pyproject metadata (#314) (8d1e2b0007a61171a0c1f901497e78580c9b9117)
+
+- validate Python target against supported Azure versions (#313) (e2efcb1d6072216f94b5b1079cd89e6712ad5b1c)
+
+- emit per-file and per-line locations in SARIF output (#297) (087adae9540e3efe471954a33a341e6b34382359)
+
+- fix JUnit name, README count, action alias, and SHA pinning (#296) (b43b3fffc760b208383384d90dd52d98a9ebfe15)
+
+- resolve project Python target before falling back to tool interpreter (#295) (d292f6c4918db2028e27cf084d35c869d555ad6d)
+
+- report skipped checks with an explicit skip status (#293) (0c5f480e7b6918bf627f770f4f0ce480b87b6efc)
+
+- exclude virtualenv, vendor, and cache dirs from project scans (#292) (f768432380227016f513735882fba97e16d622dc)
+
+- sync doc version strings to 0.19.2 (#294) (beb7d241a7acd4010354255a58fc90456d726232)
 ## [0.19.2] - 2026-08-14
+
+- update changelog (59299d860f496b901ef497f932596d43c30b05a0)
 
 - bump version to 0.19.2 (d3bc7cd4d819e760e03a045731b87eefc084b87f)
 
@@ -153,7 +276,6 @@ chore(deps): bump mypy from 1.20.2 to 2.0.0 (de86a742dca99b2299ca318e9f566d957af
 - fix cross-repo links and README title (fa2509179ebea3aa415f28ce172260a1f9dc9ba6)
 
 - Add DX Toolkit hub link to README (073b16155d39da8e9b37fa4b08c17e8472b62fdb)
-## [0.17.0] - 2026-04-26
 
 - update changelog (9f5ce2cda749c5808d5c55239eec22c50cf9b3c8)
 
@@ -262,6 +384,7 @@ chore: release v0.16.2 (2878efb29f2b80fe6bc512cd4e7aaa2546ad0601)
 - resolve 6 confirmed bugs (#95–#100) (#101) (e6d1957d0487c79d3dd956759a27beb5f792f19c)
 
 - use standard pypi environment name for Trusted Publisher (64f4af308b1f7646c9223d75dae40e7ac17a4c84)
+## [0.17.0] - 2026-03-22
 
 - update README with Azure Functions Python DX Toolkit branding (96c95bfb668fe4abc0abf21700e9eaf974df8026)
 
@@ -758,6 +881,7 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 ## [0.2.0] - 2025-08-30
 
 - align local version with PyPI release (0.2.0) (68a011cfc517751eda20de5b19d9a1f378296187)
+## [0.1.11] - 2025-08-30
 
 - update changelog (afdf7359dafaf8ff444552b08152a5d9cd25271b)
 
@@ -784,7 +908,6 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - add SARIF and JUnit output (b1b674ef96fa2d757e5376586496b7988dd6b004)
 
 - allow custom rules file (ee260411fca40d350d265477f993a195cb5dad49)
-## [0.1.11] - 2025-06-22
 
 - update changelog (67f7d2ea5e2eed122f41f527659e650f12f6614d)
 

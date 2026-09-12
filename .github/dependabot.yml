@@ -52,3 +52,11 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Artifact actions are deliberately pinned at v4 in the release-gated
+      # workflows (publish-pypi.yml, e2e-azure.yml); major bumps break the
+      # v4 artifact contract and must be handled as an explicit migration.
+      - dependency-name: "actions/upload-artifact"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "actions/download-artifact"
+        update-types: ["version-update:semver-major"]

@@ -3,4 +3,4 @@
 This module initializes the Azure Functions Doctor package and defines the version string.
 """
 
-__version__ = "0.19.2"
+__version__ = "0.20.0"

@@ -1,16 +1,23 @@
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
 import time
-from typing import Annotated, Optional
+from typing import Annotated, Mapping, Optional, cast
 
 from rich.console import Console
 from rich.text import Text
 import typer
 
 from azure_functions_doctor import __version__
-from azure_functions_doctor.doctor import Doctor, _resolve_severity, _resolve_tier
+from azure_functions_doctor.doctor import (
+    FINDING_EVIDENCE_KEYS,
+    FINDING_SCHEMA_VERSION,
+    Doctor,
+    _resolve_severity,
+    _resolve_tier,
+)
 from azure_functions_doctor.logging_config import (
     get_logger,
     log_diagnostic_complete,
@@ -23,7 +30,11 @@ from azure_functions_doctor.target_resolver import (
     is_supported_python_for_plan,
     resolve_python_target,
 )
-from azure_functions_doctor.utils import format_detail, format_status_icon
+from azure_functions_doctor.utils import (
+    format_detail,
+    format_freshness_line,
+    format_status_icon,
+)
 
 cli = typer.Typer()
 console = Console()
@@ -31,6 +42,26 @@ logger = get_logger(__name__)
 
 SUPPORTED_TARGET_PYTHON_VERSIONS = SUPPORTED_PYTHON_VERSIONS
 SUPPORTED_DEPLOYMENT_MODES = ("remote-build", "local", "local-prebuilt", "container")
+
+
+def _version_callback(value: bool) -> None:
+    """Print the installed version and exit (``--version``, issue #396)."""
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@cli.callback()
+def _main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show the installed azure-functions-doctor version and exit.",
+    ),
+) -> None:
+    """Azure Functions Python runtime & deployment diagnostic engine."""
 
 
 def _validate_inputs(
@@ -146,7 +177,14 @@ def doctor(
         Optional[Path], typer.Option(help="Optional path to save output result")
     ] = None,
     profile: Annotated[
-        Optional[str], typer.Option(help="Rule profile: 'minimal' or 'full'")
+        Optional[str],
+        typer.Option(
+            help=(
+                "Rule profile: 'minimal' (required gating checks), 'deploy' "
+                "(Azure runtime/hosting/deployment correctness), 'development' "
+                "(local dev-environment checks), or 'full' (all rules)."
+            ),
+        ),
     ] = None,
     rules: Annotated[
         Optional[Path], typer.Option(help="Optional path to a custom rules file")
@@ -193,7 +231,7 @@ def doctor(
         debug: Enable debug logging to stderr.
         format: Output format: 'table', 'json', 'sarif', or 'junit'.
         output: Optional file path to save output result.
-        profile: Optional rule profile ('minimal' or 'full').
+        profile: Optional rule profile ('minimal', 'deploy', 'development', or 'full').
         rules: Optional path to a custom rules file.
         summary_json: Path to write a JSON summary with passed/warned/failed counts.
         target_python: Optional target Python runtime override.
@@ -218,6 +256,7 @@ def doctor(
         rules_path=rules,
         target_python=target_python,
         deployment_mode=deployment_mode,
+        hosting_plan=hosting_plan,
     )
     resolved_path = Path(path).resolve()
     report_properties = doctor.get_report_properties()
@@ -287,6 +326,7 @@ def doctor(
             **report_properties,
         }
         json_output = {
+            "schema_version": FINDING_SCHEMA_VERSION,
             "metadata": metadata,
             "results": results,
         }
@@ -318,6 +358,75 @@ def doctor(
             driver_rules.append(driver_rule)
 
         sarif_results = []
+        # SARIF artifactLocation URIs paired with %SRCROOT% must be relative
+        # references (SARIF 2.1.0 §3.4.4), so the scan root is normalized once
+        # (#392): a relative --path (e.g. "services/api" in a monorepo) becomes
+        # the repo-root prefix for every URI; an absolute --path cannot be
+        # related to the runner's checkout root, so URIs stay scan-root-relative
+        # and never leak filesystem paths into the report.
+        scan_root_norm = path.replace("\\", "/").rstrip("/")
+        scan_root_is_absolute = scan_root_norm.startswith("/") or (
+            len(scan_root_norm) > 1 and scan_root_norm[1] == ":"
+        )
+        scan_prefix = ""
+        if not scan_root_is_absolute and scan_root_norm not in ("", "."):
+            scan_prefix = scan_root_norm + "/"
+
+        def _physical_location_for(
+            entry: Mapping[str, object],
+        ) -> tuple[dict[str, object], str, object]:
+            """Build one physicalLocation from an item or per-finding entry.
+
+            Returns ``(physical_location, artifact_uri, loc_line)``. URIs are
+            repo-root-relative per issue #392; entries may carry an absolute
+            path defensively, which is rebased onto the scan root.
+            """
+            loc_file = entry.get("file")
+            artifact_uri = ""
+            loc_line: object = None
+            if loc_file:
+                artifact_uri = str(loc_file).replace("\\", "/")
+                if Path(str(loc_file)).is_absolute():
+                    try:
+                        artifact_uri = str(Path(str(loc_file)).relative_to(Path(path))).replace(
+                            "\\", "/"
+                        )
+                    except ValueError:
+                        artifact_uri = Path(str(loc_file)).name
+                if artifact_uri.startswith("./"):
+                    artifact_uri = artifact_uri[2:]
+                artifact_uri = scan_prefix + artifact_uri
+                physical: dict[str, object] = {
+                    "artifactLocation": {
+                        "uri": artifact_uri,
+                        "uriBaseId": "%SRCROOT%",
+                    }
+                }
+                raw_line = entry.get("line")
+                if isinstance(raw_line, int) and raw_line > 0:
+                    loc_line = raw_line
+                    region: dict[str, object] = {"startLine": raw_line}
+                    raw_end = entry.get("end_line")
+                    if isinstance(raw_end, int) and raw_end > 0:
+                        region["endLine"] = raw_end
+                    raw_col = entry.get("column")
+                    if isinstance(raw_col, int) and raw_col > 0:
+                        region["startColumn"] = raw_col
+                    physical["region"] = region
+                return physical, artifact_uri, loc_line
+            # Rules without a file location point at the scan root in its
+            # repo-root-relative form; absolute roots collapse to "." (#392).
+            return (
+                {
+                    "artifactLocation": {
+                        "uri": scan_prefix if scan_prefix else ".",
+                        "uriBaseId": "%SRCROOT%",
+                    }
+                },
+                scan_prefix if scan_prefix else ".",
+                None,
+            )
+
         for section in results:
             for item in section["items"]:
                 status = item.get("status")
@@ -326,43 +435,53 @@ def doctor(
                     continue
                 rule_id = item.get("rule_id") or item.get("label", "")
                 level = "error" if status == "fail" else "warning"
-                loc_file = item.get("file")
-                if loc_file:
-                    artifact_uri = str(loc_file).replace("\\", "/")
-                    if artifact_uri.startswith("./"):
-                        artifact_uri = artifact_uri[2:]
-                    physical_location: dict[str, object] = {
-                        "artifactLocation": {
-                            "uri": artifact_uri,
-                            "uriBaseId": "%SRCROOT%",
-                        }
-                    }
-                    loc_line = item.get("line")
-                    if isinstance(loc_line, int) and loc_line > 0:
-                        region: dict[str, object] = {"startLine": loc_line}
-                        loc_end_line = item.get("end_line")
-                        if isinstance(loc_end_line, int) and loc_end_line > 0:
-                            region["endLine"] = loc_end_line
-                        loc_column = item.get("column")
-                        if isinstance(loc_column, int) and loc_column > 0:
-                            region["startColumn"] = loc_column
-                        physical_location["region"] = region
-                else:
-                    physical_location = {
-                        "artifactLocation": {
-                            "uri": path.replace("\\", "/").rstrip("/") + "/",
-                            "uriBaseId": "%SRCROOT%",
-                        }
-                    }
-                sarif_result: dict[str, object] = {
-                    "ruleId": rule_id,
-                    "message": {"text": item.get("value", "")},
-                    "level": level,
-                    "locations": [{"physicalLocation": physical_location}],
-                }
+
+                # One SARIF result per finding (issue #395): when a handler
+                # supplies structured ``locations``, each entry becomes its
+                # own result with its own region and message.
+                item_map = cast(Mapping[str, object], item)
+                raw_locations = item_map.get("locations")
+                entries: list[tuple[Mapping[str, object], str]] = []
+                if isinstance(raw_locations, list) and raw_locations:
+                    for raw_entry in raw_locations:
+                        if isinstance(raw_entry, dict):
+                            entry_map = cast(Mapping[str, object], raw_entry)
+                            per_message = str(entry_map.get("message") or item.get("value", ""))
+                            entries.append((entry_map, per_message))
+                if not entries:
+                    entries = [(item_map, str(item.get("value", "")))]
+
+                props: dict[str, object] = {}
                 if item.get("hint"):
-                    sarif_result["properties"] = {"hint": item.get("hint", "")}
-                sarif_results.append(sarif_result)
+                    props["hint"] = item.get("hint", "")
+                for key in FINDING_EVIDENCE_KEYS:
+                    val = item_map.get(key)
+                    if isinstance(val, str) and val:
+                        props[key] = val
+                analysis = item.get("analysis")
+                if analysis:
+                    props["analysis"] = analysis
+
+                for entry, message_text in entries:
+                    physical_location, artifact_uri, loc_line = _physical_location_for(entry)
+                    # Stable fingerprint so Code Scanning can match alerts across
+                    # runs even when lines shift (#392).
+                    line_for_seed = loc_line if isinstance(loc_line, int) else 0
+                    fingerprint_seed = f"{rule_id}:{artifact_uri}:{line_for_seed}"
+                    sarif_result: dict[str, object] = {
+                        "ruleId": rule_id,
+                        "message": {"text": message_text},
+                        "level": level,
+                        "locations": [{"physicalLocation": physical_location}],
+                        "partialFingerprints": {
+                            "primaryLocationLineHash": hashlib.sha256(
+                                fingerprint_seed.encode("utf-8")
+                            ).hexdigest()
+                        },
+                    }
+                    if props:
+                        sarif_result["properties"] = props
+                    sarif_results.append(sarif_result)
 
         sarif_output = {
             "version": "2.1.0",
@@ -461,6 +580,14 @@ def doctor(
 
             console.print(line)
 
+            # Finding Contract v2 (issue #348): surface source-verified freshness
+            # for date / compatibility findings that carry it.
+            freshness = format_freshness_line(
+                item.get("last_verified", ""), item.get("source_url", "")
+            )
+            if freshness:
+                console.print(f"    [dim]{freshness}[/dim]")
+
             # show hint as 'fix:' only when verbose is enabled
             if status != "pass" and verbose:
                 hint = item.get("hint", "")
@@ -504,6 +631,42 @@ def _warn_deprecated_alias(alias: str) -> None:
         f"removed in a future release (targeted for v1.0.0). "
         f"Use '{_CANONICAL_COMMAND}' instead."
     )
+
+
+# App-level options handled by the Typer callback itself; everything else
+# given before the (only) `doctor` subcommand belongs to the doctor run.
+_APP_LEVEL_FLAGS = {"--version", "--help", "-h"}
+
+
+def normalize_argv(argv: list[str]) -> list[str]:
+    """Insert the implicit ``doctor`` subcommand when it is omitted (#399).
+
+    ``doctor`` is the only command, so the top level accepts the same options:
+    ``azure-functions-doctor --path . --format json`` behaves identically to
+    ``azure-functions-doctor doctor --path . --format json``. Pure function so
+    the dispatch is unit-testable without spawning a process.
+    """
+    if not argv:
+        return ["doctor"]
+    first = argv[0]
+    if first == "doctor":
+        return list(argv)
+    if first in _APP_LEVEL_FLAGS:
+        return list(argv)
+    if first.startswith("-"):
+        return ["doctor", *argv]
+    # Unknown bare word: let Typer surface its own "no such command" error.
+    return list(argv)
+
+
+def main() -> None:
+    """Console-script entry point that tolerates the omitted subcommand."""
+    import sys
+
+    normalized = normalize_argv(sys.argv[1:])
+    if normalized != sys.argv[1:]:
+        sys.argv = [sys.argv[0], *normalized]
+    cli()
 
 
 def azure_functions_alias() -> None:

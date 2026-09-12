@@ -109,6 +109,57 @@ def test_profile_minimal_filters_optional_rules() -> None:
         assert "local.settings.json" not in item_labels
 
 
+def _write_minimal_v2_app(tmp: str) -> None:
+    with open(os.path.join(tmp, "function_app.py"), "w") as f:
+        f.write("import azure.functions as func\napp = func.FunctionApp()\n")
+    with open(os.path.join(tmp, "host.json"), "w") as f:
+        json.dump({"version": "2.0"}, f)
+    with open(os.path.join(tmp, "requirements.txt"), "w") as f:
+        f.write("azure-functions==1.13.0")
+
+
+def test_profile_development_runs_dev_env_checks() -> None:
+    """The development profile runs local dev-environment checks (#356)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _write_minimal_v2_app(tmp)
+
+        doctor = Doctor(tmp, profile="development")
+        results = doctor.run_all_checks()
+
+        rule_ids = {
+            str(item.get("rule_id", "")) for section in results for item in section["items"]
+        }
+        assert rule_ids == {
+            "check_venv",
+            "check_python_executable",
+            "check_func_cli",
+            "check_func_core_tools_version",
+            "check_local_settings",
+        }
+
+
+def test_profile_deploy_excludes_dev_and_integration() -> None:
+    """The deploy profile keeps core deploy rules, drops dev-env + integration (#356)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _write_minimal_v2_app(tmp)
+
+        doctor = Doctor(tmp, profile="deploy")
+        results = doctor.run_all_checks()
+
+        rule_ids = {
+            str(item.get("rule_id", "")) for section in results for item in section["items"]
+        }
+        # Developer-environment checks are excluded.
+        assert "check_venv" not in rule_ids
+        assert "check_local_settings" not in rule_ids
+        # Integration-group rules are excluded.
+        assert "check_langgraph_anonymous_auth" not in rule_ids
+        assert "check_otel_trace_context_activation" not in rule_ids
+        # Core deploy-correctness rules are present.
+        assert "check_python_version" in rule_ids
+        assert "check_host_json" in rule_ids
+
+
 def test_get_report_properties_includes_target_python(tmp_path: Path) -> None:
     """Tests report properties expose programming model and target Python."""
     (tmp_path / "function_app.py").write_text(
@@ -121,6 +172,7 @@ def test_get_report_properties_includes_target_python(tmp_path: Path) -> None:
         "programming_model": "v2",
         "target_python": "3.12",
         "deployment_mode": "remote-build",
+        "hosting_plan": None,
     }
 
 
@@ -128,7 +180,7 @@ def test_invalid_profile_raises() -> None:
     """Tests that an invalid profile raises a ValueError."""
     with tempfile.TemporaryDirectory() as tmp:
         doctor = Doctor(tmp, profile="unknown")
-        with pytest.raises(ValueError, match="Profile must be 'minimal' or 'full'"):
+        with pytest.raises(ValueError, match="Profile must be one of"):
             doctor.run_all_checks()
 
 

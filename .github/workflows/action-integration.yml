@@ -78,3 +78,44 @@ jobs:
           assert 'rules' in driver, 'Missing driver.rules'
           print('SARIF validation passed')
           "
+
+  test-action-sarif-promotion:
+    name: Test action promotes format when upload-sarif is set
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # upload-sarif=true with format=json must promote to SARIF instead of
+      # silently skipping the upload (issue #398).
+      - name: Run doctor action (json -> sarif promotion)
+        id: doctor-promo
+        continue-on-error: true
+        uses: ./
+        with:
+          path: examples/v2/http-trigger
+          profile: minimal
+          format: json
+          output: doctor-promo.json
+          python-version: "3.12"
+          upload-artifact: "false"
+          upload-sarif: "true"
+          sarif-category: azure-functions-doctor-promotion-test
+          version: local
+
+      - name: Verify promotion wrote SARIF
+        run: |
+          test -f doctor-report.sarif || (echo "Promoted SARIF file not found" && exit 1)
+          python3 -c "
+          import json
+          data = json.load(open('doctor-report.sarif'))
+          assert data.get('version') == '2.1.0', 'Expected SARIF version 2.1.0'
+          print('Promotion validation passed')
+          "
+
+      - name: Confirm the json output was replaced, not left stale
+        run: |
+          if [ -f doctor-promo.json ]; then
+            echo "stale json output left behind"
+            exit 1
+          fi

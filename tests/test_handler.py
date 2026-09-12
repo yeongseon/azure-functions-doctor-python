@@ -159,12 +159,13 @@ def test_compare_python_version_from_python_version_file(tmp_path: Path) -> None
     assert ".python-version" in result["detail"]
     assert "unsupported target" not in result["detail"]
 
+
 def test_compare_func_core_tools_version_pass(monkeypatch: MonkeyPatch) -> None:
     """Test that the func Core Tools version check passes when version meets minimum."""
     from azure_functions_doctor import handlers
 
     monkeypatch.setattr(
-        handlers.registry,
+        handlers.generic,
         "resolve_target_value",
         lambda t: "4.0.5455" if t == "func_core_tools" else "",
     )
@@ -186,7 +187,7 @@ def test_compare_func_core_tools_version_fail_not_installed(monkeypatch: MonkeyP
     from azure_functions_doctor import handlers
 
     monkeypatch.setattr(
-        handlers.registry,
+        handlers.generic,
         "resolve_target_value",
         lambda t: "not_installed" if t == "func_core_tools" else "",
     )
@@ -208,7 +209,7 @@ def test_compare_func_core_tools_version_fail_old_version(monkeypatch: MonkeyPat
     from azure_functions_doctor import handlers
 
     monkeypatch.setattr(
-        handlers.registry,
+        handlers.generic,
         "resolve_target_value",
         lambda t: "3.0.0" if t == "func_core_tools" else "",
     )

@@ -5,7 +5,7 @@
 ## Package Info
 
 - PyPI: `pip install azure-functions-doctor`
-- Version: 0.19.2
+- Version: 0.20.0
 - Python: >=3.10, <3.15
 - License: MIT
 - Docs: https://yeongseon.dev/azure-functions-python/doctor/
@@ -23,7 +23,7 @@ pip install azure-functions-doctor
 All three commands are aliases to the same CLI:
 
 ```bash
-azure-functions doctor [OPTIONS]
+azure-functions-doctor doctor [OPTIONS]
 azure-functions-doctor doctor [OPTIONS]
 fdoctor doctor [OPTIONS]
 ```
@@ -35,7 +35,7 @@ Runs diagnostics on an Azure Functions Python v2 application.
 ### Syntax
 
 ```bash
-azure-functions doctor [OPTIONS]
+azure-functions-doctor doctor [OPTIONS]
 ```
 
 ### Options
@@ -67,10 +67,12 @@ azure-functions doctor [OPTIONS]
 #### Rule Configuration
 
 - `--profile TEXT` (optional)
-  - Rule profile: `minimal` or `full`
+  - Rule profile: `minimal`, `deploy`, `development`, or `full`
   - **minimal**: Load only required rules (required=true). Faster, focused on blockers.
+  - **deploy**: Runtime/hosting/deployment correctness — core-group rules minus dev-environment checks.
+  - **development**: Dev-environment checks (venv, Python executable, Core Tools, local.settings).
   - **full** (default): Load all rules including recommended best practices
-  - Example: `--profile minimal` for required checks only
+  - Example: `--profile deploy` for a pre-deploy gate, `--profile minimal` for required checks only
 
 - `--rules PATH` (optional)
   - Path to custom rules JSON file (overrides built-in rules)
@@ -105,47 +107,47 @@ azure-functions doctor [OPTIONS]
 
 **Basic check (current directory, table output):**
 ```bash
-azure-functions doctor
+azure-functions-doctor doctor
 ```
 
 **Verbose output for debugging:**
 ```bash
-azure-functions doctor --verbose
+azure-functions-doctor doctor --verbose
 ```
 
 **Required checks only (minimal profile):**
 ```bash
-azure-functions doctor --profile minimal
+azure-functions-doctor doctor --profile minimal
 ```
 
 **JSON output for CI integration:**
 ```bash
-azure-functions doctor --format json
+azure-functions-doctor doctor --format json
 ```
 
 **Save JSON to file with debug logging:**
 ```bash
-azure-functions doctor --format json --output diagnostics.json --debug
+azure-functions-doctor doctor --format json --output diagnostics.json --debug
 ```
 
 **SARIF output for GitHub Security tab:**
 ```bash
-azure-functions doctor --format sarif --output sarif.json
+azure-functions-doctor doctor --format sarif --output sarif.json
 ```
 
 **Custom rules with summary:**
 ```bash
-azure-functions doctor --rules ./custom-rules.json --summary-json summary.json
+azure-functions-doctor doctor --rules ./custom-rules.json --summary-json summary.json
 ```
 
 **JUnit output for CI/CD:**
 ```bash
-azure-functions doctor --format junit --output test-results.xml
+azure-functions-doctor doctor --format junit --output test-results.xml
 ```
 
 **Full diagnostics with all options:**
 ```bash
-azure-functions doctor \
+azure-functions-doctor doctor \
   --path ./my-app \
   --profile full \
   --format json \
@@ -173,7 +175,7 @@ Python Env
   [✓] Python version: 3.12 running
   [✗] Virtual environment
 
-Doctor summary (to see all details, run azure-functions doctor -v):
+Doctor summary (to see all details, run azure-functions-doctor doctor -v):
   1 fail, 1 warning, 8 passed
 Exit code: 1
 ```
@@ -185,7 +187,7 @@ Structured output with metadata, results, and rule information:
 ```json
 {
   "metadata": {
-    "tool_version": "0.19.2",
+    "tool_version": "0.20.0",
     "generated_at": "2025-04-07T10:30:00Z",
     "target_path": "/path/to/app"
   },
@@ -223,7 +225,7 @@ Static Analysis Results Format (SARIF 2.1.0) compatible with GitHub Security tab
       "tool": {
         "driver": {
           "name": "azure-functions-doctor",
-          "version": "0.19.2",
+          "version": "0.20.0",
           "informationUri": "https://github.com/yeongseon/azure-functions-doctor",
           "rules": [...]
         }

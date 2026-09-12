@@ -11,6 +11,6 @@ but `function_app.py` does not use `func.FunctionApp()` or any `@app.*` decorato
 
 ## Expected doctor output
 
-When running `azure-functions doctor --path examples/v2/broken-no-v2-decorators`, the report
+When running `azure-functions-doctor doctor --path examples/v2/broken-no-v2-decorators`, the report
 should include a failed `Python v2 programming model was not detected` result because no
 `func.FunctionApp()`, `Blueprint()`, or `@app.` / `@bp.` trigger decorators are present.

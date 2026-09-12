@@ -1,16 +1,21 @@
 import ast
+import contextvars
+from fnmatch import fnmatch
 import json
 from pathlib import Path
 import re
 import sys
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Literal,
     NamedTuple,
     Optional,
+    Tuple,
     TypedDict,
     TypeVar,
     Union,
@@ -27,6 +32,9 @@ except ModuleNotFoundError:  # pragma: no cover - exercised on Python 3.10
 from azure_functions_doctor.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+if TYPE_CHECKING:
+    from azure_functions_doctor.deploy_config import TargetConfig
 
 EXCLUDED_PROJECT_DIRS = {
     # Python virtual environments
@@ -54,6 +62,84 @@ EXCLUDED_PROJECT_DIRS = {
 }
 
 
+# Project-scoped extra exclude globs (issue #290). Populated from the
+# ``[tool.azure-functions-doctor].exclude`` config and layered on top of
+# ``EXCLUDED_PROJECT_DIRS``. Stored in a ``ContextVar`` so it stays scoped to
+# the active diagnostic run without threading a parameter through every
+# traversal helper. The tuple is ``(project_root, exclude_globs)``.
+_extra_excludes: contextvars.ContextVar[Tuple[Path, Tuple[str, ...]]] = contextvars.ContextVar(
+    "_extra_excludes", default=(Path(), ())
+)
+
+
+def set_extra_excludes(
+    root: Path, globs: Iterable[str]
+) -> contextvars.Token[Tuple[Path, Tuple[str, ...]]]:
+    """Set the active extra-exclude globs and return a reset token."""
+    normalized = tuple(g for g in globs if g)
+    return _extra_excludes.set((root, normalized))
+
+
+def reset_extra_excludes(
+    token: contextvars.Token[Tuple[Path, Tuple[str, ...]]],
+) -> None:
+    """Restore the previous extra-exclude state."""
+    _extra_excludes.reset(token)
+
+
+def _matches_extra_exclude(candidate: Path) -> bool:
+    """True when ``candidate`` matches a configured extra-exclude glob.
+
+    Globs are matched against the candidate's POSIX path relative to the
+    configured project root. A trailing-slash-free directory glob such as
+    ``legacy`` also matches everything beneath it (``legacy/**``).
+    """
+    root, globs = _extra_excludes.get()
+    if not globs:
+        return False
+    try:
+        rel = candidate.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return False
+    for glob in globs:
+        pattern = glob.strip().rstrip("/")
+        if not pattern:
+            continue
+        if fnmatch(rel, pattern) or fnmatch(rel, f"{pattern}/*"):
+            return True
+    return False
+
+
+def _is_excluded_path(candidate: Path) -> bool:
+    """True when ``candidate`` is under an excluded dir or an extra glob."""
+    if any(part in EXCLUDED_PROJECT_DIRS for part in candidate.parts):
+        return True
+    return _matches_extra_exclude(candidate)
+
+
+def iter_project_files(
+    project_path: Path, patterns: Union[str, tuple[str, ...], list[str]]
+) -> Iterator[Path]:
+    """Single entry point for project file traversal (issue #393).
+
+    Yields files under ``project_path`` matching ``patterns`` (rglob syntax),
+    honoring ``EXCLUDED_PROJECT_DIRS`` and the user's
+    ``[tool.azure-functions-doctor].exclude`` globs. Handlers must traverse
+    through this helper instead of calling ``Path.rglob`` directly so
+    virtualenvs, node_modules, caches, and user excludes are never scanned -
+    a regression test forbids raw rglob outside this module.
+    """
+    pattern_list: tuple[str, ...]
+    if isinstance(patterns, str):
+        pattern_list = (patterns,)
+    else:
+        pattern_list = tuple(patterns)
+    for pattern in pattern_list:
+        for candidate in sorted(project_path.rglob(pattern)):
+            if not _is_excluded_path(candidate):
+                yield candidate
+
+
 class HandlerResult(TypedDict, total=False):
     status: str
     detail: str
@@ -62,11 +148,28 @@ class HandlerResult(TypedDict, total=False):
     line: int
     end_line: int
     column: int
+    # Per-finding locations (issue #394/#395): each entry is a dict with
+    # file/line/end_line/column/message keys; SARIF emits one result per entry.
+    locations: List[Dict[str, object]]
+    # Finding Contract v2 (issue #348): optional auditable evidence a handler
+    # may emit for date / compatibility findings.
+    evidence: str
+    expected: str
+    actual: str
+    source_url: str
+    last_verified: str
+    catalog_version: str
+    # Per-finding severity / gate refinements (issue #343): a handler may WARN on
+    # a retiring runtime but FAIL on an unsupported one, overriding the rule's
+    # static severity/gate. Both are optional; when absent the rule defaults win.
+    severity: str
+    gate: bool
 
 
 class RuleContext(TypedDict, total=False):
     target_python: Optional[str]
     deployment_mode: Optional[str]
+    target_config: Optional["TargetConfig"]
 
 
 # Platform-aware candidates for executables (for symmetric fallback)
@@ -266,8 +369,10 @@ def _validate_http_above_binding(
     return any(validate_idx < binding_idx for binding_idx in binding_indices)
 
 
-def _collect_inverted_decorator_order(path: Path, expected_order: list[str]) -> list[str]:
-    """Return "file:function" labels whose decorators violate *expected_order*.
+def _collect_inverted_decorator_order(
+    path: Path, expected_order: list[str]
+) -> list[tuple[str, int]]:
+    """Return "(file:function, lineno)" pairs whose decorators violate *expected_order*.
 
     *expected_order* lists decorator leaf names from **outermost to innermost**
     (the intended top-to-bottom stacking). For the validation/logging pairing
@@ -282,7 +387,7 @@ def _collect_inverted_decorator_order(path: Path, expected_order: list[str]) -> 
     SDK ``FunctionBuilder`` instead of the handler, so validation is inactive and
     no endpoint metadata is emitted -- a silent "dead handler".
     """
-    inverted: list[str] = []
+    inverted: list[tuple[str, int]] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
             tree = ast.parse(content)
@@ -304,11 +409,26 @@ def _collect_inverted_decorator_order(path: Path, expected_order: list[str]) -> 
             if len(present) >= 2:
                 actual = sorted(present, key=lambda name: positions[name])
                 if actual != present:
-                    inverted.append(label)
+                    inverted.append((label, node.decorator_list[0].lineno))
                     continue
             if _validate_http_above_binding(node, app_aliases):
-                inverted.append(label)
+                inverted.append((label, node.decorator_list[0].lineno))
     return inverted
+
+
+def _project_declares_openapi_dep(path: Path) -> bool:
+    """Return True when ``azure-functions-openapi`` is declared in
+    ``requirements.txt``. Missing/unreadable file counts as not declared; the
+    scan-before-spec and version-mixing rules are meaningless without it
+    (generic ``build``/``create_spec`` call names belong to other libraries).
+    """
+    req_path = path / "requirements.txt"
+    if not req_path.exists():
+        return False
+    content = _read_project_python_file(req_path)
+    if content is None:
+        return False
+    return canonicalize_name("azure-functions-openapi") in _parse_requirements_names(content)
 
 
 def _project_declares_validation_dep(path: Path) -> bool:
@@ -484,7 +604,9 @@ def _collect_openapi_version_mixing(path: Path) -> dict[str, set[str]]:
     return signals
 
 
-def _collect_scan_before_spec(path: Path, scan_names: set[str], spec_names: set[str]) -> list[str]:
+def _collect_scan_before_spec(
+    path: Path, scan_names: set[str], spec_names: set[str]
+) -> tuple[list[str], list[tuple[str, int]]]:
     """Return "file:spec_call" labels where a spec build precedes endpoint scan.
 
     For each file, records the line numbers of scan-style calls and spec-style
@@ -492,8 +614,13 @@ def _collect_scan_before_spec(path: Path, scan_names: set[str], spec_names: set[
     precedes the earliest scan call in that file. Additionally, if spec calls
     exist anywhere in the project but no scan call is ever seen, every spec call
     is reported (scanning was skipped entirely).
+
+    Returns ``(labels, located)`` where ``located`` carries ``(label, lineno)``
+    pairs so callers can emit per-line SARIF locations (issue #394).
     """
     violations: list[str] = []
+    located: list[tuple[str, int]] = []
+    all_spec_located: list[tuple[str, int]] = []
     any_scan_seen = False
     spec_labels: list[str] = []
     for py_file, content in _iter_project_py_contents(path):
@@ -514,17 +641,22 @@ def _collect_scan_before_spec(path: Path, scan_names: set[str], spec_names: set[
                 scan_lines.append(node.lineno)
             elif leaf in spec_names:
                 spec_calls.append((node.lineno, leaf))
+        for lineno, leaf in spec_calls:
+            label = f"{py_file.relative_to(path)}:{leaf}"
+            spec_labels.append(label)
+            all_spec_located.append((label, lineno))
         if scan_lines:
             any_scan_seen = True
             first_scan = min(scan_lines)
             for lineno, leaf in spec_calls:
                 if lineno < first_scan:
-                    violations.append(f"{py_file.relative_to(path)}:{leaf}")
-        for lineno, leaf in spec_calls:
-            spec_labels.append(f"{py_file.relative_to(path)}:{leaf}")
+                    label = f"{py_file.relative_to(path)}:{leaf}"
+                    violations.append(label)
+                    located.append((label, lineno))
     if spec_labels and not any_scan_seen:
-        return spec_labels
-    return violations
+        # Scanning was skipped entirely: every spec call is a violation.
+        return spec_labels, all_spec_located
+    return violations, located
 
 
 def _project_imports_langgraph(path: Path) -> bool:
@@ -546,15 +678,17 @@ def _project_imports_langgraph(path: Path) -> bool:
     return False
 
 
-def _collect_anonymous_auth_routes(path: Path, flag_missing_auth_level: bool = False) -> list[str]:
-    """Return "file:function" labels for routes using anonymous auth.
+def _collect_anonymous_auth_routes(
+    path: Path, flag_missing_auth_level: bool = False
+) -> list[tuple[str, int]]:
+    """Return "(file:function, lineno)" pairs for routes using anonymous auth.
 
     A route is flagged when a decorator keyword ``auth_level`` resolves to
     ``AuthLevel.ANONYMOUS`` (an attribute whose leaf is ``ANONYMOUS``) or to the
     string ``"anonymous"`` (case-insensitive). When *flag_missing_auth_level* is
     True, routes without any ``auth_level`` keyword are also reported.
     """
-    flagged: list[str] = []
+    flagged: list[tuple[str, int]] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
             tree = ast.parse(content)
@@ -583,17 +717,60 @@ def _collect_anonymous_auth_routes(path: Path, flag_missing_auth_level: bool = F
                 label = f"{py_file.relative_to(path)}:{node.name}"
                 if auth_kw is None:
                     if flag_missing_auth_level:
-                        flagged.append(label)
+                        flagged.append((label, dec.lineno))
                     continue
                 if isinstance(auth_kw, ast.Attribute) and auth_kw.attr == "ANONYMOUS":
-                    flagged.append(label)
+                    flagged.append((label, dec.lineno))
                 elif (
                     isinstance(auth_kw, ast.Constant)
                     and isinstance(auth_kw.value, str)
                     and auth_kw.value.lower() == "anonymous"
                 ):
-                    flagged.append(label)
+                    flagged.append((label, dec.lineno))
     return flagged
+
+
+def _collect_binding_connections(path: Path) -> list[tuple[str, str, int]]:
+    """Return ``(connection_name, "file:function", lineno)`` triples for v2 binding decorators.
+
+    Scans decorators applied to a discovered ``FunctionApp``/``Blueprint`` alias for a
+    ``connection="..."`` keyword and collects the referenced setting name. Only
+    string-literal connection names are collected; dynamic expressions (variables,
+    ``os.environ[...]``) cannot be resolved statically and are skipped. This covers
+    Storage, Service Bus, Event Hub, Cosmos DB and any other binding that exposes a
+    ``connection`` keyword, without hard-coding a decorator whitelist.
+    """
+    references: list[tuple[str, str, int]] = []
+    for py_file, content in _iter_project_py_contents(path):
+        try:
+            tree = ast.parse(content)
+        except SyntaxError:
+            continue
+        app_aliases = _discover_functionapp_aliases(content)
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            for dec in node.decorator_list:
+                if not isinstance(dec, ast.Call):
+                    continue
+                inner = dec.func
+                if not (
+                    isinstance(inner, ast.Attribute)
+                    and isinstance(inner.value, ast.Name)
+                    and inner.value.id in app_aliases
+                ):
+                    continue
+                for kw in dec.keywords:
+                    if kw.arg != "connection":
+                        continue
+                    if (
+                        isinstance(kw.value, ast.Constant)
+                        and isinstance(kw.value.value, str)
+                        and kw.value.value.strip()
+                    ):
+                        label = f"{py_file.relative_to(path)}:{node.name}"
+                        references.append((kw.value.value, label, dec.lineno))
+    return references
 
 
 def _project_activates_trace_context(path: Path) -> list[str]:
@@ -667,15 +844,15 @@ def _project_declares_opentelemetry(path: Path) -> bool:
 
 def _collect_orchestrator_nondeterminism(
     path: Path, blocklist: set[str], decorator_names: set[str]
-) -> list[str]:
-    """Return "file:function -> call" labels for nondeterministic orchestrator calls.
+) -> list[tuple[str, int]]:
+    """Return "(file:function -> call, lineno)" pairs for nondeterministic calls.
 
     Finds functions decorated with any name in *decorator_names* (matched by
     decorator leaf name, e.g. ``orchestration_trigger``) and reports calls whose
     dotted name matches an entry in *blocklist* either exactly or as a dotted
     suffix (``endswith("." + entry)``).
     """
-    flagged: list[str] = []
+    flagged: list[tuple[str, int]] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
             tree = ast.parse(content)
@@ -695,7 +872,9 @@ def _collect_orchestrator_nondeterminism(
                     continue
                 for entry in blocklist:
                     if dotted == entry or dotted.endswith("." + entry):
-                        flagged.append(f"{py_file.relative_to(path)}:{node.name} -> {dotted}")
+                        flagged.append(
+                            (f"{py_file.relative_to(path)}:{node.name} -> {dotted}", sub.lineno)
+                        )
                         break
     return flagged
 
@@ -732,7 +911,7 @@ def _collect_unsupported_metadata_versions(
     seen: set[Path] = set()
     for pattern in files:
         for match in path.rglob(pattern):
-            if match in seen or any(part in EXCLUDED_PROJECT_DIRS for part in match.parts):
+            if match in seen or _is_excluded_path(match):
                 continue
             seen.add(match)
             data = _load(match)
@@ -781,9 +960,7 @@ def _source_contains_ast(source: str, identifier: str) -> bool:
 
 def _iter_project_py_contents(path: Path) -> Iterator[tuple[Path, str]]:
     """Yield (py_file, content) for each .py file under path, skipping excluded dirs."""
-    for py_file in path.rglob("*.py"):
-        if any(part in EXCLUDED_PROJECT_DIRS for part in py_file.parts):
-            continue
+    for py_file in iter_project_files(path, "*.py"):
         content = _read_project_python_file(py_file)
         if content is None:
             continue
@@ -895,6 +1072,38 @@ def pyproject_dependency_names(path: Path) -> set[str]:
     return names
 
 
+class DoctorConfig(TypedDict):
+    """Resolved ``[tool.azure-functions-doctor]`` project configuration."""
+
+    ignore: List[str]
+    exclude: List[str]
+
+
+def load_doctor_config(path: Path) -> DoctorConfig:
+    """Load ``[tool.azure-functions-doctor]`` settings from ``pyproject.toml``.
+
+    Returns ``ignore`` (rule ids to suppress and report as ``skip``) and
+    ``exclude`` (extra path globs layered on top of ``EXCLUDED_PROJECT_DIRS``).
+    Missing files, tables, or keys yield empty lists. Only string list entries
+    are honored; malformed values are ignored rather than raising.
+    """
+    config: DoctorConfig = {"ignore": [], "exclude": []}
+    data = _load_pyproject(path)
+    if not data:
+        return config
+    tool = data.get("tool")
+    if not isinstance(tool, dict):
+        return config
+    table = tool.get("azure-functions-doctor")
+    if not isinstance(table, dict):
+        return config
+    for key in ("ignore", "exclude"):
+        raw = table.get(key)
+        if isinstance(raw, list):
+            config[key] = [item for item in raw if isinstance(item, str)]
+    return config
+
+
 def pyproject_declares_dependencies(path: Path) -> bool:
     """Return True when ``pyproject.toml`` declares any runtime or optional
     dependency in the standard ``[project]`` table.
@@ -972,8 +1181,16 @@ def _create_result(
     line: Optional[int] = None,
     end_line: Optional[int] = None,
     column: Optional[int] = None,
+    locations: Optional[List[Dict[str, object]]] = None,
 ) -> HandlerResult:
-    """Create a standardized result dictionary (status limited to 'pass'/'fail')."""
+    """Create a standardized result dictionary (status limited to 'pass'/'fail').
+
+    ``locations`` (issues #394/#395) carries every individual finding as
+    ``{"file", "line", "end_line", "column", "message"}`` so SARIF output can
+    emit one result per finding instead of collapsing N findings onto the
+    first location. When omitted, the scalar ``file``/``line`` fields are the
+    single-location form.
+    """
     res: HandlerResult = {"status": status, "detail": detail}
     if internal_error:
         res["internal_error"] = "true"
@@ -985,6 +1202,8 @@ def _create_result(
         res["end_line"] = end_line
     if column is not None:
         res["column"] = column
+    if locations:
+        res["locations"] = locations
     return res
 
 

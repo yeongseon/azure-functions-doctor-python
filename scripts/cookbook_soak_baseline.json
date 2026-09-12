@@ -1,0 +1,685 @@
+{
+  "examples/ai-and-agents/ai_image_generation": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/ai-and-agents/durable_ai_pipeline": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/ai-and-agents/embedding_vector_search": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/ai-and-agents/knowledge_notion_search": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/ai-and-agents/langgraph_agent": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/ai-and-agents/langgraph_rag_agent": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/ai-and-agents/langgraph_tool_use": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/ai-and-agents/mcp_server_example": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/ai-and-agents/openai_direct_chat": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/ai-and-agents/rag_knowledge_api": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/ai-and-agents/streaming_ai_response": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/apis-and-ingress/apim_function_backend": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/apis-and-ingress/auth_easyauth": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/apis-and-ingress/auth_jwt_validation": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/apis-and-ingress/auth_multitenant": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/apis-and-ingress/bff_facade_api": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_extension_bundle",
+    "check_extension_bundle_v4",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/apis-and-ingress/full_stack_crud_api": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/apis-and-ingress/hello_http_minimal": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/apis-and-ingress/http_auth_levels": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/apis-and-ingress/http_routing_query_body": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/apis-and-ingress/scaffold_walkthrough_app": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_extension_bundle",
+    "check_extension_bundle_v4",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/apis-and-ingress/webhook_github": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/async-apis-and-jobs/async_http_polling": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/async-apis-and-jobs/callback_completion": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/async-apis-and-jobs/queue_backed_job": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/blob-and-file-triggers/blob_csv_to_table": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/blob-and-file-triggers/blob_eventgrid_trigger": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/blob-and-file-triggers/blob_thumbnail_generator": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/blob-and-file-triggers/blob_upload_processor": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/data-and-pipelines/change_feed_processor": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/data-and-pipelines/cqrs_read_projection": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/data-and-pipelines/db_input_output": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/data-and-pipelines/etl_enrichment": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/data-and-pipelines/file_processing_pipeline": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/data-and-pipelines/sqlalchemy_rest_pagination": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/guides/local_run_and_direct_invoke": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/messaging-and-pubsub/claim_check_pattern": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/messaging-and-pubsub/eventgrid_domain_events": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/messaging-and-pubsub/eventgrid_router": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/messaging-and-pubsub/queue_consumer": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/messaging-and-pubsub/queue_producer": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/messaging-and-pubsub/servicebus_dlq_replay": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/messaging-and-pubsub/servicebus_sessions": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/messaging-and-pubsub/servicebus_topic_fanout": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/messaging-and-pubsub/servicebus_worker": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/orchestration-and-workflows/async_job_lifecycle": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/orchestration-and-workflows/durable_determinism_gotchas": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/orchestration-and-workflows/durable_entity_counter": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/orchestration-and-workflows/durable_fan_out_fan_in": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/orchestration-and-workflows/durable_graph_fan_out": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_scan_before_spec"
+  ],
+  "examples/orchestration-and-workflows/durable_hello_sequence": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/orchestration-and-workflows/durable_human_interaction": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/orchestration-and-workflows/durable_retry_pattern": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/orchestration-and-workflows/durable_singleton_monitor": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/orchestration-and-workflows/durable_unit_testing": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/orchestration-and-workflows/saga_compensation": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/orchestration-and-workflows/sub_orchestration": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/realtime/websocket_proxy": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/reliability/circuit_breaker": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/reliability/outbox_pattern": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/reliability/poison_message_handling": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/reliability/rate_limiting": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/reliability/retry_and_idempotency": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/runtime-and-ops/blueprint_modular_app": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/runtime-and-ops/cold_start_mitigation": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/runtime-and-ops/concurrency_tuning": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/runtime-and-ops/doctor_diagnostics_endpoint": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/runtime-and-ops/host_json_tuning": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_host_json_log_level_conflict",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/runtime-and-ops/observability_tracing": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/runtime-and-ops/output_binding_vs_sdk": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/scheduled-and-background/durable_timer_reminder": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_durabletask_config",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/scheduled-and-background/queue_scheduled_dispatch": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/scheduled-and-background/timer_cron_job": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/security-and-tenancy/managed_identity_servicebus": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/security-and-tenancy/managed_identity_storage": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ],
+  "examples/security-and-tenancy/secretless_keyvault": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/security-and-tenancy/tenant_isolation": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/streams-and-telemetry/eventhub_batch_window": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/streams-and-telemetry/eventhub_checkpoint_replay": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_funcignore",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/streams-and-telemetry/eventhub_consumer": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_binding_connection_resolution",
+    "check_local_settings",
+    "check_requirements_txt",
+    "check_unused_files"
+  ]
+}

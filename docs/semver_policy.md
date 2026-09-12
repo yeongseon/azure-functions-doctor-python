@@ -12,7 +12,7 @@ Every built-in rule has one of three stability states:
 | **Experimental** | Under evaluation. May change behavior or be removed in a minor release. False positives are documented as known limitations. |
 | **Deprecated** | Scheduled for removal. Announced in the changelog and removed in the next major release. |
 
-All 29 current built-in rules are **stable**.
+All 41 current built-in rules are **stable**.
 
 ## State Transitions
 
@@ -69,4 +69,4 @@ The `minimal` profile runs only rules marked `required: true`. Because CI pipeli
 
 ## Current Rule Status
 
-All 29 rules in `v2.json` are **stable**. See the [Rule Inventory](rule_inventory.md) for the complete list.
+All 41 rules in `v2.json` are **stable**. See the [Rule Inventory](rule_inventory.md) for the complete list.

@@ -33,3 +33,32 @@ jobs:
 
       - name: Run security scan (Bandit)
         run: make security
+
+      - name: Check compatibility catalog freshness
+        # Governance only - the shipped runtime stays 100% offline and never
+        # phones home. This weekly gate just fails when the version-controlled
+        # catalog has not been re-verified against its upstream sources within
+        # 30 days, so stale compatibility knowledge cannot ship silently.
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from datetime import date, datetime
+          from pathlib import Path
+
+          catalog = json.loads(
+              Path("src/azure_functions_doctor/assets/compatibility/catalog.json")
+              .read_text(encoding="utf-8")
+          )
+          last_verified = datetime.strptime(catalog["last_verified"], "%Y-%m-%d").date()
+          age = (date.today() - last_verified).days
+          limit = 30
+          print(f"catalog {catalog.get('catalog_version', '?')}: last_verified={last_verified} (age {age}d)")
+          if age > limit:
+              print(
+                  f"::error::compatibility catalog is {age} days stale "
+                  f"(limit {limit}d). Re-verify facts against their source_url "
+                  "and bump last_verified."
+              )
+              sys.exit(1)
+          PY

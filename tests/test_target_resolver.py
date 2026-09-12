@@ -140,7 +140,6 @@ def test_resolve_python_target_no_project_path(tmp_path: Path) -> None:
     assert (version, source) == (sys.version.split()[0], "tool-runtime")
 
 
-
 @pytest.mark.parametrize(
     "version, expected",
     [

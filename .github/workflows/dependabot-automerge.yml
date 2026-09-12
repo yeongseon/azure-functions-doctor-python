@@ -1,6 +1,11 @@
 name: Dependabot auto-merge
 
-on: pull_request_target
+on:
+  pull_request_target:
+  schedule:
+    # Daily maturity sweep: re-evaluate young Dependabot PRs once they pass
+    # the cooldown window (pull_request_target only fires on open/synchronize).
+    - cron: "23 3 * * *"
 
 permissions:
   contents: write
@@ -13,11 +18,96 @@ jobs:
     steps:
       - name: Fetch Dependabot metadata
         id: meta
-        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2.5.0
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
 
-      - name: Enable auto-merge for patch/minor updates
-        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' }}
+      # Security updates stay on the fast path: no maturation cooldown, so
+      # vulnerability fixes are not delayed (audit finding MEDIUM, issue #337).
+      - name: Enable auto-merge for security updates (fast path)
+        if: contains(github.event.pull_request.labels.*.name, 'security')
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check PR maturity (3-day cooldown for patch/minor updates)
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'security') && (steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor') }}
+        id: matured
+        env:
+          PR_CREATED_AT: ${{ github.event.pull_request.created_at }}
+        run: |
+          created=$(date -u -d "$PR_CREATED_AT" +%s)
+          now=$(date -u +%s)
+          age_days=$(( (now - created) / 86400 ))
+          echo "age_days=$age_days" >> "$GITHUB_OUTPUT"
+          if [ "$age_days" -ge 3 ]; then
+            echo "matured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "matured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enable auto-merge for matured patch/minor updates
+        if: steps.matured.outputs.matured == 'true'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  mature-dependabot-prs:
+    # Scheduled fallback: enable auto-merge for Dependabot PRs that were too
+    # young when opened and have now passed the cooldown window (or are
+    # security updates the event-based fast path missed).
+    if: ${{ github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge for matured Dependabot PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          prs=$(gh pr list --repo "$REPO" --state open --json number,author,isDraft \
+            --jq '.[] | select(.author.login == "dependabot[bot]" and (.isDraft | not)) | .number')
+          for pr in $prs; do
+            created=$(gh pr view "$pr" --repo "$REPO" --json createdAt --jq '.createdAt')
+            labels=$(gh pr view "$pr" --repo "$REPO" --json labels --jq '[.labels[].name]')
+            title=$(gh pr view "$pr" --repo "$REPO" --json title --jq '.title')
+            now=$(date -u +%s)
+            c=$(date -u -d "$created" +%s)
+            age_days=$(( (now - c) / 86400 ))
+
+            # Security updates take the fast path regardless of age.
+            if echo "$labels" | grep -q '"security"'; then
+              echo "PR #$pr: security update, enabling auto-merge (fast path)"
+              gh pr merge --auto --squash "$pr" --repo "$REPO" || true
+              continue
+            fi
+
+            if [ "$age_days" -lt 3 ]; then
+              echo "PR #$pr (age ${age_days}d): inside cooldown window, skipping"
+              continue
+            fi
+
+            # Preserve the patch/minor-only auto-merge policy: parse the
+            # "... from <old> to <new>" title shape and skip major bumps and
+            # anything unparseable (group/multi updates) conservatively.
+            range=$(echo "$title" | grep -oE 'from [^ ]+ to [^ ]+$' || true)
+            if [ -z "$range" ]; then
+              echo "PR #$pr: no single-version range in title, skipping"
+              continue
+            fi
+            old=$(echo "$range" | awk '{print $2}' | sed 's/^v//')
+            new=$(echo "$range" | awk '{print $4}' | sed 's/^v//')
+            old_major=$(echo "$old" | cut -d. -f1)
+            new_major=$(echo "$new" | cut -d. -f1)
+            case "$old_major$new_major" in
+              *[!0-9]*)
+                echo "PR #$pr: non-numeric version range ($old -> $new), skipping"
+                continue
+                ;;
+            esac
+            if [ "$old_major" != "$new_major" ]; then
+              echo "PR #$pr: major bump ($old -> $new), never auto-merged"
+              continue
+            fi
+            echo "PR #$pr (age ${age_days}d, $old -> $new): patch/minor matured, enabling auto-merge"
+            gh pr merge --auto --squash "$pr" --repo "$REPO" || true
+          done

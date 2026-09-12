@@ -9,6 +9,31 @@ All notable changes to this project will be documented in this file.
 
 ## Full Version History
 
+### v0.20.0 (2026-09-06)
+
+**Migration notes** (read before upgrading pinned `@v1` Action usage):
+
+1. **GitHub Action default profile is now `deploy`** (was `minimal`). Pinned
+   `yeongseon/azure-functions-doctor@v1` users receive this automatically on
+   release: the run grows from 6 required rules to 19 (6 required + 13
+   optional deploy-correctness rules). The exit-code contract is unchanged —
+   the added rules only warn and `fail-on-warn` defaults to `false` — but
+   expect more Code Scanning alerts. Pin `profile: minimal` explicitly to
+   keep the previous behavior.
+2. **SARIF now emits one result per finding** (was one per rule). Rules that
+   report multiple findings (e.g. uncovered routes, unpinned requirements)
+   produce one located result each, compounding the alert-count increase
+   above with more precise locations.
+3. **`check_unsupported_metadata_version` was removed.** `[tool.azure-functions-doctor].ignore`
+   entries naming this rule ID are now dangling; remove them.
+
+Other highlights: SARIF artifactLocation URIs are repo-root-relative with
+`partialFingerprints` (was: absolute paths in some branches); all file
+traversal honors the shared exclusion helper and the user's `exclude` globs
+(no more venv/node_modules false positives); `--version` flag; the `doctor`
+subcommand is optional; reference examples pass their own pinning rule.
+
+
 ### v0.16.2 (2026-03-29)
 - Fix 6 confirmed bugs: #95, #96, #97, #98, #99, #100 (#101)
 - Update README with Azure Functions Python DX Toolkit branding

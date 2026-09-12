@@ -6,6 +6,11 @@ before. Implementation lives in :mod:`._helpers` (pure helpers and types) and
 :mod:`.registry` (the ``HandlerRegistry`` dispatch class).
 """
 
+from azure_functions_doctor.deploy_config import (
+    ResolvedField,
+    TargetConfig,
+    resolve_target_config,
+)
 from azure_functions_doctor.handlers._helpers import (
     _HOST_JSON_MISSING,
     _PYTHON_CANDIDATES,
@@ -13,6 +18,7 @@ from azure_functions_doctor.handlers._helpers import (
     EXCLUDED_PROJECT_DIRS,
     NATIVE_DEPENDENCY_PACKAGES,
     Condition,
+    DoctorConfig,
     HandlerResult,
     Rule,
     RuleContext,
@@ -31,6 +37,10 @@ from azure_functions_doctor.handlers._helpers import (
     _rule_handler,
     _source_contains_ast,
     _source_contains_blueprint_decorator,
+    iter_project_files,
+    load_doctor_config,
+    reset_extra_excludes,
+    set_extra_excludes,
 )
 from azure_functions_doctor.handlers.registry import (
     HandlerRegistry,
@@ -42,12 +52,19 @@ __all__ = [
     "EXCLUDED_PROJECT_DIRS",
     "NATIVE_DEPENDENCY_PACKAGES",
     "Condition",
+    "DoctorConfig",
+    "load_doctor_config",
+    "set_extra_excludes",
+    "reset_extra_excludes",
     "HandlerRegistry",
     "HandlerResult",
     "Rule",
     "RuleContext",
     "generic_handler",
     "resolve_target_value",
+    "ResolvedField",
+    "TargetConfig",
+    "resolve_target_config",
     "_collect_blueprint_aliases",
     "_collect_register_functions_args",
     "_collect_unregistered_blueprint_aliases",
@@ -58,6 +75,7 @@ __all__ = [
     "_handle_specific_exceptions",
     "_HOST_JSON_MISSING",
     "_iter_project_py_contents",
+    "iter_project_files",
     "_parse_requirements_names",
     "_PYTHON_CANDIDATES",
     "_read_project_python_file",

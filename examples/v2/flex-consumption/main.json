@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "resources": [
+    {
+      "type": "Microsoft.Web/sites",
+      "name": "func-app",
+      "location": "koreacentral",
+      "properties": {
+        "functionAppConfig": {
+          "runtime": {
+            "name": "python",
+            "version": "3.12"
+          },
+          "deployment": {
+            "storage": {
+              "value": "https://stflexexample.blob.core.windows.net/code",
+              "authentication": {
+                "type": "SystemAssignedIdentity"
+              }
+            }
+          }
+        },
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "AzureWebJobsStorage__accountName",
+              "value": "stflexexample"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

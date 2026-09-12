@@ -16,13 +16,15 @@ If `--output` is omitted, JSON is printed to stdout.
 
 ```json
 {
+  "schema_version": "2.0",
   "metadata": {
-    "tool_version": "0.19.1",
-    "generated_at": "2026-03-14T10:40:20.731Z",
+    "tool_version": "0.19.2",
+    "generated_at": "2026-09-06T10:40:20.731Z",
     "target_path": "/absolute/path/to/project",
     "programming_model": "v2",
     "target_python": null,
-    "deployment_mode": "remote-build"
+    "deployment_mode": "remote-build",
+    "hosting_plan": null
   },
   "results": [
     {
@@ -31,14 +33,21 @@ If `--output` is omitted, JSON is printed to stdout.
       "status": "fail",
       "items": [
         {
-          "rule_id": "check_python_version",
-          "label": "Python version",
-          "value": "Python 3.9.18 (tool runtime, >=3.10) — unsupported target; Azure Functions supports Python 3.10–3.14",
-          "status": "fail",
-          "severity": "error",
+          "rule_id": "check_python_runtime_lifecycle",
+          "label": "Python runtime lifecycle",
+          "value": "Python 3.10.12 support is expected to end in October 2026; plan an upgrade to a newer supported Python (e.g. 3.14) before then.",
+          "status": "warn",
+          "severity": "warning",
           "tier": "core",
-          "hint": "Target a Python version supported by Azure Functions: 3.10, 3.11, 3.12, 3.13, or 3.14.",
-          "hint_url": "https://learn.microsoft.com/..."
+          "evidence": "Python 3.10.12 support is expected to end in October 2026; plan an upgrade to a newer supported Python (e.g. 3.14) before then.",
+          "expected": "A supported Azure Functions Python runtime",
+          "actual": "Python 3.10.12 (support ends October 2026)",
+          "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+          "last_verified": "2026-09-06",
+          "catalog_version": "1.0.0",
+          "analysis": { "type": "deterministic" },
+          "hint": "Target a Python version with a long support runway. Upgrade a retiring runtime before its Azure Functions end-of-support date.",
+          "hint_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages"
         }
       ]
     }
@@ -47,6 +56,32 @@ If `--output` is omitted, JSON is printed to stdout.
 ```
 
 ## Field reference
+
+### Location semantics
+
+Findings carry `file`/`line` (single-location form) or `locations` (per-finding
+form) whenever the rule can attribute a project artifact. Environment-level
+checks (virtual environment, Python executable, Core Tools, interpreter
+lifecycle) intentionally have **no file location** and fall back to the
+scan-root URI — that is the correct semantic, not a gap.
+
+### Machine-readable schema
+
+The contract ships as a JSON Schema in the wheel: [`schemas/output-contract-2.0.schema.json`](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/src/azure_functions_doctor/schemas/output-contract-2.0.schema.json) (draft-07). Consumers validate with `jsonschema`:
+
+```python
+import json, jsonschema
+schema = json.load(open("output-contract-2.0.schema.json"))
+jsonschema.validate(json.load(open("doctor-report.json")), schema)
+```
+
+Strict on identity and semantics (rule_id shape, status/severity/tier enums); permissive on additive fields for 0.x evolution. Field *meaning* changes require a migration note per the [semver policy](semver_policy.md).
+
+### Top level
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `schema_version` | string | Machine-output schema version (Finding Contract). Current: `"2.0"`. Independent of the SARIF schema version (`"2.1.0"`). |
 
 ### `metadata`
 
@@ -58,6 +93,7 @@ If `--output` is omitted, JSON is printed to stdout.
 | `programming_model` | string | Detected Azure Functions programming model (`v2`, `mixed`, `unsupported_v1`, or `unknown`). |
 | `target_python` | string \| null | Target Python version requested via `--target-python`, or `null` when not set. |
 | `deployment_mode` | string | Deployment mode used for dependency checks: `remote-build` (default) or `local`. |
+| `hosting_plan` | string \| null | Resolved hosting plan (e.g. `flex-consumption`) when determinable from deploy config, else `null`. |
 
 ### `results[]`
 
@@ -75,9 +111,17 @@ If `--output` is omitted, JSON is printed to stdout.
 | `rule_id` | string | Stable machine-oriented rule identifier (matches the rule `id` in the ruleset). Used directly as the SARIF `ruleId`. |
 | `label` | string | Check display label. |
 | `value` | string | Diagnostic detail text from handler execution. |
-| `status` | `pass` \| `warn` \| `fail` | Canonical item-level status. |
+| `status` | `pass` \| `warn` \| `fail` \| `skip` | Canonical item-level status. `skip` means the rule legitimately did not apply (e.g. not a Flex Consumption app); it is not an error. |
 | `severity` | `error` \| `warning` \| `info` | Runtime severity of the rule. A failing `error` rule maps to `fail`; otherwise it maps to `warn`. |
 | `tier` | `core` \| `extended` \| `experimental` | Rule maturity/tier classification. |
+| `evidence` | string (optional) | Auditable human-readable statement backing the finding (Finding Contract v2). |
+| `expected` | string (optional) | What the configuration should be, per the compatibility catalog or platform contract. |
+| `actual` | string (optional) | What was actually observed. |
+| `source_url` | string (optional) | Upstream source (e.g. Microsoft Learn) the verdict is pinned to. |
+| `last_verified` | string (optional) | ISO date when the catalog fact was last verified against the source. |
+| `catalog_version` | string (optional) | Version of the compatibility catalog the fact came from. |
+| `analysis` | object (optional) | Analysis provenance block; `type` is `deterministic` for every built-in rule. |
+| `locations` | array (optional) | Per-finding locations (`file`/`line`/`end_line`/`column`/`message`). SARIF emits one result per entry instead of collapsing onto the first location; the scalar `file`/`line` fields remain the single-location form. |
 | `hint` | string (optional) | Human-readable remediation guidance. |
 | `hint_url` | string (optional) | Supporting documentation link. |
 
@@ -88,6 +132,9 @@ Use the following contract expectations when writing parsers.
 | Field | Stability | Guidance |
 | --- | --- | --- |
 | `metadata.tool_version` | Stable | Safe for telemetry and compatibility checks. |
+| `schema_version` | Stable | Machine-output schema version; bump only on contract-breaking change. |
+| `results[].items[].evidence` / `expected` / `actual` | Stable | Finding Contract v2 auditable fields; absent on findings without catalog backing. |
+| `results[].items[].source_url` / `last_verified` / `catalog_version` | Stable | Freshness/source pinning for catalog-backed findings. |
 | `metadata.generated_at` | Stable | Safe for run timestamp tracking. |
 | `metadata.target_path` | Stable | Safe for target correlation. |
 | `metadata.programming_model` | Stable | Safe for detecting v1/v2/mixed project state. |
@@ -114,6 +161,7 @@ Item status rules:
 - `pass`: check succeeded
 - `fail`: required rule failed
 - `warn`: optional rule failed
+- `skip`: rule legitimately did not apply (e.g. not a Flex Consumption app, or a suppressed rule); not an error and never gates
 
 Section status rules:
 
@@ -139,13 +187,13 @@ from pathlib import Path
 def parse_doctor(path: str) -> dict:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
 
-    summary = {"pass": 0, "warn": 0, "fail": 0}
+    summary: dict[str, int] = {}
     failures: list[dict[str, str]] = []
 
     for section in payload["results"]:
         for item in section["items"]:
             status = item["status"]
-            summary[status] += 1
+            summary[status] = summary.get(status, 0) + 1
             if status == "fail":
                 failures.append(
                     {
@@ -201,7 +249,8 @@ jq -r '.results[] as $s | $s.items[] | "[\($s.category)] \(.status) - \(.label):
 ## Common parser mistakes
 
 - Assuming warnings fail builds
-- Treating missing optional fields (`hint`, `hint_url`) as schema errors
+- Assuming `pass`/`warn`/`fail` are the only statuses — `skip` is a first-class status and must not crash counters
+- Treating missing optional fields (`hint`, `hint_url`, and the evidence fields) as schema errors
 - Parsing output from non-JSON format
 - Ignoring process exit code and relying only on string matching
 

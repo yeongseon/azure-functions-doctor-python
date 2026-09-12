@@ -263,7 +263,7 @@ def test_compare_version_invalid_version() -> None:
         },
     }
     # Mock func_core_tools to return invalid version
-    _target = "azure_functions_doctor.handlers.registry.resolve_target_value"
+    _target = "azure_functions_doctor.handlers.generic.resolve_target_value"
     with patch(_target, return_value="invalid!!!version"):
         result = registry.handle(rule, Path("."))
         assert result["status"] == "fail"
@@ -538,7 +538,7 @@ def test_conditional_exists_durable_detection_exception() -> None:
             raise ValueError("Simulated read error")
 
         with patch(
-            "azure_functions_doctor.handlers.registry._read_project_python_file",
+            "azure_functions_doctor.handlers.generic._read_project_python_file",
             side_effect=read_with_error,
         ):
             result = registry.handle(rule, tmp_path)
@@ -910,6 +910,7 @@ def test_extension_bundle_overbroad_upper_fails() -> None:
         assert result["status"] == "fail"
         assert "does not match" in result["detail"]
 
+
 def test_extension_bundle_nonzero_upper_minor_fails() -> None:
     """[4.0.0, 5.1.0) widens past the exclusive 5.0.0 bound and must fail."""
     registry = HandlerRegistry()
@@ -943,7 +944,6 @@ def test_extension_bundle_malformed_range_fails() -> None:
         result = registry.handle(rule, tmp_path)
         assert result["status"] == "fail"
         assert "not a valid range" in result["detail"]
-
 
 
 def test_local_settings_security_no_file() -> None:
@@ -1101,7 +1101,7 @@ def test_compare_version_func_core_tools_not_installed() -> None:
             "value": "4.0",
         },
     }
-    _target = "azure_functions_doctor.handlers.registry.resolve_target_value"
+    _target = "azure_functions_doctor.handlers.generic.resolve_target_value"
     with patch(_target, return_value="not_installed"):
         result = registry.handle(rule, Path("."))
         assert result["status"] == "fail"
@@ -1849,7 +1849,7 @@ def test_compare_version_func_tools_success() -> None:
         },
     }
     with patch(
-        "azure_functions_doctor.handlers.registry.resolve_target_value", return_value="5.0.0"
+        "azure_functions_doctor.handlers.generic.resolve_target_value", return_value="5.0.0"
     ):
         result = registry.handle(rule, Path("."))
         assert result["status"] == "pass"

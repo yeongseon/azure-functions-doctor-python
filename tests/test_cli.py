@@ -97,6 +97,7 @@ def test_cli_sarif_output() -> None:
     expected_exit = 1 if has_error else 0
     assert result.exit_code == expected_exit
 
+
 def test_cli_sarif_ruleid_propagates_from_rule_id() -> None:
     """SARIF ``ruleId`` comes from the result's ``rule_id``, matching driver rule ids."""
     result = runner.invoke(
@@ -115,6 +116,7 @@ def test_cli_sarif_ruleid_propagates_from_rule_id() -> None:
         rule_id = finding["ruleId"]
         assert rule_id, "every SARIF finding must carry a ruleId"
         assert rule_id in driver_ids, f"ruleId {rule_id!r} must match a driver rule id"
+
 
 def test_cli_junit_output() -> None:
     """Test CLI outputs JUnit format."""
@@ -241,6 +243,7 @@ def test_cli_deployment_mode_local_end_to_end() -> None:
     data = json.loads(result.output)
     assert data["metadata"]["deployment_mode"] == "local"
 
+
 def test_cli_json_output_includes_target_python_override() -> None:
     """Test JSON metadata includes target_python override."""
     result = runner.invoke(
@@ -279,6 +282,7 @@ def test_cli_sarif_output_includes_target_python_override() -> None:
         "programming_model": "v2",
         "target_python": "3.11",
         "deployment_mode": "remote-build",
+        "hosting_plan": None,
     }
 
 
@@ -384,7 +388,11 @@ def _write_sarif_location_fixture(root: Path) -> int:
 
 def test_cli_sarif_output_emits_per_file_and_per_line_locations(tmp_path: Path) -> None:
     """SARIF results carry per-file locations for a file-based rule and per-line
-    locations (with region) for an AST-based rule."""
+    "locations (with region) for an AST-based rule.
+
+    Absolute scan roots must never leak into the document: URIs pair with
+    %SRCROOT%, so they stay scan-root-relative (issue #392).
+    """
     handler_line = _write_sarif_location_fixture(tmp_path)
 
     result = runner.invoke(app, ["doctor", "--path", str(tmp_path), "--format", "sarif"])
@@ -394,13 +402,26 @@ def test_cli_sarif_output_emits_per_file_and_per_line_locations(tmp_path: Path) 
     def _uri(res: Any) -> str:
         return str(res["locations"][0]["physicalLocation"]["artifactLocation"]["uri"])
 
+    # No absolute filesystem path leaks into any URI.
+    assert all(str(tmp_path) not in _uri(r) for r in sarif_results)
+    assert all(not _uri(r).startswith("/") for r in sarif_results)
+
     # File-based rule: missing host.json is reported against the offending file.
     host_json_results = [r for r in sarif_results if _uri(r) == "host.json"]
     assert host_json_results, "expected a SARIF result located at host.json"
     assert "region" not in host_json_results[0]["locations"][0]["physicalLocation"]
 
-    # AST-based rule: the flagged route carries a per-line region.
-    ast_results = [r for r in sarif_results if _uri(r) == "function_app.py"]
+    # Rules without a file location collapse to the scan-root-relative root.
+    fallback_results = [r for r in sarif_results if _uri(r) == "."]
+    assert fallback_results, "expected fallback results located at '.'"
+
+    # AST-based rule: the flagged route carries a per-line region. Filter by
+    # ruleId: decorator_order now also emits located function_app.py results.
+    ast_results = [
+        r
+        for r in sarif_results
+        if _uri(r) == "function_app.py" and r["ruleId"] == "check_endpoint_metadata"
+    ]
     assert ast_results, "expected a SARIF result located at function_app.py"
     region = next(
         r["locations"][0]["physicalLocation"]["region"]
@@ -408,8 +429,48 @@ def test_cli_sarif_output_emits_per_file_and_per_line_locations(tmp_path: Path) 
         if "region" in r["locations"][0]["physicalLocation"]
     )
     assert region["startLine"] == handler_line
+
+    # The inverted decorator order is now located too (per-line wiring).
+    decorator_results = [r for r in sarif_results if r["ruleId"] == "check_decorator_order"]
+    assert decorator_results, "expected located decorator-order findings"
+    assert decorator_results[0]["locations"][0]["physicalLocation"]["region"]["startLine"] > 0
     assert region["endLine"] >= region["startLine"]
     assert region["startColumn"] >= 1
+
+    # Every finding carries a stable fingerprint for Code Scanning matching.
+    for res in sarif_results:
+        fp = res.get("partialFingerprints", {}).get("primaryLocationLineHash")
+        assert isinstance(fp, str) and fp
+
+
+def test_cli_sarif_rebases_relative_scan_root_in_both_branches(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A relative --path prefixes BOTH branches' URIs (issue #392).
+
+    Monorepo scenario: scanning ``services/api`` must emit
+    ``services/api/host.json`` from the file branch AND ``services/api/`` from
+    the fallback branch - never a bare ``host.json``.
+    """
+    services = tmp_path / "services" / "api"
+    services.mkdir(parents=True)
+    _write_sarif_location_fixture(services)
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(app, ["doctor", "--path", "services/api", "--format", "sarif"])
+    # The fixture intentionally fails required checks (exit 1 is expected).
+    sarif_results = json.loads(result.output)["runs"][0]["results"]
+
+    uris = {
+        str(r["locations"][0]["physicalLocation"]["artifactLocation"]["uri"]) for r in sarif_results
+    }
+    # File branch keeps the repo-root prefix.
+    assert "services/api/host.json" in uris
+    assert "services/api/function_app.py" in uris
+    # Fallback branch points at the prefixed scan root, not a bare name.
+    assert "services/api/" in uris
+    assert "host.json" not in uris
+    assert "function_app.py" not in uris
 
 
 def test_create_result_populates_optional_location_fields() -> None:
@@ -424,3 +485,110 @@ def test_create_result_populates_optional_location_fields() -> None:
 
     bare = _create_result("pass", "ok")
     assert "file" not in bare and "line" not in bare
+
+
+def test_cli_version_flag_prints_package_version() -> None:
+    """--version prints the installed version without running a scan (#396)."""
+    from azure_functions_doctor import __version__
+
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert result.output.strip() == __version__
+
+
+def test_cli_doctor_subcommand_still_works_with_version_flag_present(
+    tmp_path: Path,
+) -> None:
+    """Adding the top-level --version callback does not break the subcommand."""
+    result = runner.invoke(app, ["doctor", "--path", str(tmp_path), "--format", "json"])
+    assert result.exit_code in (0, 1)
+    assert result.output.startswith("{")
+
+
+def test_cli_sarif_emits_one_result_per_finding(tmp_path: Path) -> None:
+    """Two uncovered routes yield two located endpoint_metadata results (#395)."""
+    (tmp_path / "requirements.txt").write_text(
+        "azure-functions==1.25.0\nazure-functions-validation==0.24.0\n", encoding="utf-8"
+    )
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n"
+        "from azure_functions_validation import validate_http\n"
+        "\n"
+        "app = func.FunctionApp()\n"
+        "\n"
+        "\n"
+        "@validate_http\n"
+        '@app.route(route="alpha")\n'
+        "def alpha(req):\n"
+        "    return req\n"
+        "\n"
+        "\n"
+        "@validate_http\n"
+        '@app.route(route="beta")\n'
+        "def beta(req):\n"
+        "    return req\n",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["doctor", "--path", str(tmp_path), "--format", "sarif"])
+    sarif_results = json.loads(result.output)["runs"][0]["results"]
+    endpoint = [r for r in sarif_results if r["ruleId"] == "check_endpoint_metadata"]
+    assert len(endpoint) == 2, "expected one SARIF result per uncovered route"
+    lines = sorted(r["locations"][0]["physicalLocation"]["region"]["startLine"] for r in endpoint)
+    assert lines == [9, 15]
+    messages = " | ".join(r["message"]["text"] for r in endpoint)
+    assert "alpha" in messages and "beta" in messages
+    # Distinct fingerprints per finding.
+    prints = {r["partialFingerprints"]["primaryLocationLineHash"] for r in endpoint}
+    assert len(prints) == 2
+
+
+def test_cli_sarif_unpinned_requirements_lands_on_lines(tmp_path: Path) -> None:
+    """Each unpinned requirement carries its requirements.txt line (#394)."""
+    (tmp_path / "requirements.txt").write_text(
+        "azure-functions==1.25.0\nrequests>=2.0\nflask\n", encoding="utf-8"
+    )
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n\napp = func.FunctionApp()\n", encoding="utf-8"
+    )
+
+    result = runner.invoke(app, ["doctor", "--path", str(tmp_path), "--format", "sarif"])
+    sarif_results = json.loads(result.output)["runs"][0]["results"]
+    unpinned = [r for r in sarif_results if r["ruleId"] == "check_unpinned_requirements"]
+    assert unpinned, "expected unpinned-requirements findings"
+    lines = sorted(r["locations"][0]["physicalLocation"]["region"]["startLine"] for r in unpinned)
+    assert lines == [2, 3]
+    uris = {r["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] for r in unpinned}
+    assert uris == {"requirements.txt"}
+
+
+def test_normalize_argv_inserts_implicit_doctor_subcommand() -> None:
+    """The lone subcommand may be omitted (#399)."""
+    from azure_functions_doctor.cli import normalize_argv
+
+    assert normalize_argv([]) == ["doctor"]
+    assert normalize_argv(["--path", ".", "--format", "json"]) == [
+        "doctor",
+        "--path",
+        ".",
+        "--format",
+        "json",
+    ]
+    assert normalize_argv(["doctor", "--path", "."]) == ["doctor", "--path", "."]
+    assert normalize_argv(["--version"]) == ["--version"]
+    assert normalize_argv(["--help"]) == ["--help"]
+    # Unknown bare words fall through so Typer reports the real error.
+    assert normalize_argv(["nonsense"]) == ["nonsense"]
+
+
+def test_cli_top_level_invocation_matches_subcommand(tmp_path: Path) -> None:
+    """`--path X --format json` and `doctor --path X --format json` agree (#399)."""
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n\napp = func.FunctionApp()\n", encoding="utf-8"
+    )
+    from azure_functions_doctor.cli import normalize_argv
+
+    with_sub = runner.invoke(app, ["doctor", "--path", str(tmp_path), "--format", "json"])
+    without_sub = runner.invoke(app, normalize_argv(["--path", str(tmp_path), "--format", "json"]))
+    assert with_sub.exit_code == without_sub.exit_code
+    assert json.loads(without_sub.output)["schema_version"] == "2.0"

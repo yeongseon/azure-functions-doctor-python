@@ -391,6 +391,24 @@ Found unwanted files: ['tests/', '.venv']
 - **Severity:** Warning only (`required: false`).
 
 
+## Deploy-risk rule reference
+
+The runtime/hosting/deployment-correctness rules also have individual reference pages under `docs/rules/`. Each page shows the exact finding text, so searching for an error message lands directly on the rule:
+
+- [Python runtime lifecycle](rules/check_python_runtime_lifecycle.md)
+- [Functions runtime lifecycle](rules/check_functions_runtime_lifecycle.md)
+- [Hosting plan lifecycle](rules/check_hosting_plan_lifecycle.md)
+- [Flex Consumption runtime config](rules/check_flex_runtime_config.md)
+- [Flex Consumption deprecated app settings](rules/check_flex_deprecated_settings.md)
+- [Flex Consumption deployment storage](rules/check_flex_deployment_storage.md)
+- [Binding connection resolution](rules/check_binding_connection_resolution.md)
+- [Functions extension version](rules/check_functions_extension_version.md)
+- [Linux runtime (linuxFxVersion)](rules/check_linux_fx_version.md)
+- [Dev-storage emulator connection](rules/check_dev_storage_connection.md)
+- [Pinned requirements](rules/check_unpinned_requirements.md)
+
+Experimental-tier and integration-group rules are intentionally not given per-rule pages yet (see [#326](https://github.com/yeongseon/azure-functions-doctor-python/issues/326)).
+
 ## Rule authoring template
 
 ```json

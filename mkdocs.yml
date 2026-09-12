@@ -24,6 +24,18 @@ nav:
       - Deprecated Aliases: deprecated-aliases.md
       - Diagnostics: diagnostics.md
       - Rules: rules.md
+      - Deploy-Risk Rule Pages:
+          - Python runtime lifecycle: rules/check_python_runtime_lifecycle.md
+          - Functions runtime lifecycle: rules/check_functions_runtime_lifecycle.md
+          - Hosting plan lifecycle: rules/check_hosting_plan_lifecycle.md
+          - Flex runtime config: rules/check_flex_runtime_config.md
+          - Flex deprecated app settings: rules/check_flex_deprecated_settings.md
+          - Flex deployment storage: rules/check_flex_deployment_storage.md
+          - Binding connection resolution: rules/check_binding_connection_resolution.md
+          - Functions extension version: rules/check_functions_extension_version.md
+          - Linux runtime (linuxFxVersion): rules/check_linux_fx_version.md
+          - Dev-storage emulator connection: rules/check_dev_storage_connection.md
+          - Pinned requirements: rules/check_unpinned_requirements.md
       - Rule Inventory: rule_inventory.md
       - Minimal Profile: minimal_profile.md
       - JSON Output Contract: json_output_contract.md
@@ -39,6 +51,8 @@ nav:
   - Reference:
       - Architecture: architecture.md
       - Supported Versions: supported_versions.md
+      - Catalog Operations: catalog_operations.md
+      - Comparison vs Official Skill: comparison.md
       - Semver Policy: semver_policy.md
   - Contributing:
       - Development: development.md

@@ -58,7 +58,7 @@ This enables direct CI usage without custom gate wrappers.
 ## Feature highlights
 
 - Declarative rules with schema validation
-- Profile-based execution (`full`, `minimal`)
+- Profile-based execution (`minimal`, `deploy`, `development`, `full`)
 - Multiple output formats (`table`, `json`, `sarif`, `junit`)
 - Custom rule file support via `--rules`
 - Programmatic API for pipeline/tool integration
@@ -96,6 +96,7 @@ def has_required_failures(path: str) -> bool:
 - [Diagnostics](diagnostics.md)
 - [Rules](rules.md)
 - [Rule Inventory](rule_inventory.md)
+- [Deploy-Risk Rule Pages](rules/check_python_runtime_lifecycle.md) — one page per runtime/deployment rule; error messages land on the rule
 - [Minimal Profile](minimal_profile.md)
 - [JSON Output Contract](json_output_contract.md)
 - [Handlers](handlers.md)
@@ -110,6 +111,7 @@ def has_required_failures(path: str) -> bool:
 
 - [Supported Versions](supported_versions.md)
 - [Semver Policy](semver_policy.md)
+- [Comparison vs Official Skill](comparison.md)
 - [Troubleshooting](troubleshooting.md)
 - [FAQ](faq.md)
 

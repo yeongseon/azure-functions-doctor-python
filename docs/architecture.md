@@ -18,7 +18,7 @@ Core modules and responsibilities:
 - `__init__.py`: public exports and version string.
 - `cli.py`: Typer-based CLI entrypoint; maps flags to `Doctor` options.
 - `doctor.py`: `Doctor` runner — loads rules, executes handlers, aggregates results.
-- `handlers/` package: `Rule` type and shared helpers (`_helpers.py`), plus `generic_handler` and type-based rule dispatch via `HandlerRegistry` (`registry.py`).
+- `handlers/` package: `Rule` type and shared helpers (`_helpers.py`), plus `generic_handler` and type-based rule dispatch via `HandlerRegistry` (`registry.py`) over per-domain implementation modules (`generic`, `dependencies`, `runtime`, `monitoring`, `deployment`, `bindings`, `project`, `durable`, `integrations`).
 - `config.py`: configuration management (reserved for future use; not yet in the runtime path).
 - `target_resolver.py`: resolves runtime values (Python version, Core Tools version) for version-comparison checks.
 - `logging_config.py`: internal logging setup.
@@ -118,9 +118,9 @@ CI pipelines can rely on these codes directly. See [JSON Output Contract](json_o
 
 Profiles allow subsets of rules:
 
-- Profile is a string selector (`minimal` or `full`), not a file-based system. `minimal` keeps only rules where `required=True` in the rule asset; `full` (the default) runs all rules.
-- `--profile minimal` restricts the scan to required rules only.
-- Custom profile names raise `ValueError`; only `minimal` and `full` are accepted.
+- Profile is a string selector, not a file-based system. Four profiles are accepted: `minimal` (only rules with `required=True`), `deploy` (core-group rules minus dev-environment checks — runtime/hosting/deployment correctness), `development` (dev-environment checks: venv, Python executable, Core Tools, local.settings), and `full` (default when omitted: all rules).
+- Membership is computed in `azure_functions_doctor.profiles` from rule metadata (single source of truth shared with the generated rule inventory).
+- Custom profile names raise `ValueError`; only the four names above are accepted.
 
 See [Configuration](configuration.md) and [Minimal Profile](minimal_profile.md).
 
@@ -140,7 +140,7 @@ The `handlers/` package (`registry.py`) maintains a `HandlerRegistry` that maps 
 
 ### 4. String-based profile selection
 
-Profiles are not file-based. The `--profile` flag accepts `minimal` or `full` (default). `minimal` filters rules to those where `required=True` in the rule asset (`Doctor.run_all_checks()`). This avoids external profile file management while covering the common use case of gating CI on required rules only.
+Profiles are not file-based. The `--profile` flag accepts `minimal`, `deploy`, `development`, or `full` (default when the flag is omitted: all rules). Membership is computed from rule metadata in `azure_functions_doctor.profiles` (`Doctor.run_all_checks()` filters with it). This avoids external profile file management while covering the common cases: gating CI on required rules (`minimal`) or on deployment correctness (`deploy`).
 
 ### 5. Typer CLI framework
 

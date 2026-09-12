@@ -55,7 +55,7 @@ flowchart TD
     CLI["cli.py<br/>Typer CLI"]
     DOC["doctor.py<br/>Diagnostic runner"]
     RULES[("assets/<br/>Rule inventory")]
-    HDLR["handlers.py<br/>Type-based dispatch"]
+    HDLR["handlers/registry.py<br/>Type-based dispatch"]
     TR["target_resolver.py<br/>Version resolution"]
     RES["Structured results<br/>SectionResult + CheckResult"]
 

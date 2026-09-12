@@ -34,14 +34,14 @@ Intentionally misconfigured projects that demonstrate specific rule failures.
 
 ```bash
 # Passing examples (all checks should pass)
-azure-functions doctor --path examples/v2/http-trigger
-azure-functions doctor --path examples/v2/timer-trigger
-azure-functions doctor --path examples/v2/multi-trigger
-azure-functions doctor --path examples/v2/blueprint
+azure-functions-doctor doctor --path examples/v2/http-trigger
+azure-functions-doctor doctor --path examples/v2/timer-trigger
+azure-functions-doctor doctor --path examples/v2/multi-trigger
+azure-functions-doctor doctor --path examples/v2/blueprint
 
 # Broken examples (expect specific failures)
-azure-functions doctor --path examples/v2/broken-missing-host-json
-azure-functions doctor --path examples/v2/broken-missing-requirements
-azure-functions doctor --path examples/v2/broken-missing-azure-functions
-azure-functions doctor --path examples/v2/broken-no-v2-decorators
+azure-functions-doctor doctor --path examples/v2/broken-missing-host-json
+azure-functions-doctor doctor --path examples/v2/broken-missing-requirements
+azure-functions-doctor doctor --path examples/v2/broken-missing-azure-functions
+azure-functions-doctor doctor --path examples/v2/broken-no-v2-decorators
 ```

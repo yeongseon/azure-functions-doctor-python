@@ -36,6 +36,7 @@ Homepage = "https://yeongseon.dev/azure-functions-python/doctor/"
 Documentation = "https://yeongseon.dev/azure-functions-python/doctor/"
 Repository = "https://github.com/yeongseon/azure-functions-doctor-python"
 Issues = "https://github.com/yeongseon/azure-functions-doctor-python/issues"
+Changelog = "https://github.com/yeongseon/azure-functions-doctor-python/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -48,7 +49,7 @@ dev = [
     "pre-commit",
     "pytest",
     "pytest-cov",
-    "ruff==0.16.4",
+    "ruff==0.16.6",
     "requests",
     "types-requests",
 ]
@@ -59,7 +60,7 @@ docs = [
 ]
 
 [project.scripts]
-azure-functions-doctor = "azure_functions_doctor.cli:cli"
+azure-functions-doctor = "azure_functions_doctor.cli:main"
 # Deprecated aliases (removal targeted for v1.0.0); emit a deprecation notice.
 azure-functions = "azure_functions_doctor.cli:azure_functions_alias"
 fdoctor = "azure_functions_doctor.cli:fdoctor_alias"

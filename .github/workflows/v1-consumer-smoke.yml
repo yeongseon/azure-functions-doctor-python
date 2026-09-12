@@ -1,0 +1,161 @@
+name: v1 Consumer Smoke
+
+# Post-release verification of the EXISTING-USER consumer path (issue #410):
+# every other smoke uses `uses: ./` (local composite action); nothing else
+# proves that pinning yeongseon/azure-functions-doctor@v1 resolves and behaves
+# after a release — new deploy default profile, per-finding SARIF with
+# repo-root-relative URIs and partialFingerprints, and PyPI parity.
+#
+# Code Scanning upload is deliberately NOT performed here (the main repo's
+# alert stream must stay clean); SARIF artifacts are asserted structurally
+# and uploaded as plain workflow artifacts instead.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily, off-round minute. Catches @v1 drift within a day of a release.
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  v1-consumer-smoke:
+    name: Consume the published action as an external user
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (frozen example projects come from here)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Differential assertion, part 1: the DEFAULT profile. Runs the v1
+      # moving branch exactly as a pinned user would, with no explicit profile.
+      - name: Run @v1 with the default profile
+        id: v1-default
+        continue-on-error: true
+        uses: yeongseon/azure-functions-doctor@v1 # pin-exempt: the product under test — this smoke exists to verify the moving @v1 ref itself
+        with:
+          path: examples/v2/http-trigger
+          format: json
+          output: v1-default.json
+          upload-artifact: "false"
+          fail-on-warn: "false"
+
+      # Differential assertion, part 2: the same run with an EXPLICIT deploy
+      # profile. Identical exit-code/pass/fail/warn counts prove the default
+      # is `deploy` (a minimal default would produce different counts).
+      - name: Run @v1 with an explicit deploy profile
+        id: v1-deploy
+        continue-on-error: true
+        uses: yeongseon/azure-functions-doctor@v1 # pin-exempt: the product under test — this smoke exists to verify the moving @v1 ref itself
+        with:
+          path: examples/v2/http-trigger
+          profile: deploy
+          format: json
+          output: v1-deploy.json
+          upload-artifact: "false"
+          fail-on-warn: "false"
+
+      # Exit-code contract on a failing fixture: a required-rule violation
+      # must exit 1 through @v1 exactly as it does locally.
+      - name: Run @v1 on a broken fixture (expect exit 1)
+        id: v1-broken
+        continue-on-error: true
+        uses: yeongseon/azure-functions-doctor@v1 # pin-exempt: the product under test — this smoke exists to verify the moving @v1 ref itself
+        with:
+          path: examples/v2/broken-missing-host-json
+          profile: minimal
+          format: json
+          output: v1-broken.json
+          upload-artifact: "false"
+          fail-on-warn: "false"
+
+      # SARIF contract through @v1: relative URIs only, uriBaseId on every
+      # location, partialFingerprints on every result, per-finding regions.
+      - name: Run @v1 in SARIF mode for contract assertions
+        id: v1-sarif
+        continue-on-error: true
+        uses: yeongseon/azure-functions-doctor@v1 # pin-exempt: the product under test — this smoke exists to verify the moving @v1 ref itself
+        with:
+          path: examples/v2/broken-missing-host-json
+          profile: full
+          format: sarif
+          output: v1.sarif
+          upload-artifact: "false"
+          upload-sarif: "false"
+
+      - name: Verify the @v1 consumer contract
+        run: |
+          python3 - <<'PY'
+          import json, sys
+
+          default = json.load(open("v1-default.json"))
+          deploy = json.load(open("v1-deploy.json"))
+          broken = json.load(open("v1-broken.json"))
+
+          # 1) Default profile == deploy (differential on counts + exit code).
+          for key in ("schema_version",):
+              assert default[key] == deploy[key] == "2.0", key
+          d_items = [i for s in default["results"] for i in s["items"]]
+          p_items = [i for s in deploy["results"] for i in s["items"]]
+          d_counts = {st: sum(1 for i in d_items if i["status"] == st)
+                      for st in ("pass", "warn", "fail", "skip")}
+          p_counts = {st: sum(1 for i in p_items if i["status"] == st)
+                      for st in ("pass", "warn", "fail", "skip")}
+          assert d_counts == p_counts, f"default profile is not deploy: {d_counts} != {p_counts}"
+          assert d_counts["pass"] > 6, "deploy default should run more than the required-only ruleset"
+
+          # 2) Exit-code contract: required failure => failed > 0 and rc 1.
+          b_items = [i for s in broken["results"] for i in s["items"]]
+          assert sum(1 for i in b_items if i["status"] == "fail") >= 1
+
+          print("default==deploy counts:", d_counts)
+          PY
+          test "${{ steps.v1-default.outputs.exit-code }}" = "0" || exit 1
+          test "${{ steps.v1-broken.outputs.exit-code }}" = "1" || exit 1
+
+      - name: Assert the SARIF artifact contract
+        run: |
+          python3 - <<'PY'
+          import json
+
+          sarif = json.load(open("v1.sarif"))
+          assert sarif["version"] == "2.1.0"
+          results = sarif["runs"][0]["results"]
+          assert results, "expected findings in SARIF output"
+
+          for r in results:
+              loc = r["locations"][0]["physicalLocation"]["artifactLocation"]
+              # Relative references only: no absolute filesystem paths may leak
+              # into the security artifact (issue #392 contract).
+              assert not loc["uri"].startswith("/"), f"absolute URI leaked: {loc['uri']}"
+              assert not loc["uri"].startswith("file:"), loc["uri"]
+              assert loc.get("uriBaseId") == "%SRCROOT%"
+              # Stable fingerprints on every result (issue #392/#405 contract).
+              fp = r.get("partialFingerprints", {}).get("primaryLocationLineHash")
+              assert isinstance(fp, str) and fp, "missing primaryLocationLineHash"
+
+          located = [r for r in results
+                     if "region" in r["locations"][0]["physicalLocation"]]
+          assert located, "expected at least one per-finding region"
+          print(f"SARIF contract OK: {len(results)} results, {len(located)} located")
+          PY
+
+      - name: PyPI parity (fresh install matches the published latest)
+        run: |
+          python3 -m venv /tmp/pypi-check
+          /tmp/pypi-check/bin/pip install --quiet --upgrade pip
+          /tmp/pypi-check/bin/pip install --quiet azure-functions-doctor
+          INSTALLED=$(/tmp/pypi-check/bin/azure-functions-doctor --version)
+          LATEST=$(curl -s https://pypi.org/pypi/azure-functions-doctor/json \
+            | python3 -c "import json,sys; print(json.load(sys.stdin)['info']['version'])")
+          echo "installed=$INSTALLED pypi_latest=$LATEST"
+          test "$INSTALLED" = "$LATEST"
+          /tmp/pypi-check/bin/azure-functions-doctor doctor \
+            --path examples/v2/http-trigger --profile minimal --format json > pypi.json
+          python3 -c "
+          import json
+          d = json.load(open('pypi.json'))
+          assert d['schema_version'] == '2.0'
+          assert d['metadata']['tool_version'] == '$INSTALLED'
+          print('PyPI parity OK')
+          "

@@ -42,7 +42,7 @@ These represent the minimum structural requirements for a valid Azure Functions 
 | Dimension | `full` profile | `minimal` profile |
 | --- | --- | --- |
 | Rule scope | Required + optional | Required only |
-| Built-in count | 29 rules | 6 rules |
+| Built-in count | 41 rules | 6 rules |
 | Warning volume | Higher | Lower |
 | CI suitability | Useful for report artifacts | Best for hard gating |
 | Local guidance depth | High | Baseline only |

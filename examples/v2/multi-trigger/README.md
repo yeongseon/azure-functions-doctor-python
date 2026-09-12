@@ -34,7 +34,7 @@ func start
 ## Diagnose
 
 ```bash
-azure-functions doctor --path examples/v2/multi-trigger
+azure-functions-doctor doctor --path examples/v2/multi-trigger
 ```
 
 All checks should pass for this example.

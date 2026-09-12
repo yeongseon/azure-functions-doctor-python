@@ -34,7 +34,7 @@ curl "http://localhost:7071/api/HttpExample?name=World"
 ## Diagnose
 
 ```bash
-azure-functions doctor --path examples/v2/http-trigger
+azure-functions-doctor doctor --path examples/v2/http-trigger
 ```
 
 All checks should pass for this example.

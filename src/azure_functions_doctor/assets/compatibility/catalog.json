@@ -1,0 +1,165 @@
+{
+  "catalog_version": "1.0.0",
+  "last_verified": "2026-09-06",
+  "sources": {
+    "supported_languages": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+    "functions_versions": "https://learn.microsoft.com/azure/azure-functions/functions-versions",
+    "consumption_plan": "https://learn.microsoft.com/azure/azure-functions/consumption-plan",
+    "functions_app_settings": "https://learn.microsoft.com/azure/azure-functions/functions-app-settings"
+  },
+  "facts": [
+    {
+      "fact_id": "python-3.10-eos",
+      "category": "python_runtime_lifecycle",
+      "applies_to": { "python": "3.10" },
+      "status": "supported",
+      "support_end": { "value": "2026-10", "precision": "month" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.10 GA end-of-support as 'October 2026' (month precision, no day published)."
+    },
+    {
+      "fact_id": "python-3.11-eos",
+      "category": "python_runtime_lifecycle",
+      "applies_to": { "python": "3.11" },
+      "status": "supported",
+      "support_end": { "value": "2027-10", "precision": "month" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.11 GA end-of-support as 'October 2027' (month precision)."
+    },
+    {
+      "fact_id": "python-3.12-eos",
+      "category": "python_runtime_lifecycle",
+      "applies_to": { "python": "3.12" },
+      "status": "supported",
+      "support_end": { "value": "2028-10", "precision": "month" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.12 GA end-of-support as 'October 2028' (month precision)."
+    },
+    {
+      "fact_id": "python-3.13-eos",
+      "category": "python_runtime_lifecycle",
+      "applies_to": { "python": "3.13" },
+      "status": "supported",
+      "support_end": { "value": "2029-10", "precision": "month" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.13 GA end-of-support as 'October 2029' (month precision)."
+    },
+    {
+      "fact_id": "python-3.14-eos",
+      "category": "python_runtime_lifecycle",
+      "applies_to": { "python": "3.14" },
+      "status": "supported",
+      "support_end": { "value": "2030-10", "precision": "month" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.14 GA end-of-support as 'October 2030' (month precision)."
+    },
+    {
+      "fact_id": "hosting-plan-python-cap-linux-consumption",
+      "category": "hosting_plan_python_cap",
+      "applies_to": { "hosting_plan": "linux-consumption" },
+      "max_python": "3.12",
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn: 'Python 3.12 is the last Python version supported for Linux Consumption plan apps. Newer Python versions aren't added to Linux Consumption.'"
+    },
+    {
+      "fact_id": "hosting-plan-python-cap-flex-consumption",
+      "category": "hosting_plan_python_cap",
+      "applies_to": { "hosting_plan": "flex-consumption" },
+      "max_python": null,
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Flex Consumption tracks the newer Python runtimes; no cap below the globally supported set."
+    },
+    {
+      "fact_id": "hosting-plan-python-cap-premium",
+      "category": "hosting_plan_python_cap",
+      "applies_to": { "hosting_plan": "premium" },
+      "max_python": null,
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Elastic Premium tracks the newer Python runtimes; no cap below the globally supported set."
+    },
+    {
+      "fact_id": "hosting-plan-python-cap-dedicated",
+      "category": "hosting_plan_python_cap",
+      "applies_to": { "hosting_plan": "dedicated" },
+      "max_python": null,
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Dedicated (App Service) plan tracks the newer Python runtimes; no cap below the globally supported set."
+    },
+    {
+      "fact_id": "linux-consumption-retirement",
+      "category": "hosting_plan_lifecycle",
+      "applies_to": { "hosting_plan": "linux-consumption" },
+      "status": "retiring",
+      "support_end": { "value": "2028-09-30", "precision": "day" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/consumption-plan",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn: 'The option to host function apps on Linux in a Consumption plan is retiring on 30 September 2028.'"
+    },
+    {
+      "fact_id": "functions-runtime-v1-eos",
+      "category": "functions_runtime_lifecycle",
+      "applies_to": { "functions_runtime": "1.x" },
+      "status": "retiring",
+      "support_end": { "value": "2026-09-14", "precision": "day" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/functions-versions",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'Compare Azure Functions runtime versions': 'Support ends for version 1.x on September 14, 2026.' Retiring as of the last verification (end date in the future); GA only for C#/.NET Framework apps."
+    },
+    {
+      "fact_id": "functions-runtime-v2-eos",
+      "category": "functions_runtime_lifecycle",
+      "applies_to": { "functions_runtime": "2.x" },
+      "status": "unsupported",
+      "support_end": { "value": "2022-12-13", "precision": "day" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/functions-versions",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'Compare Azure Functions runtime versions': runtime 2.x reached end of extended support on December 13, 2022."
+    },
+    {
+      "fact_id": "functions-runtime-v3-eos",
+      "category": "functions_runtime_lifecycle",
+      "applies_to": { "functions_runtime": "3.x" },
+      "status": "unsupported",
+      "support_end": { "value": "2022-12-13", "precision": "day" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/functions-versions",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'Compare Azure Functions runtime versions': runtime 3.x reached end of extended support on December 13, 2022."
+    },
+    {
+      "fact_id": "functions-runtime-v4-supported",
+      "category": "functions_runtime_lifecycle",
+      "applies_to": { "functions_runtime": "4.x" },
+      "status": "supported",
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/functions-versions",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'Compare Azure Functions runtime versions': 4.x is GA and the recommended runtime for all languages; no end-of-support date is published."
+    },
+    {
+      "fact_id": "functions-runtime-v3-linux-consumption-stop",
+      "category": "functions_runtime_lifecycle",
+      "applies_to": { "functions_runtime": "3.x", "hosting_plan": "linux-consumption" },
+      "status": "unsupported",
+      "support_end": { "value": "2026-09-30", "precision": "day" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/functions-versions",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn: 'Function apps still running the end-of-life v3 runtime on Linux in a Consumption plan stop running after September 30, 2026.'"
+    },
+    {
+      "fact_id": "flex-deprecated-app-settings",
+      "category": "flex_deprecated_settings",
+      "applies_to": { "hosting_plan": "flex-consumption" },
+      "source_url": "https://learn.microsoft.com/azure/azure-functions/functions-app-settings",
+      "last_verified": "2026-09-06",
+      "verification_notes": "Microsoft Learn 'App settings reference for Azure Functions': the Flex Consumption plan does not use a set of legacy app settings (runtime worker selection, Oryx/remote-build toggles, Azure Files content-share settings, run-from-package, and VNet route-all); the runtime stack, deployment package, scaling, and networking are configured through functionAppConfig and site networking properties instead."
+    }
+  ]
+}

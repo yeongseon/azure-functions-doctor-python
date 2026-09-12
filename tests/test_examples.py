@@ -121,3 +121,81 @@ class TestBrokenExamples:
             "broken-no-v2-decorators: expected undetected v2 programming model failure, "
             f"got {item_map!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Deploy-profile scenario fixtures (issue #409)
+# ---------------------------------------------------------------------------
+
+
+class TestDeployScenarioExamples:
+    """Deploy-rule fixtures: healthy Flex passes; each broken trips exactly its rule."""
+
+    def test_flex_consumption_healthy_passes_deploy_rules(self) -> None:
+        _doctor, item_map = _run_example("flex-consumption")
+        assert item_map.get("Flex Consumption runtime config") == "pass"
+        assert item_map.get("Flex Consumption deprecated app settings") == "pass"
+        assert item_map.get("Flex Consumption deployment storage") == "pass"
+        assert item_map.get("Dev-storage emulator connection") == "pass"
+        for label in _ALWAYS_PASS_LABELS:
+            assert item_map.get(label) == "pass", label
+
+    def test_broken_flex_runtime_config_fails_only_that_rule(self) -> None:
+        _doctor, item_map = _run_example("broken-flex-runtime-config")
+        assert item_map.get("Flex Consumption runtime config") == "fail"
+        assert item_map.get("Flex Consumption deprecated app settings") == "pass"
+        for label in _ALWAYS_PASS_LABELS:
+            assert item_map.get(label) == "pass", label
+
+    def test_broken_flex_deprecated_settings_warns(self) -> None:
+        _doctor, item_map = _run_example("broken-flex-deprecated-settings")
+        assert item_map.get("Flex Consumption deprecated app settings") == "warn"
+        assert item_map.get("Flex Consumption runtime config") == "pass"
+        for label in _ALWAYS_PASS_LABELS:
+            assert item_map.get(label) == "pass", label
+
+    def test_broken_flex_deployment_storage_warns(self) -> None:
+        _doctor, item_map = _run_example("broken-flex-deployment-storage")
+        assert item_map.get("Flex Consumption deployment storage") == "warn"
+        assert item_map.get("Flex Consumption runtime config") == "pass"
+        for label in _ALWAYS_PASS_LABELS:
+            assert item_map.get(label) == "pass", label
+
+    def test_broken_dev_storage_leak_warns(self) -> None:
+        _doctor, item_map = _run_example("broken-dev-storage-leak")
+        assert item_map.get("Dev-storage emulator connection") == "warn"
+        for label in _ALWAYS_PASS_LABELS:
+            assert item_map.get(label) == "pass", label
+
+    def test_broken_legacy_extension_version_warns_and_lifecycle_fails(self) -> None:
+        """The ~3 pin trips the extension-version warn; v3 being out of
+        support also fails the runtime lifecycle check (both correct)."""
+        _doctor, item_map = _run_example("broken-legacy-extension-version")
+        assert item_map.get("Functions extension version") == "warn"
+        assert item_map.get("Functions runtime lifecycle") == "fail"
+        assert item_map.get("requirements.txt") == "pass"
+
+
+class TestMonorepoExample:
+    """examples/monorepo anchors the SARIF repo-root rebasing contract (#392)."""
+
+    def test_sarif_uris_rebase_onto_the_subdirectory(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import json as _json
+
+        from typer.testing import CliRunner
+
+        from azure_functions_doctor.cli import cli as app
+
+        runner = CliRunner()
+        monkeypatch.chdir(EXAMPLES_DIR.parent / "monorepo")
+        result = runner.invoke(app, ["doctor", "--path", "services/api", "--format", "sarif"])
+        sarif_results = _json.loads(result.output)["runs"][0]["results"]
+        assert sarif_results, "expected findings from the intentionally missing host.json"
+        uris = {
+            r["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] for r in sarif_results
+        }
+        # File branch carries the repo-root prefix...
+        assert "services/api/host.json" in uris
+        # ...and so does the fallback branch; bare names never appear.
+        assert "services/api/" in uris
+        assert "host.json" not in uris

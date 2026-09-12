@@ -4,18 +4,23 @@ import importlib.resources
 import json
 from pathlib import Path
 import time
-from typing import Literal, Optional, TypedDict
+from typing import Literal, Mapping, Optional, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
 from azure_functions_doctor.handlers import (
-    EXCLUDED_PROJECT_DIRS,
+    HandlerResult,
     Rule,
     RuleContext,
     _discover_functionapp_aliases,
     _iter_project_py_contents,
     _source_contains_ast,
     generic_handler,
+    iter_project_files,
+    load_doctor_config,
+    reset_extra_excludes,
+    resolve_target_config,
+    set_extra_excludes,
 )
 from azure_functions_doctor.logging_config import get_logger, log_rule_execution
 
@@ -25,6 +30,24 @@ ProgrammingModel = Literal["v2", "unsupported_v1", "mixed", "unknown"]
 
 _VALID_SEVERITIES = ("error", "warning", "info")
 _VALID_TIERS = ("core", "extended", "experimental")
+
+# Finding Contract v2 (issue #348): the machine-output schema version for the
+# ``json`` format. Bumped from the implicit v1 (which carried only rule_id /
+# status / severity / tier) to v2, which adds auditable evidence and freshness
+# fields plus an ``analysis`` block. This is independent of the SARIF schema
+# version ("2.1.0").
+FINDING_SCHEMA_VERSION = "2.0"
+
+# Finding Contract v2 evidence / freshness fields carried from a handler result
+# into the emitted finding. All are optional strings.
+FINDING_EVIDENCE_KEYS = (
+    "evidence",
+    "expected",
+    "actual",
+    "source_url",
+    "last_verified",
+    "catalog_version",
+)
 
 
 def _resolve_severity(rule: Rule) -> str:
@@ -51,6 +74,23 @@ def _resolve_tier(rule: Rule) -> str:
     return "core" if rule.get("required", True) else "extended"
 
 
+# Rule-profile membership lives in a dependency-free module so lightweight
+# tooling can share the same source of truth; re-exported here for runtime use.
+from azure_functions_doctor.profiles import (  # noqa: E402
+    DEV_ENVIRONMENT_RULES,
+    PROFILE_NAMES,
+    profiles_for_rule,
+    rule_matches_profile,
+)
+
+__all__ = [
+    "DEV_ENVIRONMENT_RULES",
+    "PROFILE_NAMES",
+    "profiles_for_rule",
+    "rule_matches_profile",
+]
+
+
 class CheckResult(TypedDict, total=False):
     rule_id: str
     label: str
@@ -64,6 +104,16 @@ class CheckResult(TypedDict, total=False):
     line: int
     end_line: int
     column: int
+    # Per-finding locations (issues #394/#395); SARIF emits one result per entry.
+    locations: list[dict[str, object]]
+    # Finding Contract v2 (issue #348): auditable evidence + freshness metadata.
+    evidence: str
+    expected: str
+    actual: str
+    source_url: str
+    last_verified: str
+    catalog_version: str
+    analysis: dict[str, str]
 
 
 class SectionResult(TypedDict):
@@ -71,6 +121,25 @@ class SectionResult(TypedDict):
     category: str
     status: str  # 'pass' or 'fail'
     items: list[CheckResult]
+
+
+def _apply_finding_contract_v2(item: CheckResult, result: HandlerResult) -> None:
+    """Attach Finding Contract v2 metadata (issue #348) to a finding.
+
+    Copies any auditable evidence / freshness fields a handler emitted
+    (``evidence``, ``expected``, ``actual``, ``source_url``, ``last_verified``,
+    ``catalog_version``) into the finding, and always records the deterministic
+    analysis marker. ``analysis.type = "deterministic"`` is preferred over a
+    ``confidence`` float so this diagnostic output stays cleanly separated from
+    any future agent-inferred findings.
+    """
+    result_map = cast(Mapping[str, object], result)
+    item_map = cast("dict[str, object]", item)
+    for key in FINDING_EVIDENCE_KEYS:
+        value = result_map.get(key)
+        if isinstance(value, str) and value:
+            item_map[key] = value
+    item["analysis"] = {"type": "deterministic"}
 
 
 class Doctor:
@@ -88,17 +157,25 @@ class Doctor:
         rules_path: Optional[Path] = None,
         target_python: Optional[str] = None,
         deployment_mode: str = "remote-build",
+        hosting_plan: Optional[str] = None,
     ) -> None:
         self.project_path: Path = Path(path).resolve()
         self.profile = profile
         self.target_python: Optional[str] = target_python
         self.deployment_mode: str = deployment_mode
+        self.hosting_plan: Optional[str] = hosting_plan
         self.rules_path: Optional[Path] = None
         if rules_path is not None:
             resolved = rules_path.resolve()
             if not resolved.is_file():
                 raise ValueError(f"rules_path must be an existing file: {resolved}")
             self.rules_path = resolved
+        # Config-based suppression / exclusion (issue #290). CLI selections
+        # (profile, rules_path) take precedence for ruleset selection; the
+        # config ``ignore``/``exclude`` layer on top of the resolved run.
+        doctor_config = load_doctor_config(self.project_path)
+        self.ignore_rules: set[str] = set(doctor_config["ignore"])
+        self.exclude_globs: list[str] = list(doctor_config["exclude"])
         self.programming_model: ProgrammingModel = self._detect_programming_model()
 
     def get_report_properties(self) -> dict[str, Optional[str]]:
@@ -107,6 +184,7 @@ class Doctor:
             "programming_model": self.programming_model,
             "target_python": self.target_python,
             "deployment_mode": self.deployment_mode,
+            "hosting_plan": self.hosting_plan,
         }
 
     def _detect_programming_model(self) -> ProgrammingModel:
@@ -133,9 +211,7 @@ class Doctor:
 
     def _has_v1_signals(self) -> bool:
         """Check if the project contains legacy v1 function.json files."""
-        for function_json in self.project_path.rglob("function.json"):
-            if any(part in EXCLUDED_PROJECT_DIRS for part in function_json.parts):
-                continue
+        for function_json in iter_project_files(self.project_path, "function.json"):
             logger.debug("Detected v1 signal: %s", function_json)
             return True
         return False
@@ -230,6 +306,7 @@ class Doctor:
                     "severity": "error",
                     "tier": "core",
                     "hint": hint,
+                    "analysis": {"type": "deterministic"},
                 }
             ],
         }
@@ -277,10 +354,10 @@ class Doctor:
 
     def run_all_checks(self, rules: Optional[list[Rule]] = None) -> list[SectionResult]:
         rules = self.load_rules() if rules is None else rules
-        if self.profile == "minimal":
-            rules = [rule for rule in rules if rule.get("required", True)]
-        elif self.profile not in (None, "full"):
-            raise ValueError("Profile must be 'minimal' or 'full'")
+        if self.profile is not None and self.profile != "full":
+            if self.profile not in PROFILE_NAMES:
+                raise ValueError("Profile must be one of: " + ", ".join(PROFILE_NAMES))
+            rules = [rule for rule in rules if rule_matches_profile(rule, self.profile)]
 
         if self.programming_model != "v2":
             logger.info(
@@ -295,9 +372,21 @@ class Doctor:
             grouped[rule.get("section", "unknown")].append(rule)
 
         results: list[SectionResult] = []
+        # Layer config ``exclude`` globs on top of EXCLUDED_PROJECT_DIRS for the
+        # duration of this run (issue #290). Each run sets its own value first,
+        # so state never leaks between runs.
+        exclude_token = set_extra_excludes(self.project_path, self.exclude_globs)
         context: RuleContext = {
             "target_python": self.target_python,
             "deployment_mode": self.deployment_mode,
+            "target_config": resolve_target_config(
+                self.project_path,
+                {
+                    "hosting_plan": self.hosting_plan,
+                    "runtime_version": self.target_python,
+                    "deployment_mode": self.deployment_mode,
+                },
+            ),
         }
 
         for section, checks in grouped.items():
@@ -309,6 +398,20 @@ class Doctor:
             }
 
             for rule in checks:
+                rule_id = rule.get("id", "unknown_rule")
+                # Config-based suppression (issue #290): report ignored rules
+                # with the explicit ``skip`` status instead of executing them.
+                if rule_id in self.ignore_rules:
+                    skip_item: CheckResult = {
+                        "rule_id": rule_id,
+                        "label": rule.get("label", rule_id),
+                        "value": ("Suppressed by pyproject [tool.azure-functions-doctor].ignore"),
+                        "status": "skip",
+                        "severity": _resolve_severity(rule),
+                        "tier": _resolve_tier(rule),
+                    }
+                    section_result["items"].append(skip_item)
+                    continue
                 # Time rule execution for logging
                 rule_start = time.time()
                 result = generic_handler(rule, self.project_path, context)
@@ -330,6 +433,15 @@ class Doctor:
                 severity = _resolve_severity(rule)
                 gate = _resolve_gate(rule)
                 tier = _resolve_tier(rule)
+                # A handler may refine severity/gate per finding (issue #343):
+                # e.g. a runtime-lifecycle check WARNs on a retiring runtime but
+                # FAILs on one past end-of-support. When absent, rule defaults win.
+                handler_severity = result.get("severity")
+                if handler_severity in _VALID_SEVERITIES:
+                    severity = str(handler_severity)
+                handler_gate = result.get("gate")
+                if isinstance(handler_gate, bool):
+                    gate = handler_gate
                 rule_id = rule.get("id", "unknown_rule")
                 if handler_status == "pass":
                     canonical = "pass"
@@ -355,6 +467,8 @@ class Doctor:
                     "tier": tier,
                 }
 
+                _apply_finding_contract_v2(item, result)
+
                 if failed and gate:
                     section_result["status"] = "fail"
 
@@ -372,9 +486,12 @@ class Doctor:
                     item["end_line"] = result["end_line"]
                 if "column" in result:
                     item["column"] = result["column"]
+                if "locations" in result:
+                    item["locations"] = result["locations"]
 
                 section_result["items"].append(item)
 
             results.append(section_result)
 
+        reset_extra_excludes(exclude_token)
         return results

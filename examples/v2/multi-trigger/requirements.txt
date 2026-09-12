@@ -1,2 +1,2 @@
-azure-functions
-azure-functions-doctor
+azure-functions==1.25.0
+azure-functions-doctor>=0.19,<1

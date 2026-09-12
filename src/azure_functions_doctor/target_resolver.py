@@ -5,26 +5,26 @@ import subprocess  # nosec B404
 import sys
 from typing import Callable, Dict, Optional, Tuple
 
+from azure_functions_doctor.compatibility import load_catalog
 from azure_functions_doctor.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-# Python versions supported by Azure Functions (2026). Anything outside this
-# inclusive major.minor set is unsupported and should fail diagnostics.
-SUPPORTED_PYTHON_VERSIONS: Tuple[str, ...] = ("3.10", "3.11", "3.12", "3.13", "3.14")
-
-# Python support is not uniform across Azure Functions hosting plans. Linux
-# Consumption is capped at Python 3.12 ("the last Python version supported for
-# Linux Consumption plan apps"), while Flex Consumption, Premium (Elastic
-# Premium), and Dedicated (App Service) plans track the newer runtimes. A flat
-# allow-list would pass invalid combinations such as Python 3.14 on Linux
-# Consumption, so support is modelled as a per-plan matrix.
-PYTHON_HOSTING_PLAN_MATRIX: Dict[str, Tuple[str, ...]] = {
-    "linux-consumption": ("3.10", "3.11", "3.12"),
-    "flex-consumption": ("3.10", "3.11", "3.12", "3.13", "3.14"),
-    "premium": ("3.10", "3.11", "3.12", "3.13", "3.14"),
-    "dedicated": ("3.10", "3.11", "3.12", "3.13", "3.14"),
-}
+# Python versions supported by Azure Functions and the per-plan support matrix are
+# derived from the version-controlled compatibility catalog
+# (assets/compatibility/catalog.json), the single auditable source of truth for
+# every date/compatibility fact. The names below are preserved for backward
+# compatibility with existing handler and CLI imports.
+#
+# Python support is not uniform across hosting plans: Linux Consumption is capped
+# at Python 3.12 ("the last Python version supported for Linux Consumption plan
+# apps"), while Flex Consumption, Premium (Elastic Premium), and Dedicated (App
+# Service) plans track the newer runtimes. A flat allow-list would pass invalid
+# combinations such as Python 3.14 on Linux Consumption, so support is modelled as
+# a per-plan matrix.
+_CATALOG = load_catalog()
+SUPPORTED_PYTHON_VERSIONS: Tuple[str, ...] = _CATALOG.supported_python_versions()
+PYTHON_HOSTING_PLAN_MATRIX: Dict[str, Tuple[str, ...]] = dict(_CATALOG.hosting_plan_matrix())
 
 # Hosting plans recognized by the Python-version compatibility matrix.
 SUPPORTED_HOSTING_PLANS: Tuple[str, ...] = tuple(PYTHON_HOSTING_PLAN_MATRIX)
@@ -69,7 +69,6 @@ def is_supported_python_for_plan(version: str, plan: str) -> bool:
     if parsed is None:
         return False
     supported = {_major_minor(v) for v in allowed}
-    return parsed in supported
     return parsed in supported
 
 

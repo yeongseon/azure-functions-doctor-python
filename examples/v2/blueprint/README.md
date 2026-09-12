@@ -30,7 +30,7 @@ func start
 ## Diagnose
 
 ```bash
-azure-functions doctor --path examples/v2/blueprint
+azure-functions-doctor doctor --path examples/v2/blueprint
 ```
 
 All checks should pass for this example.

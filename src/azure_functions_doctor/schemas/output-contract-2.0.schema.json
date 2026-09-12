@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/yeongseon/azure-functions-doctor-python/blob/main/src/azure_functions_doctor/schemas/output-contract-2.0.schema.json",
+  "title": "azure-functions-doctor JSON output contract",
+  "description": "Machine-readable contract for `azure-functions-doctor doctor --format json` output (schema_version 2.0). Strict on finding identity and status/severity semantics; additive evolution is allowed in 0.x (additionalProperties true) but any field meaning change requires a migration note per docs/semver_policy.md.",
+  "type": "object",
+  "required": ["schema_version", "metadata", "results"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "const": "2.0" },
+    "metadata": {
+      "type": "object",
+      "required": ["tool_version", "generated_at", "target_path", "programming_model"],
+      "additionalProperties": true,
+      "properties": {
+        "tool_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "target_path": { "type": "string" },
+        "programming_model": {
+          "enum": ["v2", "mixed", "unsupported_v1", "unknown"]
+        },
+        "target_python": { "type": ["string", "null"] },
+        "deployment_mode": {
+          "enum": ["remote-build", "local", "local-prebuilt", "container"]
+        },
+        "hosting_plan": { "type": ["string", "null"] }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "category", "status", "items"],
+        "additionalProperties": true,
+        "properties": {
+          "title": { "type": "string" },
+          "category": { "type": "string" },
+          "status": { "enum": ["pass", "warn", "fail", "skip"] },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/finding" }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "finding": {
+      "type": "object",
+      "required": ["rule_id", "label", "value", "status", "severity", "tier"],
+      "additionalProperties": true,
+      "properties": {
+        "rule_id": { "type": "string", "pattern": "^check_[a-z0-9_]+$" },
+        "label": { "type": "string" },
+        "value": { "type": "string" },
+        "status": { "enum": ["pass", "warn", "fail", "skip"] },
+        "severity": { "enum": ["error", "warning", "info"] },
+        "tier": { "enum": ["core", "extended", "experimental"] },
+        "hint": { "type": "string" },
+        "hint_url": { "type": "string", "format": "uri" },
+        "file": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "end_line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 },
+        "evidence": { "type": "string" },
+        "expected": { "type": "string" },
+        "actual": { "type": "string" },
+        "source_url": { "type": "string", "format": "uri" },
+        "last_verified": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "catalog_version": { "type": "string" },
+        "analysis": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "const": "deterministic" }
+          },
+          "additionalProperties": true
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["file"],
+            "additionalProperties": true,
+            "properties": {
+              "file": { "type": "string" },
+              "line": { "type": ["integer", "null"], "minimum": 1 },
+              "end_line": { "type": ["integer", "null"], "minimum": 1 },
+              "column": { "type": ["integer", "null"], "minimum": 1 },
+              "message": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

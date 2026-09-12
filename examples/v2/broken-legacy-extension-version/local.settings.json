@@ -1,0 +1,1 @@
+{"Values": {"AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=example;AccountKey=placeholder", "FUNCTIONS_EXTENSION_VERSION": "~3"}}

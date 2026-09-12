@@ -17,6 +17,8 @@ Read this in: [한국어](README.ko.md) | [日本語](README.ja.md) | [简体中
 
 **Azure Functions Doctor** is the pre-deploy health gate for **Azure Functions Python v2** projects — a diagnostic CLI that catches configuration issues, missing dependencies, and environment problems before they cause runtime failures in production.
 
+> **Looking for the official `azure-functions-skills` doctor?** This is an independent, offline, deterministic Python package — see [how it compares](docs/comparison.md) and when to use each.
+
 ---
 
 Part of the **Azure Functions Python DX Toolkit**
@@ -35,9 +37,9 @@ Deploying a broken Azure Functions app is expensive — the worker starts, the h
 
 ## What it does
 
-- **30 diagnostic checks** — Python version, dependencies, host.json, Core Tools, Durable Functions, and more
+- **41 diagnostic checks** — Python version, dependencies, host.json, Core Tools, Durable Functions, and more
 - **Multiple output formats** — table, JSON, SARIF, JUnit for CI integration
-- **Profile support** — `minimal` or `full` rulesets depending on your needs
+- **Profile support** — `minimal`, `deploy`, `development`, or `full` rulesets depending on your needs
 - **Official GitHub Action** — `yeongseon/azure-functions-doctor@v1` for CI gates
 
 ## Scope
@@ -78,6 +80,32 @@ pip install -e .
 
 ## Quick Start
 
+**3 minutes, install to first fixed finding.** Clone this repo (for the demo
+fixture), install, run the doctor on a project that ships a real deploy-risk
+bug, then fix what it points at:
+
+```bash
+pip install azure-functions-doctor
+git clone https://github.com/yeongseon/azure-functions-doctor-python.git
+cd azure-functions-doctor-python
+
+# 1) Run the doctor on a broken fixture (dev-storage emulator leaked into infra)
+azure-functions-doctor doctor --path examples/v2/broken-dev-storage-leak
+
+# 2) Read the finding — it names the file, the risk, and the fix:
+#    Dev-storage emulator connection in deployable config (ships to production):
+#    - main.bicep
+#    Fix: provision a real storage account connection ...
+
+# 3) Fix it: point AzureWebJobsStorage at a real storage account in main.bicep,
+#    keep UseDevelopmentStorage=true only in local.settings.json. Re-run:
+#    the warning is gone and the exit code returns to 0.
+```
+
+Exit codes make it a CI gate: `0` when required checks pass, `1` on any
+required failure; optional findings warn without gating (`--profile` selects
+`minimal` / `deploy` / `development` / `full`, [details](#what-it-does)).
+
 Run the doctor in the current project:
 
 ```bash
@@ -110,6 +138,30 @@ azure-functions-doctor doctor --target-python 3.12
 
 Use `--target-python` when the Python running `azure-functions-doctor`
 is not the same as the Python version your Function App will run on Azure.
+
+### Project configuration (`pyproject.toml`)
+
+For per-project defaults, add a `[tool.azure-functions-doctor]` table to your
+`pyproject.toml`. This is a deliberately minimal surface for suppressing rules
+and scoping the scan:
+
+```toml
+[tool.azure-functions-doctor]
+# Rule ids to suppress. Suppressed rules are reported with the `skip`
+# status (never silently passed).
+ignore = ["check_application_insights", "check_core_tools"]
+
+# Extra path globs to exclude from scans, layered on top of the built-in
+# excluded directories (`.venv`, `node_modules`, `build`, ...). Globs are
+# matched against each path relative to the project root.
+exclude = ["legacy", "vendor/*.py"]
+```
+
+**Precedence.** CLI flags take precedence over configuration: `--profile` and
+`--rules` select the ruleset, and the config `ignore`/`exclude` then layer on
+top of the resolved run. Ignored rules that survive profile filtering are
+reported as `skip` rather than executed. There is no CLI equivalent for
+`ignore`/`exclude` in this minimal surface.
 
 ### Command name and deprecated aliases
 
@@ -165,9 +217,31 @@ The same command runs in CI pipelines — see [CI Integration](#ci-integration) 
 
 ## CI Integration
 
-Use `azure-functions-doctor` as a CI gate to block deployments on required failures.
+**Recipe — gate a PR job on the deploy profile** (exit 1 only on required
+failures; optional findings warn in the log):
 
-### GitHub Actions (CLI)
+```yaml
+- name: Pre-deploy health gate
+  run: |
+    pip install "azure-functions-doctor>=0.20,<1"
+    azure-functions-doctor doctor --path . --profile deploy --format junit --output doctor.xml
+```
+
+**Recipe — official GitHub Action with Code Scanning** (see
+[docs/examples/ci_integration.md](docs/examples/ci_integration.md) for the
+full set: Azure DevOps, pre-commit, VS Code, and a minimal SARIF recipe):
+
+```yaml
+- uses: yeongseon/azure-functions-doctor@v1
+  with:
+    path: .
+    profile: deploy
+    format: sarif
+    output: doctor.sarif
+    upload-sarif: true
+```
+
+## GitHub Actions (CLI)
 
 ```yaml
 - name: Run azure-functions-doctor
@@ -230,8 +304,17 @@ The default ruleset includes checks for:
 
 ## Examples
 
-- [examples/v2/http-trigger/README.md](examples/v2/http-trigger/README.md)
-- [examples/v2/multi-trigger/README.md](examples/v2/multi-trigger/README.md)
+| Scenario | Example | Demonstrates |
+| --- | --- | --- |
+| Healthy v2 HTTP app | [http-trigger](examples/v2/http-trigger/README.md) | Reference project; docs/e2e/Action anchor |
+| Multi-trigger + blueprint | [multi-trigger](examples/v2/multi-trigger/README.md) | Several trigger kinds in one app |
+| Healthy Flex Consumption | [flex-consumption](examples/v2/flex-consumption/README.md) | `functionAppConfig.runtime`, managed-identity deployment storage |
+| Unsupported Flex runtime | [broken-flex-runtime-config](examples/v2/broken-flex-runtime-config/README.md) | `check_flex_runtime_config` failure |
+| Legacy settings on Flex | [broken-flex-deprecated-settings](examples/v2/broken-flex-deprecated-settings/README.md) | Deprecated app-setting warnings |
+| Missing storage auth | [broken-flex-deployment-storage](examples/v2/broken-flex-deployment-storage/README.md) | Deployment-storage shape warnings |
+| Emulator leak in infra | [broken-dev-storage-leak](examples/v2/broken-dev-storage-leak/README.md) | `UseDevelopmentStorage=true` shipped in bicep |
+| Legacy `~3` pin | [broken-legacy-extension-version](examples/v2/broken-legacy-extension-version/README.md) | Extension-version warn + v3 lifecycle failure |
+| Monorepo subdirectory | [monorepo](examples/monorepo/README.md) | SARIF repo-root rebasing (`services/api`) |
 
 ## Requirements
 
@@ -256,7 +339,7 @@ type-based handler, and aggregates the results into per-section output:
 flowchart LR
     CLI["cli.py<br/>Typer CLI"] --> DOC["doctor.py<br/>Diagnostic runner"]
     DOC --> RULES[("assets/<br/>Rule inventory")]
-    DOC --> HDLR["handlers.py<br/>Type-based dispatch"]
+    DOC --> HDLR["handlers/registry.py<br/>Type-based dispatch"]
     HDLR --> TR["target_resolver.py<br/>Version resolution"]
     DOC --> RES["SectionResult<br/>+ CheckResult"]
     RES --> OUT["table / json<br/>sarif / junit"]
@@ -303,11 +386,11 @@ This repository includes `llms.txt` and `llms-full.txt` for LLM-friendly documen
 
 When working with this codebase, LLM assistants should:
 
-1. **Use `llms.txt` for quick reference** — the canonical package version (0.19.2), Python requirements (>=3.10,<3.15), CLI entry points
+1. **Use `llms.txt` for quick reference** — the canonical package version (0.20.0), Python requirements (>=3.10,<3.15), CLI entry points
 2. **Refer to `llms-full.txt` for implementation details** — output contracts, rule structure, custom rule patterns, handler types
 3. **Check `src/azure_functions_doctor/cli.py`** — authoritative source for CLI options and validation
 4. **Review `src/azure_functions_doctor/assets/rules/v2.json`** — complete ruleset with check definitions
-5. **Consult `src/azure_functions_doctor/handlers.py`** — diagnostic rule handlers and pattern matchers
+5. **Consult `src/azure_functions_doctor/handlers/registry.py`** — diagnostic rule handlers and pattern matchers (`handlers/_helpers.py` for shared primitives)
 
 For bug reports, feature requests, or documentation improvements, please open an issue or pull request on GitHub.
 

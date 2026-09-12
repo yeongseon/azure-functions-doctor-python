@@ -117,6 +117,7 @@ def test_openapi_version_mixing_skips_syntax_error(tmp_path: Path) -> None:
 
 
 def test_scan_before_spec_spec_before_scan_fails(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(
         tmp_path,
         "app.py",
@@ -124,27 +125,30 @@ def test_scan_before_spec_spec_before_scan_fails(tmp_path: Path) -> None:
     )
     scan = {"scan"}
     spec = {"build_spec"}
-    assert _collect_scan_before_spec(tmp_path, scan, spec) == ["app.py:build_spec"]
+    assert _collect_scan_before_spec(tmp_path, scan, spec)[0] == ["app.py:build_spec"]
     assert _status("scan_before_spec", tmp_path) == "fail"
 
 
 def test_scan_before_spec_correct_order_passes(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "app.py", "scan()\nbuild_spec()\n")
     assert _status("scan_before_spec", tmp_path) == "pass"
 
 
 def test_scan_before_spec_spec_without_scan_fails(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "app.py", "build_spec()\n")
-    assert _collect_scan_before_spec(tmp_path, {"scan"}, {"build_spec"}) == ["app.py:build_spec"]
+    assert _collect_scan_before_spec(tmp_path, {"scan"}, {"build_spec"})[0] == ["app.py:build_spec"]
     assert _status("scan_before_spec", tmp_path) == "fail"
 
 
 def test_scan_before_spec_no_spec_passes(tmp_path: Path) -> None:
     _write(tmp_path, "app.py", "scan()\n")
-    assert _collect_scan_before_spec(tmp_path, {"scan"}, {"build_spec"}) == []
+    assert _collect_scan_before_spec(tmp_path, {"scan"}, {"build_spec"})[0] == []
 
 
 def test_scan_before_spec_custom_names(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "app.py", "make_spec()\ndiscover()\n")
     assert (
         _status(
@@ -156,10 +160,18 @@ def test_scan_before_spec_custom_names(tmp_path: Path) -> None:
     )
 
 
+def test_scan_before_spec_skips_without_openapi_dependency(tmp_path: Path) -> None:
+    """Non-OpenAPI build() calls (e.g. durable-graph .build()) must not trip (#426)."""
+    _write(tmp_path, "app.py", "graph = GraphBuilder(nodes).build()\n")
+    _write(tmp_path, "requirements.txt", "azure-functions-durable-graph==0.3.0\n")
+    assert _status("scan_before_spec", tmp_path) == "skip"
+
+
 def test_scan_before_spec_real_openapi_names_default_condition(tmp_path: Path) -> None:
     # Regression (#248): the real azure-functions-openapi call names must be
     # recognised by the built-in default names baked into the handler, so the
     # rule fires even though v2.json's condition does not re-list them.
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(
         tmp_path,
         "app.py",
@@ -170,6 +182,7 @@ def test_scan_before_spec_real_openapi_names_default_condition(tmp_path: Path) -
 
 def test_scan_before_spec_real_openapi_names_correct_order_passes(tmp_path: Path) -> None:
     # Regression (#248): scanning before building the spec passes with defaults.
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(
         tmp_path,
         "app.py",
@@ -180,13 +193,13 @@ def test_scan_before_spec_real_openapi_names_correct_order_passes(tmp_path: Path
 
 def test_scan_before_spec_skips_syntax_error(tmp_path: Path) -> None:
     _write(tmp_path, "broken.py", "def f(:\n")
-    assert _collect_scan_before_spec(tmp_path, {"scan"}, {"build_spec"}) == []
+    assert _collect_scan_before_spec(tmp_path, {"scan"}, {"build_spec"})[0] == []
 
 
 def test_scan_before_spec_dotted_call_target(tmp_path: Path) -> None:
     # attribute-style call that resolves to a leaf name is still matched
     _write(tmp_path, "app.py", "api.build_spec()\napi.scan()\n")
-    assert _collect_scan_before_spec(tmp_path, {"scan"}, {"build_spec"}) == ["app.py:build_spec"]
+    assert _collect_scan_before_spec(tmp_path, {"scan"}, {"build_spec"})[0] == ["app.py:build_spec"]
 
 
 # ---------------------------------------------------------------------------
@@ -231,7 +244,9 @@ def test_langgraph_anonymous_auth_attribute_fails(tmp_path: Path) -> None:
         "function_app.py",
         _langgraph_app("@app.route(route='x', auth_level=func.AuthLevel.ANONYMOUS)"),
     )
-    assert _collect_anonymous_auth_routes(tmp_path) == ["function_app.py:handler"]
+    assert [lbl for lbl, _ln in _collect_anonymous_auth_routes(tmp_path)] == [
+        "function_app.py:handler"
+    ]
     assert _status("langgraph_anonymous_auth", tmp_path) == "fail"
 
 
@@ -273,9 +288,9 @@ def test_langgraph_anonymous_auth_flag_missing(tmp_path: Path) -> None:
         _langgraph_app("@app.route(route='x')"),
     )
     assert _collect_anonymous_auth_routes(tmp_path) == []
-    assert _collect_anonymous_auth_routes(tmp_path, flag_missing_auth_level=True) == [
-        "function_app.py:handler"
-    ]
+    assert [
+        lbl for lbl, _ln in _collect_anonymous_auth_routes(tmp_path, flag_missing_auth_level=True)
+    ] == ["function_app.py:handler"]
 
 
 def test_langgraph_anonymous_auth_skips_syntax_error(tmp_path: Path) -> None:
@@ -301,7 +316,7 @@ def test_durable_nondeterminism_flags_calls(tmp_path: Path) -> None:
         "    return x\n",
     )
     flagged = _collect_orchestrator_nondeterminism(tmp_path, _BLOCK, _DECOS)
-    assert flagged == ["function_app.py:orch -> random.randint"]
+    assert [lbl for lbl, _ln in flagged] == ["function_app.py:orch -> random.randint"]
     assert _status("durable_nondeterminism", tmp_path) == "fail"
 
 
@@ -334,7 +349,7 @@ def test_durable_nondeterminism_dotted_suffix_match(tmp_path: Path) -> None:
         "    return datetime.datetime.now()\n",
     )
     flagged = _collect_orchestrator_nondeterminism(tmp_path, {"datetime.now"}, _DECOS)
-    assert flagged == ["function_app.py:orch -> datetime.datetime.now"]
+    assert [lbl for lbl, _ln in flagged] == ["function_app.py:orch -> datetime.datetime.now"]
 
 
 def test_durable_nondeterminism_skips_syntax_error(tmp_path: Path) -> None:

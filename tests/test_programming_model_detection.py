@@ -223,6 +223,7 @@ x = 1
                         "severity": "error",
                         "tier": "core",
                         "hint": UNSUPPORTED_V1_HINT,
+                        "analysis": {"type": "deterministic"},
                     }
                 ],
             }
@@ -250,6 +251,7 @@ x = 1
                         "severity": "error",
                         "tier": "core",
                         "hint": UNKNOWN_HINT,
+                        "analysis": {"type": "deterministic"},
                     }
                 ],
             }

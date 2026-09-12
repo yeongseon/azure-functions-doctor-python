@@ -15,7 +15,7 @@ def run_diagnostics(
 
     Args:
         path: The file system path to the Azure Functions application.
-        profile: Optional rule profile ('minimal' or 'full').
+        profile: Optional rule profile ('minimal', 'deploy', 'development', or 'full').
 
     Returns:
         A list of SectionResult containing the results of each diagnostic check.

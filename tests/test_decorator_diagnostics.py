@@ -127,7 +127,9 @@ def test_collect_inverted_decorator_order_async_function(tmp_path: Path) -> None
         "@app.route(route='x')\n@validate_http\n@with_context\nasync def f():\n    return None\n",
         encoding="utf-8",
     )
-    assert helpers._collect_inverted_decorator_order(tmp_path, _ORDER) == ["function_app.py:f"]
+    assert [lbl for lbl, _ln in helpers._collect_inverted_decorator_order(tmp_path, _ORDER)] == [
+        "function_app.py:f"
+    ]
 
 
 def test_collect_inverted_decorator_order_skips_syntax_error(tmp_path: Path) -> None:
@@ -143,7 +145,9 @@ def test_collect_inverted_decorator_order_honors_custom_order(tmp_path: Path) ->
         "@a\n@b\ndef f():\n    return None\n", encoding="utf-8"
     )
     assert helpers._collect_inverted_decorator_order(tmp_path, ["a", "b"]) == []
-    assert helpers._collect_inverted_decorator_order(tmp_path, ["b", "a"]) == ["function_app.py:f"]
+    assert [
+        lbl for lbl, _ln in helpers._collect_inverted_decorator_order(tmp_path, ["b", "a"])
+    ] == ["function_app.py:f"]
 
 
 # ---------------------------------------------------------------------------
@@ -237,7 +241,7 @@ def test_collect_inverted_flags_validate_http_above_binding(tmp_path: Path) -> N
         "    return req\n",
         encoding="utf-8",
     )
-    assert helpers._collect_inverted_decorator_order(tmp_path, _ORDER) == [
+    assert [lbl for lbl, _ln in helpers._collect_inverted_decorator_order(tmp_path, _ORDER)] == [
         "function_app.py:handler"
     ]
 

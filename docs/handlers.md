@@ -3,9 +3,25 @@
 Handlers execute rule definitions from `src/azure_functions_doctor/assets/rules/v2.json`.
 
 Each rule has a `type`, and `HandlerRegistry` routes the rule to the corresponding
-handler implementation in the `src/azure_functions_doctor/handlers/` package
-(dispatch class in `registry.py`, shared helpers in `_helpers.py`). The public
-import path `azure_functions_doctor.handlers` is preserved.
+handler implementation in the `src/azure_functions_doctor/handlers/` package.
+`registry.py` owns registration and dispatch only; implementations live in
+per-domain modules composed as mixins (issue #387):
+
+| Module | Domain |
+| --- | --- |
+| `generic.py` | Version comparison, path/file/env/executable detection |
+| `dependencies.py` | requirements.txt / pyproject declarations, native-deployment risk, pinning |
+| `runtime.py` | Python / Functions runtime / hosting-plan lifecycle evaluators |
+| `monitoring.py` | Application Insights connection strings, host.json log-level conflicts |
+| `deployment.py` | Flex Consumption, FUNCTIONS_EXTENSION_VERSION, linuxFxVersion, host.json/site config |
+| `bindings.py` | Binding `connection=` resolution |
+| `project.py` | Blueprint registration, decorator ordering |
+| `durable.py` | Durable orchestrator determinism |
+| `integrations.py` | Endpoint metadata, OpenAPI versioning, LangGraph, OTel |
+
+Shared primitives stay in `_helpers.py`, and every public name is re-exported
+from `registry.py` for backward compatibility. The public import path
+`azure_functions_doctor.handlers` is preserved.
 
 ## Contract
 
@@ -204,7 +220,8 @@ The authoritative dispatch map is `_RULE_DISPATCH` in
 
 - `source_code_contains` supports a simple string mode and an AST-based mode.
 - `conditional_exists` is used for checks that only matter when a related feature is detected.
-- Handler implementations live in the `src/azure_functions_doctor/handlers/` package (`registry.py`).
+- Handler implementations live in the `src/azure_functions_doctor/handlers/` package
+  (domain modules listed above; dispatch in `registry.py`).
 
 ## Programmatic Usage Examples
 
@@ -261,6 +278,9 @@ def run_custom_rule(project_path: str) -> dict[str, str]:
 When adding a new handler:
 
 1. Extend the `Rule["type"]` literal in `handlers/_helpers.py`
-2. Implement `_handle_<name>(self, rule, path, context=None)` in `handlers/registry.py`, decorated with `@_rule_handler` (which registers it in `_RULE_DISPATCH`; `HandlerRegistry.__init__` binds it automatically)
+2. Implement `_handle_<name>(self, rule, path, context=None)` in the matching domain
+   module under `handlers/` (or a new one, added to the `HandlerRegistry` mixin bases in
+   `registry.py`), decorated with `@_rule_handler` (which registers it in
+   `_RULE_DISPATCH`; `HandlerRegistry.__init__` binds it automatically)
 3. Update `rules.schema.json`
 4. Add tests in `tests/test_handler.py`

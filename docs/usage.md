@@ -64,7 +64,8 @@ azure-functions-doctor doctor --target-python 3.12
 | `--output` | path | unset | Write output to file instead of stdout. |
 | `-v`, `--verbose` | flag | `false` | Show fix hints for non-passing checks (table mode). |
 | `--debug` | flag | `false` | Enable debug logging for troubleshooting. |
-| `--profile` | enum | `full` behavior | Rule profile: `minimal` or `full`. |
+| `--version` | Print the installed version and exit (no scan). |
+| `--profile` | enum | `full` behavior | Rule profile: `minimal` (required gating checks), `deploy` (Azure runtime/hosting/deployment correctness), `development` (local dev-environment checks), or `full` (all rules). |
 | `--rules` | path | unset | Custom rules file path. |
 | `--target-python` | string | unset | Override the Azure Functions target Python runtime: `3.10`, `3.11`, `3.12`, `3.13`, `3.14` (Preview). On the Linux Consumption plan, the maximum supported version is `3.12`. |
 | `--deployment-mode` | enum | `remote-build` | Deployment mode for dependency checks: `remote-build` (Azure installs from `requirements.txt`) or `local` (dependencies prebuilt/vendored locally, e.g. `.python_packages`). |
@@ -208,6 +209,34 @@ Use cases:
 - baseline compatibility checks
 
 Reference: [Minimal Profile](minimal_profile.md)
+
+### Deploy profile
+
+```bash
+azure-functions-doctor doctor --profile deploy
+```
+
+`deploy` runs the checks that govern **Azure runtime, hosting-plan, and
+deployment correctness** — the core-group rules that determine whether the app
+will start and run correctly once deployed. It excludes local
+developer-environment checks and ecosystem-integration rules.
+
+Use cases:
+
+- pre-deploy gates that focus on cloud-runtime correctness
+- CI on machines where local tooling (Core Tools, venv) is irrelevant
+
+### Development profile
+
+```bash
+azure-functions-doctor doctor --profile development
+```
+
+`development` runs the **local developer-environment** checks: virtual
+environment, Python executable, Azure Functions Core Tools, and
+`local.settings.json` presence. These help onboard a workstation but are not
+deployment blockers.
+
 
 ## Custom rules usage
 
@@ -375,7 +404,7 @@ Fix: Ensure `--path` points to an existing readable directory.
 
 Symptom: run fails with profile validation error.
 
-Fix: use only `minimal` or `full`.
+Fix: use only `minimal`, `deploy`, `development`, or `full`.
 
 ### Unsupported format
 

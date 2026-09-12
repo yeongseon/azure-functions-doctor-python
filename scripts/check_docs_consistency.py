@@ -98,9 +98,72 @@ def _check_rule_inventory() -> list[str]:
     return errors
 
 
+def _check_readme_rule_count() -> list[str]:
+    """Assert README's "N diagnostic checks" count matches the shipped ruleset."""
+    readme = ROOT / "README.md"
+    content = readme.read_text(encoding="utf-8")
+    match = re.search(r"\*\*(\d+) diagnostic checks\*\*", content)
+    if not match:
+        return [
+            "README.md: could not find a '**N diagnostic checks**' count to "
+            "verify against the rule inventory."
+        ]
+    documented = int(match.group(1))
+    actual = len(_rule_ids_from_json())
+    if documented != actual:
+        return [
+            f"README.md: documented '{documented} diagnostic checks' does not "
+            f"match the {actual} rules in v2.json. Update the count in README.md."
+        ]
+    return []
+
+
+# Historical/hand-maintained docs that legitimately cite old counts.
+_DOC_COUNT_EXEMPT = {
+    "changelog.md",  # per-release history (counts at the time of writing)
+}
+
+
+def _check_doc_rule_counts() -> list[str]:
+    """Assert every "N rules" count in docs/ matches the shipped ruleset.
+
+    Catches the drift class where README's count is verified but sibling docs
+    (semver policy, profile comparisons) silently keep an old total (issue:
+    three stale "29 rules" mentions survived a verified guard because the
+    guard only looked at README).
+    """
+    actual = len(_rule_ids_from_json())
+    errors: list[str] = []
+    patterns = (
+        # "All 41 current built-in rules" / "All 41 rules in `v2.json`"
+        re.compile(r"All (\d+) (?:current built-in )?rules"),
+        # Comparison tables: "| Built-in count | 41 rules | 6 rules |"
+        re.compile(r"\|\s*Built-in count\s*\|\s*(\d+) rules\s*\|"),
+    )
+    for doc in sorted((ROOT / "docs").glob("*.md")):
+        if doc.name in _DOC_COUNT_EXEMPT:
+            continue
+        content = doc.read_text(encoding="utf-8")
+        for pattern in patterns:
+            for match in pattern.finditer(content):
+                documented = int(match.group(1))
+                if documented != actual:
+                    errors.append(
+                        f"docs/{doc.name}: rule count '{documented}' "
+                        f'(near "{match.group(0)}") does not match the '
+                        f"{actual} rules in v2.json."
+                    )
+    return errors
+
+
 def main() -> int:
     version = _read_version()
-    errors = _check_version_refs(version) + _check_rule_inventory()
+    errors = (
+        _check_version_refs(version)
+        + _check_rule_inventory()
+        + _check_readme_rule_count()
+        + _check_doc_rule_counts()
+    )
     if errors:
         print("Documentation consistency check FAILED:")
         for err in errors:
