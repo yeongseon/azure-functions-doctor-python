@@ -116,8 +116,10 @@ jobs:
     assert lint_mod.check_workflow(text, "ci.yml", _PINNED) == []
 
 
-def test_interpreter_guard_makes_it_clean() -> None:
-    # Routes through hatch but proves the interpreter matches the matrix cell.
+def test_interpreter_guard_alone_is_not_enough() -> None:
+    # Routes tests through hatch (hatch run pytest) with only a version_info
+    # guard. The guard asserts the top-level interpreter, but the tests still
+    # run on the pinned hatch env -- so this must be FLAGGED, not cleared.
     text = (
         _MATRIX_BLOCK
         + """
@@ -128,4 +130,5 @@ def test_interpreter_guard_makes_it_clean() -> None:
         # version_info guard tied to matrix.python-version
 """
     )
-    assert lint_mod.check_workflow(text, "ci.yml", _PINNED) == []
+    errors = lint_mod.check_workflow(text, "ci.yml", _PINNED)
+    assert errors and "runs tests through Hatch" in errors[0]
