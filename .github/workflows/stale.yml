@@ -151,6 +151,7 @@ jobs:
               /^docs\/.+$/,
               /^chore\/.+$/,
               /^ci\/.+$/,
+              /^build\/.+$/,
               /^codex\/.+$/,
               /^main$/
             ];
@@ -166,6 +167,7 @@ jobs:
                 - docs/<description>
                 - chore/<description>
                 - ci/<description>
+                - build/<description>
                 - codex/<description>
                 - main`);
             } else {
@@ -188,5 +190,5 @@ jobs:
               owner,
               repo,
               issue_number: prNumber,
-              body: 'Warning: branch naming validation failed\n\nYour branch name `' + branchName + '` does not follow our naming conventions.\n\nPlease rename your branch to follow one of these patterns:\n- `feat/<description>` for new features\n- `fix/<description>` for bug fixes\n- `docs/<description>` for documentation changes\n- `chore/<description>` for maintenance tasks\n- `ci/<description>` for CI/CD changes\n- `codex/<description>` for Codex-generated changes\n\nTo rename your branch:\n1. `git checkout ' + branchName + '`\n2. `git branch -m feat/your-new-branch-name`\n3. `git push origin --delete ' + branchName + '`\n4. `git push origin feat/your-new-branch-name`\n\nOnce you have renamed the branch, please update the PR head branch.'
+              body: 'Warning: branch naming validation failed\n\nYour branch name `' + branchName + '` does not follow our naming conventions.\n\nPlease rename your branch to follow one of these patterns:\n- `feat/<description>` for new features\n- `fix/<description>` for bug fixes\n- `docs/<description>` for documentation changes\n- `chore/<description>` for maintenance tasks\n- `ci/<description>` for CI/CD changes\n- `build/<description>` for build system and dependency changes\n- `codex/<description>` for Codex-generated changes\n\nTo rename your branch:\n1. `git checkout ' + branchName + '`\n2. `git branch -m feat/your-new-branch-name`\n3. `git push origin --delete ' + branchName + '`\n4. `git push origin feat/your-new-branch-name`\n\nOnce you have renamed the branch, please update the PR head branch.'
             });
