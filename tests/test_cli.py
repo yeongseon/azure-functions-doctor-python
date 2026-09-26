@@ -10,6 +10,7 @@ from typer.testing import CliRunner
 
 import azure_functions_doctor.cli as cli_module
 from azure_functions_doctor.cli import cli as app
+from azure_functions_doctor.doctor import Doctor
 
 runner = CliRunner()
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
@@ -142,6 +143,68 @@ def test_cli_junit_output() -> None:
         assert len(failure_els) + len(skipped_els) <= 1, msg
     expected_exit = 1 if failures > 0 else 0
     assert result.exit_code == expected_exit
+
+
+def test_cli_junit_round_trips_xml_sensitive_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """CI consumers receive the original diagnostic values after parsing JUnit XML."""
+    section_title = 'Runtime & <Functions> "測試"'
+    failure_label = 'Required <setting> & "name"'
+    failure_value = 'Missing & invalid <value> "é"'
+    failure_hint = 'Set "A&B" to <valid> ✓'
+    skipped_label = 'Optional <check> & "name"'
+    skipped_value = 'Not run: "x" & <y>'
+    skipped_hint = 'Review <config> & retry 日本語'
+    results = [
+        {
+            "title": section_title,
+            "items": [
+                {"status": "pass", "label": "Passed & <safe>", "value": "ok"},
+                {
+                    "status": "fail",
+                    "label": failure_label,
+                    "value": failure_value,
+                    "hint": failure_hint,
+                },
+                {
+                    "status": "warn",
+                    "label": skipped_label,
+                    "value": skipped_value,
+                    "hint": skipped_hint,
+                },
+                {"status": "skip", "label": "Skipped & <later>", "value": "not applicable"},
+            ],
+        }
+    ]
+    monkeypatch.setattr(Doctor, "run_all_checks", lambda self, rules=None: results)
+
+    result = runner.invoke(app, ["doctor", "--path", str(tmp_path), "--format", "junit"])
+
+    assert result.exit_code == 1
+    suite = ET.fromstring(result.output)
+    assert suite.attrib["tests"] == "4"
+    assert suite.attrib["failures"] == "1"
+    assert suite.attrib["skipped"] == "2"
+    cases = suite.findall("testcase")
+    assert len(cases) == 4
+    assert all(case.attrib["classname"] == section_title for case in cases)
+    assert cases[0].attrib["name"] == "Passed & <safe>"
+    assert cases[0].find("failure") is None
+    assert cases[0].find("skipped") is None
+    assert cases[1].attrib["name"] == failure_label
+    failure = cases[1].find("failure")
+    assert failure is not None
+    assert failure.attrib["message"] == failure_value
+    assert failure.text == failure_hint
+    assert cases[2].attrib["name"] == skipped_label
+    skipped = cases[2].find("skipped")
+    assert skipped is not None
+    assert skipped.attrib["message"] == skipped_value
+    assert skipped.text == skipped_hint
+    explicit_skip = cases[3].find("skipped")
+    assert explicit_skip is not None
+    assert explicit_skip.attrib["message"] == "not applicable"
 
 
 def test_cli_json_output_includes_programming_model_for_unknown_fixture() -> None:
