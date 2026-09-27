@@ -1,6 +1,6 @@
 name: General Issue
 description: Report a general issue, question, or discussion topic
-title: ""
+title: "chore: "
 labels: ["triage"]
 assignees: []
 
@@ -9,6 +9,8 @@ body:
     attributes:
       value: |
         Thank you for opening an issue! This template is for general issues that don't fit into bug reports or feature requests.
+
+        The title is prefilled with `chore: `. If the issue is better described by another Conventional Commit type, replace it: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `ci:`, `build:` or `perf:`.
         
         **Note**: For questions or discussions, consider using [GitHub Discussions](https://github.com/yeongseon/azure-functions-doctor-python/discussions) instead.
 
