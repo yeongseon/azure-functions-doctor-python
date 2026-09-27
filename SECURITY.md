@@ -7,7 +7,7 @@ responsibly and avoid public disclosure until a fix is available.
 
 ### Preferred: GitHub Security Advisory
 
-1. Go to the [Security Advisories page](https://github.com/yeongseon/azure-functions-doctor/security/advisories/new)
+1. Go to the [Security Advisories page](https://github.com/yeongseon/azure-functions-doctor-python/security/advisories/new)
 2. Click "Report a vulnerability"
 3. Submit the details in the private advisory
 

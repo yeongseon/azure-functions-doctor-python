@@ -85,7 +85,7 @@ body:
       description: If applicable, show how you would use this feature with examples.
       placeholder: |
         # Example command
-  azure-functions doctor --my-new-feature
+        azure-functions doctor --my-new-feature
         
         # Expected output
         ...
