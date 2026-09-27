@@ -155,7 +155,7 @@ def test_cli_junit_round_trips_xml_sensitive_diagnostics(
     failure_hint = 'Set "A&B" to <valid> ✓'
     skipped_label = 'Optional <check> & "name"'
     skipped_value = 'Not run: "x" & <y>'
-    skipped_hint = 'Review <config> & retry 日本語'
+    skipped_hint = "Review <config> & retry 日本語"
     results = [
         {
             "title": section_title,
