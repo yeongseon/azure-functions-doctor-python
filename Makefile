@@ -48,6 +48,10 @@ hatch-clean: ensure-hatch
 format: ensure-hatch
 	@$(HATCH) run format
 
+.PHONY: format-check
+format-check: ensure-hatch
+	@$(HATCH) run format-check
+
 .PHONY: style
 style: ensure-hatch
 	@$(HATCH) run style
