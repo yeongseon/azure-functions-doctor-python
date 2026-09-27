@@ -1,6 +1,6 @@
 name: General Issue
 description: Report a general issue, question, or discussion topic
-title: "[Issue]: "
+title: ""
 labels: ["triage"]
 assignees: []
 
