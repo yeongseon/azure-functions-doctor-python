@@ -3,6 +3,33 @@
 ## Purpose
 `azure-functions-doctor` is a Python CLI that diagnoses common Azure Functions project issues.
 
+## Repository Identity
+
+- Project: `azure-functions-doctor`
+- Project type: Python library and CLI
+- Runtime scope: Azure Functions Python v2 programming model
+- Minimum supported Python: `3.10`
+- Packaging: `pyproject.toml` with Hatch
+
+## Root vs Docs
+
+Use the repository root for engineering and planning documents:
+
+- `AGENTS.md`: contribution and automation rules
+- `DESIGN.md`: architecture and design principles
+- `PRD.md`: product scope and user-facing goals
+
+Use `docs/` for user-facing documentation only:
+
+- installation
+- usage
+- API reference
+- examples
+- diagnostics and guides
+
+If a change materially affects behavior, architecture, or project positioning, update the
+relevant root document in the same pull request or commit series.
+
 ## Read First
 - `README.md`
 - `CONTRIBUTING.md`
@@ -121,6 +148,61 @@ Release verification is layered; each tier catches a different failure class, an
    - Treat any new `RuntimeWarning`/`DeprecationWarning` surfaced by this library during the cookbook run as a release-blocking signal — decorator-order and API-drift problems are reported as warnings, so a clean run (zero warnings from this package) is part of the release gate.
    - If the cookbook pins a lower bound (`azure-functions-doctor>=X.Y,<1`), bump it to the new minor in the same verification PR so examples are tested against the version they advertise.
    - A release is **not** considered done until the cookbook passes on the published version.
+
+## Golden Commands
+
+Use Makefile entry points only. Do not bypass the Makefile in CI or contributor guidance.
+
+| Purpose | Command |
+| --- | --- |
+| Environment setup | `make install` |
+| Format code | `make format` |
+| Check formatting (`src`, `tests`) | `make format-check` |
+| Lint | `make lint` |
+| Type check | `make typecheck` |
+| Tests | `make test` |
+| Coverage | `make cov` |
+| Full validation | `make check-all` |
+| Docs build | `make docs` |
+| Package build | `make build` |
+
+## Compatibility Rules
+
+- Runtime code must remain compatible with Python `3.10`.
+- Public APIs must be fully typed.
+- Avoid silent behavior changes.
+- Breaking changes require explicit documentation and versioning discussion.
+
+## Testing Rules
+
+- Public APIs require tests.
+- Bug fixes require regression tests.
+- Representative and complex examples must remain smoke-tested.
+- `make check-all` is the minimum merge gate.
+
+## Commit Rules
+
+Use Conventional Commits:
+
+```text
+<type>: <short imperative summary>
+```
+
+Allowed types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `ci`
+
+## Agent Rules
+
+When using AI-assisted development:
+
+- Prefer small, reviewable changes.
+- Do not guess about behavior that can be verified.
+- Keep repository structure aligned with sibling repositories.
+- Update docs, examples, and tests together when behavior changes.
+
+## Final Rule
+
+If it is not automated, it will drift.
+If it is not documented, it is not a stable rule.
 
 ## Branch Hygiene
 
