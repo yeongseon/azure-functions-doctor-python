@@ -1,9 +1,9 @@
+from collections.abc import Callable
 from pathlib import Path
 import re
 import shutil
 import subprocess  # nosec B404
 import sys
-from typing import Callable, Dict, Optional, Tuple
 
 from azure_functions_doctor.compatibility import load_catalog
 from azure_functions_doctor.logging_config import get_logger
@@ -23,14 +23,14 @@ logger = get_logger(__name__)
 # combinations such as Python 3.14 on Linux Consumption, so support is modelled as
 # a per-plan matrix.
 _CATALOG = load_catalog()
-SUPPORTED_PYTHON_VERSIONS: Tuple[str, ...] = _CATALOG.supported_python_versions()
-PYTHON_HOSTING_PLAN_MATRIX: Dict[str, Tuple[str, ...]] = dict(_CATALOG.hosting_plan_matrix())
+SUPPORTED_PYTHON_VERSIONS: tuple[str, ...] = _CATALOG.supported_python_versions()
+PYTHON_HOSTING_PLAN_MATRIX: dict[str, tuple[str, ...]] = dict(_CATALOG.hosting_plan_matrix())
 
 # Hosting plans recognized by the Python-version compatibility matrix.
-SUPPORTED_HOSTING_PLANS: Tuple[str, ...] = tuple(PYTHON_HOSTING_PLAN_MATRIX)
+SUPPORTED_HOSTING_PLANS: tuple[str, ...] = tuple(PYTHON_HOSTING_PLAN_MATRIX)
 
 
-def _major_minor(version: str) -> Optional[Tuple[int, int]]:
+def _major_minor(version: str) -> tuple[int, int] | None:
     """Return the ``(major, minor)`` pair for a version string, or ``None``."""
     match = _PYTHON_VERSION_RE.search(version)
     if not match:
@@ -72,7 +72,7 @@ def is_supported_python_for_plan(version: str, plan: str) -> bool:
     return parsed in supported
 
 
-def _resolve_python(override: Optional[str] = None) -> str:
+def _resolve_python(override: str | None = None) -> str:
     """Resolve the running Python interpreter version."""
     return override if override is not None else sys.version.split()[0]
 
@@ -81,8 +81,8 @@ _PYTHON_VERSION_RE = re.compile(r"(\d+\.\d+(?:\.\d+)?)")
 
 
 def resolve_python_target(
-    project_path: Optional[Path] = None, override: Optional[str] = None
-) -> Tuple[str, str]:
+    project_path: Path | None = None, override: str | None = None
+) -> tuple[str, str]:
     """Resolve the Python version to diagnose against, with provenance.
 
     Precedence (first match wins):
@@ -121,7 +121,7 @@ def resolve_python_target(
     return sys.version.split()[0], "tool-runtime"
 
 
-def _resolve_func_core_tools(override: Optional[str] = None) -> str:
+def _resolve_func_core_tools(override: str | None = None) -> str:
     """Resolve the installed Azure Functions Core Tools version."""
     func_path = shutil.which("func")
     if not func_path:
@@ -148,13 +148,13 @@ def _resolve_func_core_tools(override: Optional[str] = None) -> str:
 
 
 # Registry mapping a target name to its resolver callable.
-_TARGET_RESOLVERS: Dict[str, Callable[[Optional[str]], str]] = {
+_TARGET_RESOLVERS: dict[str, Callable[[str | None], str]] = {
     "python": _resolve_python,
     "func_core_tools": _resolve_func_core_tools,
 }
 
 
-def resolve_target_value(target: str, override: Optional[str] = None) -> str:
+def resolve_target_value(target: str, override: str | None = None) -> str:
     """
     Resolve the current value of a target used in version comparison or diagnostics.
 

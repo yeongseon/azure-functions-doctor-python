@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from datetime import date
 import importlib.resources
 import json
-from typing import Literal, Optional
+from typing import Literal
 
 from azure_functions_doctor.logging_config import get_logger
 
@@ -48,7 +48,7 @@ _MONTH_NAMES = (
 )
 
 
-def _parse_major_minor(version: str) -> Optional[tuple[int, int]]:
+def _parse_major_minor(version: str) -> tuple[int, int] | None:
     """Return the ``(major, minor)`` pair for a ``"3.12"``-style string."""
     parts = version.split(".")
     if len(parts) < 2:
@@ -90,7 +90,7 @@ class SupportEnd:
             )
         return self.value
 
-    def end_date(self) -> Optional[date]:
+    def end_date(self) -> date | None:
         """Return the last calendar day covered by this support-end value.
 
         For month precision the last day of the month is used, and for year
@@ -125,12 +125,12 @@ class Fact:
     source_url: str
     last_verified: str
     verification_notes: str
-    status: Optional[str] = None
-    support_end: Optional[SupportEnd] = None
-    max_python: Optional[str] = None
-    supersedes: Optional[str] = None
+    status: str | None = None
+    support_end: SupportEnd | None = None
+    max_python: str | None = None
+    supersedes: str | None = None
 
-    def effective_status(self, today: Optional[date] = None) -> Optional[str]:
+    def effective_status(self, today: date | None = None) -> str | None:
         """Return the status reconciled with ``today`` and ``support_end``.
 
         The stored ``status`` is the source-verified baseline. When an
@@ -171,7 +171,7 @@ class Catalog:
     sources: dict[str, str]
     facts: tuple[Fact, ...]
 
-    def get_fact(self, fact_id: str) -> Optional[Fact]:
+    def get_fact(self, fact_id: str) -> Fact | None:
         """Return the fact with ``fact_id`` or ``None``."""
         for fact in self.facts:
             if fact.fact_id == fact_id:
@@ -191,7 +191,7 @@ class Catalog:
         ]
         return tuple(sorted(versions, key=lambda v: _parse_major_minor(v) or (0, 0)))
 
-    def supported_python_versions(self, as_of: Optional[date] = None) -> tuple[str, ...]:
+    def supported_python_versions(self, as_of: date | None = None) -> tuple[str, ...]:
         """Return Python versions still supported as of ``as_of`` (default today).
 
         A version is supported unless its effective status (baseline status
@@ -208,7 +208,7 @@ class Catalog:
         """Backward-compatible alias for :meth:`known_python_versions`."""
         return self.known_python_versions()
 
-    def python_lifecycle_fact(self, version: str) -> Optional[Fact]:
+    def python_lifecycle_fact(self, version: str) -> Fact | None:
         """Return the ``python_runtime_lifecycle`` fact for a Python ``version``."""
         target = _parse_major_minor(version)
         if target is None:
@@ -219,12 +219,12 @@ class Catalog:
                 return fact
         return None
 
-    def python_eos(self, version: str) -> Optional[SupportEnd]:
+    def python_eos(self, version: str) -> SupportEnd | None:
         """Return the published end-of-support date for a Python ``version``."""
         fact = self.python_lifecycle_fact(version)
         return fact.support_end if fact is not None else None
 
-    def functions_runtime_fact(self, runtime: str) -> Optional[Fact]:
+    def functions_runtime_fact(self, runtime: str) -> Fact | None:
         """Return the plan-agnostic ``functions_runtime_lifecycle`` fact for a
         runtime like ``"4.x"`` (the fact whose ``applies_to`` has no
         ``hosting_plan`` qualifier). Returns ``None`` when unknown.
@@ -237,7 +237,7 @@ class Catalog:
                 return fact
         return None
 
-    def functions_runtime_plan_fact(self, runtime: str, hosting_plan: str) -> Optional[Fact]:
+    def functions_runtime_plan_fact(self, runtime: str, hosting_plan: str) -> Fact | None:
         """Return a plan-specific ``functions_runtime_lifecycle`` fact (e.g. the
         v3-on-Linux-Consumption stop-running fact) or ``None``.
         """
@@ -249,7 +249,7 @@ class Catalog:
                 return fact
         return None
 
-    def hosting_plan_lifecycle_fact(self, hosting_plan: str) -> Optional[Fact]:
+    def hosting_plan_lifecycle_fact(self, hosting_plan: str) -> Fact | None:
         """Return the ``hosting_plan_lifecycle`` fact for ``hosting_plan`` or
         ``None`` when the plan has no published retirement.
         """
@@ -258,7 +258,7 @@ class Catalog:
                 return fact
         return None
 
-    def flex_deprecated_settings_fact(self) -> Optional[Fact]:
+    def flex_deprecated_settings_fact(self) -> Fact | None:
         """Return the ``flex_deprecated_settings`` catalog fact or ``None``.
 
         This single fact carries the source URL and freshness metadata for the
@@ -289,7 +289,7 @@ class Catalog:
                 )
         return matrix
 
-    def freshness(self, today: Optional[date] = None) -> Freshness:
+    def freshness(self, today: date | None = None) -> Freshness:
         """Return the catalog's freshness state relative to ``today``."""
         current = today if today is not None else date.today()
         try:
@@ -306,7 +306,7 @@ class Catalog:
         )
 
 
-def _parse_support_end(raw: Optional[dict[str, object]]) -> Optional[SupportEnd]:
+def _parse_support_end(raw: dict[str, object] | None) -> SupportEnd | None:
     if raw is None:
         return None
     value = raw.get("value")
@@ -368,7 +368,7 @@ def _build_catalog(raw: dict[str, object]) -> Catalog:
     )
 
 
-_CATALOG_CACHE: Optional[Catalog] = None
+_CATALOG_CACHE: Catalog | None = None
 
 
 def load_catalog() -> Catalog:

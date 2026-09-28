@@ -1,7 +1,6 @@
 """Tests for the Flex Consumption runtime config check (issue #345)."""
 
 from pathlib import Path
-from typing import Optional
 
 from azure_functions_doctor.deploy_config import ResolvedField, TargetConfig
 from azure_functions_doctor.handlers._helpers import RuleContext
@@ -15,9 +14,9 @@ from azure_functions_doctor.handlers.registry import (
 
 def _target_config(
     *,
-    hosting_plan: Optional[str] = None,
-    runtime_name: Optional[str] = None,
-    runtime_version: Optional[str] = None,
+    hosting_plan: str | None = None,
+    runtime_name: str | None = None,
+    runtime_version: str | None = None,
 ) -> TargetConfig:
     """Build a minimal :class:`TargetConfig` for handler-level tests."""
     unknown = ResolvedField(None, "unknown")
@@ -135,7 +134,7 @@ class TestInfraDeclaresLinuxFxVersion:
 
 
 class TestFlexHandlerWiring:
-    def _run(self, context: Optional[RuleContext], path: Path) -> dict[str, object]:
+    def _run(self, context: RuleContext | None, path: Path) -> dict[str, object]:
         registry = HandlerRegistry()
         return dict(registry._handle_flex_runtime_config({}, path, context))
 
@@ -180,7 +179,7 @@ class TestFlexHandlerWiring:
 class TestLinuxFxVersionScoping:
     """check_linux_fx_version should defer to the Flex check for Flex apps."""
 
-    def _run(self, context: Optional[RuleContext], path: Path) -> dict[str, object]:
+    def _run(self, context: RuleContext | None, path: Path) -> dict[str, object]:
         registry = HandlerRegistry()
         return dict(registry._handle_linux_fx_version({}, path, context))
 

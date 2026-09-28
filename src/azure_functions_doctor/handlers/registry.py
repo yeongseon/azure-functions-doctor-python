@@ -6,8 +6,8 @@ HandlerRegistry composes them as mixins and owns only registration and
 dispatch. Public names are re-exported here for backward compatibility.
 """
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict, Optional
 
 from azure_functions_doctor.handlers._helpers import (
     _RULE_DISPATCH,
@@ -92,14 +92,12 @@ class HandlerRegistry(
     """Registry for diagnostic check handlers with individual handler methods."""
 
     def __init__(self) -> None:
-        self._handlers: Dict[str, Callable[[Rule, Path, Optional[RuleContext]], HandlerResult]] = {
+        self._handlers: dict[str, Callable[[Rule, Path, RuleContext | None], HandlerResult]] = {
             check_type: getattr(self, method_name)
             for check_type, method_name in _RULE_DISPATCH.items()
         }
 
-    def handle(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
-    ) -> HandlerResult:
+    def handle(self, rule: Rule, path: Path, context: RuleContext | None = None) -> HandlerResult:
         """Route rule execution to appropriate handler."""
         check_type = rule.get("type")
         if check_type is None:
@@ -119,7 +117,7 @@ class HandlerRegistry(
 _registry = HandlerRegistry()
 
 
-def generic_handler(rule: Rule, path: Path, context: Optional[RuleContext] = None) -> HandlerResult:
+def generic_handler(rule: Rule, path: Path, context: RuleContext | None = None) -> HandlerResult:
     """
     Execute a diagnostic rule based on its type and condition.
 

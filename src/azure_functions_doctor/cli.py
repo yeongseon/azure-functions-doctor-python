@@ -1,10 +1,11 @@
+from collections.abc import Mapping
 from datetime import datetime, timezone
 import hashlib
 import json
 import os
 from pathlib import Path
 import time
-from typing import Annotated, Mapping, Optional, cast
+from typing import Annotated, cast
 
 from rich.console import Console
 from rich.text import Text
@@ -67,10 +68,10 @@ def _main(
 def _validate_inputs(
     path: str,
     format_type: str,
-    output: Optional[Path],
-    target_python: Optional[str] = None,
-    deployment_mode: Optional[str] = None,
-    hosting_plan: Optional[str] = None,
+    output: Path | None,
+    target_python: str | None = None,
+    deployment_mode: str | None = None,
+    hosting_plan: str | None = None,
 ) -> None:
     """Validate CLI inputs before processing."""
     try:
@@ -146,14 +147,14 @@ def _validate_inputs(
         )
 
 
-def _write_output(content: str, output: Optional[Path], label: str) -> None:
+def _write_output(content: str, output: Path | None, label: str) -> None:
     if output:
         try:
             output.write_text(content, encoding="utf-8")
             console.print(
                 f"[green]{format_status_icon('pass')} {label} output saved to:[/green] {output}"
             )
-        except (OSError, IOError, PermissionError) as e:
+        except (OSError, PermissionError) as e:
             console.print(
                 f"[red]{format_status_icon('fail')} Failed to write {label} output:[/red] {e}"
             )
@@ -173,11 +174,9 @@ def doctor(
     format: Annotated[
         str, typer.Option(help="Output format: 'table', 'json', 'sarif', or 'junit'")
     ] = "table",
-    output: Annotated[
-        Optional[Path], typer.Option(help="Optional path to save output result")
-    ] = None,
+    output: Annotated[Path | None, typer.Option(help="Optional path to save output result")] = None,
     profile: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             help=(
                 "Rule profile: 'minimal' (required gating checks), 'deploy' "
@@ -186,18 +185,16 @@ def doctor(
             ),
         ),
     ] = None,
-    rules: Annotated[
-        Optional[Path], typer.Option(help="Optional path to a custom rules file")
-    ] = None,
+    rules: Annotated[Path | None, typer.Option(help="Optional path to a custom rules file")] = None,
     summary_json: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             "--summary-json",
             help="Write a JSON summary of counts (passed/warned/failed) to this path",
         ),
     ] = None,
     target_python: Annotated[
-        Optional[str], typer.Option("--target-python", help="Override target Python runtime")
+        str | None, typer.Option("--target-python", help="Override target Python runtime")
     ] = None,
     deployment_mode: Annotated[
         str,
@@ -211,7 +208,7 @@ def doctor(
         ),
     ] = "remote-build",
     hosting_plan: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--hosting-plan",
             help=(

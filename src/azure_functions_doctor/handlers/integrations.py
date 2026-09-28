@@ -4,7 +4,6 @@ Split out of handlers/registry.py; registration/dispatch stays there.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from azure_functions_doctor.handlers._helpers import (
     HandlerResult,
@@ -34,7 +33,7 @@ class IntegrationHandlers:
 
     @_rule_handler
     def _handle_endpoint_metadata(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Warn when route handlers lack @validate_http in a validation-enabled project."""
         if not _project_declares_validation_dep(path):
@@ -78,7 +77,7 @@ class IntegrationHandlers:
 
     @_rule_handler
     def _handle_openapi_version_mixing(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Detect when two or more OpenAPI versions (3.0/3.1/3.2) appear together."""
         signals = _collect_openapi_version_mixing(path)
@@ -100,7 +99,7 @@ class IntegrationHandlers:
 
     @_rule_handler
     def _handle_scan_before_spec(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Detect when the OpenAPI spec is built before endpoints are scanned."""
         if not _project_declares_openapi_dep(path):
@@ -167,7 +166,7 @@ class IntegrationHandlers:
 
     @_rule_handler
     def _handle_langgraph_anonymous_auth(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Detect when a LangGraph project exposes routes with anonymous auth."""
         if not _project_imports_langgraph(path):
@@ -203,7 +202,7 @@ class IntegrationHandlers:
 
     @_rule_handler
     def _handle_unsupported_metadata_version(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Detect when metadata declares an unsupported version."""
         condition = rule.get("condition", {}) or {}
@@ -229,7 +228,7 @@ class IntegrationHandlers:
 
     @_rule_handler
     def _handle_otel_activation(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Warn when the project opts into logging OTel trace-context activation but
         does not declare an ``opentelemetry`` distribution.

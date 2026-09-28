@@ -22,11 +22,11 @@ No runtime network calls are made; only files already in the project are read.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
 import json
 from pathlib import Path
 import re
-from typing import Callable, Iterator, Mapping, Optional, Union
 
 from azure_functions_doctor.logging_config import get_logger
 
@@ -81,7 +81,7 @@ _DYNAMIC_SKU_TIERS = {"dynamic"}
 class ResolvedField:
     """A resolved configuration value together with its provenance."""
 
-    value: Optional[str]
+    value: str | None
     source: str
 
     @property
@@ -105,7 +105,7 @@ class TargetConfig:
     app_settings_files: dict[str, str] = field(default_factory=dict)
 
     @classmethod
-    def unknown(cls) -> "TargetConfig":
+    def unknown(cls) -> TargetConfig:
         """Return a fully-unknown config (used when nothing can be resolved)."""
         blank = ResolvedField(None, SOURCE_UNKNOWN)
         return cls(
@@ -123,16 +123,16 @@ class TargetConfig:
 class _IaCScan:
     """Raw values discovered from a single IaC scan pass, with provenance."""
 
-    hosting_plan: Optional[ResolvedField] = None
-    runtime_name: Optional[ResolvedField] = None
-    runtime_version: Optional[ResolvedField] = None
-    extension_version: Optional[ResolvedField] = None
-    deployment_storage: Optional[ResolvedField] = None
+    hosting_plan: ResolvedField | None = None
+    runtime_name: ResolvedField | None = None
+    runtime_version: ResolvedField | None = None
+    extension_version: ResolvedField | None = None
+    deployment_storage: ResolvedField | None = None
     app_settings: dict[str, str] = field(default_factory=dict)
     app_settings_files: dict[str, str] = field(default_factory=dict)
 
 
-def _shared_traversal() -> Callable[[Path, Union[str, tuple[str, ...], list[str]]], Iterator[Path]]:
+def _shared_traversal() -> Callable[[Path, str | tuple[str, ...] | list[str]], Iterator[Path]]:
     # Imported lazily to avoid an import cycle: the ``handlers`` package
     # re-exports this module's public API from its ``__init__``.
     from azure_functions_doctor.handlers._helpers import iter_project_files
@@ -140,7 +140,7 @@ def _shared_traversal() -> Callable[[Path, Union[str, tuple[str, ...], list[str]
     return iter_project_files
 
 
-def _read_text(candidate: Path) -> Optional[str]:
+def _read_text(candidate: Path) -> str | None:
     try:
         return candidate.read_text(encoding="utf-8")
     except (OSError, ValueError, UnicodeDecodeError):
@@ -172,7 +172,7 @@ def _iter_infra_files(project_path: Path) -> list[tuple[Path, str]]:
     return files
 
 
-def _plan_from_sku(name: Optional[str], tier: Optional[str]) -> Optional[str]:
+def _plan_from_sku(name: str | None, tier: str | None) -> str | None:
     """Map an Azure sku ``(name, tier)`` pair to a canonical hosting plan."""
     name_l = name.lower() if isinstance(name, str) else ""
     tier_l = tier.lower() if isinstance(tier, str) else ""
@@ -187,7 +187,7 @@ def _plan_from_sku(name: Optional[str], tier: Optional[str]) -> Optional[str]:
     return None
 
 
-def _more_specific_plan(current: Optional[str], candidate: str) -> str:
+def _more_specific_plan(current: str | None, candidate: str) -> str:
     """Return whichever of ``current``/``candidate`` is the more specific plan."""
     if current is None:
         return candidate
@@ -199,7 +199,7 @@ def _more_specific_plan(current: Optional[str], candidate: str) -> str:
     )
 
 
-def _walk_json(node: object) -> "list[dict[str, object]]":
+def _walk_json(node: object) -> list[dict[str, object]]:
     """Yield every dict nested anywhere within a parsed JSON structure."""
     found: list[dict[str, object]] = []
     stack: list[object] = [node]
@@ -230,7 +230,7 @@ def _app_settings_from_json(node: object) -> dict[str, str]:
     return settings
 
 
-def _runtime_from_function_app_config(node: object) -> Optional[tuple[str, str]]:
+def _runtime_from_function_app_config(node: object) -> tuple[str, str] | None:
     """Return ``(name, version)`` from a ``functionAppConfig.runtime`` block."""
     for obj in _walk_json(node):
         runtime = obj.get("runtime")
@@ -242,7 +242,7 @@ def _runtime_from_function_app_config(node: object) -> Optional[tuple[str, str]]
     return None
 
 
-def _deployment_storage_from_json(node: object) -> Optional[str]:
+def _deployment_storage_from_json(node: object) -> str | None:
     """Return a Flex ``functionAppConfig.deployment.storage.value`` URL if present."""
     for obj in _walk_json(node):
         deployment = obj.get("deployment")
@@ -257,7 +257,7 @@ def _deployment_storage_from_json(node: object) -> Optional[str]:
     return None
 
 
-def flex_deployment_storage_shape(project_path: Path) -> Optional[dict[str, object]]:
+def flex_deployment_storage_shape(project_path: Path) -> dict[str, object] | None:
     """Return the Flex ``functionAppConfig.deployment.storage`` object from infra.
 
     Scans deployable infra JSON files for a ``deployment.storage`` block and
@@ -287,8 +287,8 @@ def _has_function_app_config(node: object) -> bool:
     return any("functionAppConfig" in obj for obj in _walk_json(node))
 
 
-def _plan_from_json(node: object) -> Optional[str]:
-    plan: Optional[str] = None
+def _plan_from_json(node: object) -> str | None:
+    plan: str | None = None
     if _has_function_app_config(node):
         plan = _more_specific_plan(plan, PLAN_FLEX_CONSUMPTION)
     for obj in _walk_json(node):
@@ -423,9 +423,9 @@ def local_settings_values(project_path: Path) -> dict[str, str]:
 
 
 def _resolve_field(
-    override: Optional[str],
-    iac: Optional[ResolvedField],
-    local: Optional[ResolvedField],
+    override: str | None,
+    iac: ResolvedField | None,
+    local: ResolvedField | None,
 ) -> ResolvedField:
     """Apply precedence override > IaC > local signal > unknown for one field."""
     if override is not None:
@@ -439,7 +439,7 @@ def _resolve_field(
 
 def resolve_target_config(
     project_path: Path,
-    overrides: Optional[Mapping[str, Optional[str]]] = None,
+    overrides: Mapping[str, str | None] | None = None,
 ) -> TargetConfig:
     """Resolve the target Azure configuration for ``project_path``.
 

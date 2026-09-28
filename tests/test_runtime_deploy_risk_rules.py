@@ -10,7 +10,7 @@ deploy-risk structural changes: the Python-version x hosting-plan matrix in
 
 import json
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import pytest
 import typer
@@ -27,9 +27,7 @@ from azure_functions_doctor.target_resolver import is_supported_python_for_plan
 registry = HandlerRegistry()
 
 
-def _result(
-    rule_type: str, path: Path, condition: Optional[dict[str, Any]] = None
-) -> HandlerResult:
+def _result(rule_type: str, path: Path, condition: dict[str, Any] | None = None) -> HandlerResult:
     rule = cast(Rule, {"type": rule_type, "required": False, "condition": condition or {}})
     return registry.handle(rule, path)
 

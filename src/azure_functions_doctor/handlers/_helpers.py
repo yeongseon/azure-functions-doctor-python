@@ -1,4 +1,5 @@
 import ast
+from collections.abc import Callable, Iterable, Iterator
 import contextvars
 from fnmatch import fnmatch
 import json
@@ -7,18 +8,11 @@ import re
 import sys
 from typing import (
     TYPE_CHECKING,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Literal,
     NamedTuple,
     Optional,
-    Tuple,
     TypedDict,
     TypeVar,
-    Union,
 )
 
 from packaging.requirements import InvalidRequirement, Requirement
@@ -67,21 +61,21 @@ EXCLUDED_PROJECT_DIRS = {
 # ``EXCLUDED_PROJECT_DIRS``. Stored in a ``ContextVar`` so it stays scoped to
 # the active diagnostic run without threading a parameter through every
 # traversal helper. The tuple is ``(project_root, exclude_globs)``.
-_extra_excludes: contextvars.ContextVar[Tuple[Path, Tuple[str, ...]]] = contextvars.ContextVar(
+_extra_excludes: contextvars.ContextVar[tuple[Path, tuple[str, ...]]] = contextvars.ContextVar(
     "_extra_excludes", default=(Path(), ())
 )
 
 
 def set_extra_excludes(
     root: Path, globs: Iterable[str]
-) -> contextvars.Token[Tuple[Path, Tuple[str, ...]]]:
+) -> contextvars.Token[tuple[Path, tuple[str, ...]]]:
     """Set the active extra-exclude globs and return a reset token."""
     normalized = tuple(g for g in globs if g)
     return _extra_excludes.set((root, normalized))
 
 
 def reset_extra_excludes(
-    token: contextvars.Token[Tuple[Path, Tuple[str, ...]]],
+    token: contextvars.Token[tuple[Path, tuple[str, ...]]],
 ) -> None:
     """Restore the previous extra-exclude state."""
     _extra_excludes.reset(token)
@@ -118,7 +112,7 @@ def _is_excluded_path(candidate: Path) -> bool:
 
 
 def iter_project_files(
-    project_path: Path, patterns: Union[str, tuple[str, ...], list[str]]
+    project_path: Path, patterns: str | tuple[str, ...] | list[str]
 ) -> Iterator[Path]:
     """Single entry point for project file traversal (issue #393).
 
@@ -150,7 +144,7 @@ class HandlerResult(TypedDict, total=False):
     column: int
     # Per-finding locations (issue #394/#395): each entry is a dict with
     # file/line/end_line/column/message keys; SARIF emits one result per entry.
-    locations: List[Dict[str, object]]
+    locations: list[dict[str, object]]
     # Finding Contract v2 (issue #348): optional auditable evidence a handler
     # may emit for date / compatibility findings.
     evidence: str
@@ -167,8 +161,8 @@ class HandlerResult(TypedDict, total=False):
 
 
 class RuleContext(TypedDict, total=False):
-    target_python: Optional[str]
-    deployment_mode: Optional[str]
+    target_python: str | None
+    deployment_mode: str | None
     target_config: Optional["TargetConfig"]
 
 
@@ -326,7 +320,7 @@ def _collect_unregistered_blueprint_aliases(path: Path) -> set[str]:
     return decorated_blueprint_aliases - registered_blueprint_aliases
 
 
-def _decorator_simple_name(dec: ast.expr) -> Optional[str]:
+def _decorator_simple_name(dec: ast.expr) -> str | None:
     """Extract the leaf name of a decorator.
 
     Handles bare ``@name``, attribute ``@mod.name`` and call ``@mod.name(...)``
@@ -352,7 +346,7 @@ def _validate_http_above_binding(
     alias), it wraps the SDK ``FunctionBuilder`` instead of the handler and is
     therefore inactive.
     """
-    validate_idx: Optional[int] = None
+    validate_idx: int | None = None
     binding_indices: list[int] = []
     for i, dec in enumerate(node.decorator_list):
         if validate_idx is None and _decorator_simple_name(dec) == "validate_http":
@@ -485,7 +479,7 @@ _ENDPOINT_METADATA_DECORATORS = frozenset({"openapi", "openapi_metadata", "langg
 
 def _collect_routes_missing_validate_http_locations(
     path: Path,
-) -> list[tuple[str, int, Optional[int], int]]:
+) -> list[tuple[str, int, int | None, int]]:
     """Return ``(label, lineno)`` pairs for HTTP route handlers that expose no
     endpoint OpenAPI metadata.
 
@@ -501,7 +495,7 @@ def _collect_routes_missing_validate_http_locations(
     wraps the SDK ``FunctionBuilder``, so validation and endpoint metadata are
     inactive even though the decorator name is present.
     """
-    uncovered: list[tuple[str, int, Optional[int], int]] = []
+    uncovered: list[tuple[str, int, int | None, int]] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
             tree = ast.parse(content)
@@ -514,8 +508,8 @@ def _collect_routes_missing_validate_http_locations(
             if not node.decorator_list:
                 continue
             is_route = False
-            route_idx: Optional[int] = None
-            validate_idx: Optional[int] = None
+            route_idx: int | None = None
+            validate_idx: int | None = None
             has_other_metadata = False
             for i, dec in enumerate(node.decorator_list):
                 inner: ast.expr = dec.func if isinstance(dec, ast.Call) else dec
@@ -558,7 +552,7 @@ def _collect_routes_missing_validate_http(path: Path) -> list[str]:
     return [lbl for lbl, _ln, _end, _col in _collect_routes_missing_validate_http_locations(path)]
 
 
-def _dotted_call_name(func: ast.expr) -> Optional[str]:
+def _dotted_call_name(func: ast.expr) -> str | None:
     """Return the dotted name of a call target, or ``None``.
 
     Walks an ``ast.Attribute`` chain down to a root ``ast.Name`` and rebuilds
@@ -967,7 +961,7 @@ def _iter_project_py_contents(path: Path) -> Iterator[tuple[Path, str]]:
         yield py_file, content
 
 
-def _read_project_python_file(py_file: Path) -> Optional[str]:
+def _read_project_python_file(py_file: Path) -> str | None:
     """Read Python source without failing the whole traversal."""
     try:
         return py_file.read_text(encoding="utf-8")
@@ -1023,7 +1017,7 @@ def _parse_requirements_names(content: str) -> set[str]:
     return names
 
 
-def _load_pyproject(path: Path) -> Optional[Dict[str, object]]:
+def _load_pyproject(path: Path) -> dict[str, object] | None:
     """Load and parse ``pyproject.toml`` from ``path``.
 
     Returns the parsed table, or ``None`` when the file is absent, unreadable,
@@ -1034,7 +1028,7 @@ def _load_pyproject(path: Path) -> Optional[Dict[str, object]]:
         return None
     try:
         with pyproject_path.open("rb") as handle:
-            data: Dict[str, object] = tomllib.load(handle)
+            data: dict[str, object] = tomllib.load(handle)
             return data
     except (OSError, ValueError) as exc:
         logger.debug(f"Skip pyproject.toml at {pyproject_path}: {exc}")
@@ -1075,8 +1069,8 @@ def pyproject_dependency_names(path: Path) -> set[str]:
 class DoctorConfig(TypedDict):
     """Resolved ``[tool.azure-functions-doctor]`` project configuration."""
 
-    ignore: List[str]
-    exclude: List[str]
+    ignore: list[str]
+    exclude: list[str]
 
 
 def load_doctor_config(path: Path) -> DoctorConfig:
@@ -1177,11 +1171,11 @@ def _create_result(
     status: str,
     detail: str,
     internal_error: bool = False,
-    file: Optional[str] = None,
-    line: Optional[int] = None,
-    end_line: Optional[int] = None,
-    column: Optional[int] = None,
-    locations: Optional[List[Dict[str, object]]] = None,
+    file: str | None = None,
+    line: int | None = None,
+    end_line: int | None = None,
+    column: int | None = None,
+    locations: list[dict[str, object]] | None = None,
 ) -> HandlerResult:
     """Create a standardized result dictionary (status limited to 'pass'/'fail').
 
@@ -1241,7 +1235,7 @@ def _handle_specific_exceptions(operation: str, exc: Exception) -> HandlerResult
 class Condition(TypedDict, total=False):
     target: str
     operator: str
-    value: Union[str, int, float]
+    value: str | int | float
     keyword: str
     mode: Literal["string", "ast"]  # for source_code_contains: "string" (default) or "ast"
     jsonpath: str
@@ -1317,7 +1311,7 @@ class CompareVersionParams(NamedTuple):
 
     target: str
     operator: str
-    value: Union[str, int, float]
+    value: str | int | float
 
 
 class SourceCodeParams(NamedTuple):
@@ -1334,13 +1328,13 @@ class PackageParams(NamedTuple):
     file: str
 
 
-def parse_target(condition: Condition) -> Optional[str]:
+def parse_target(condition: Condition) -> str | None:
     """Return a non-empty ``target`` string from ``condition``, or ``None``."""
     target = condition.get("target")
     return target if isinstance(target, str) and target else None
 
 
-def parse_compare_version(condition: Condition) -> Optional[CompareVersionParams]:
+def parse_compare_version(condition: Condition) -> CompareVersionParams | None:
     """Return validated ``compare_version`` params, or ``None`` if incomplete."""
     target = condition.get("target")
     operator = condition.get("operator")
@@ -1357,7 +1351,7 @@ def parse_compare_version(condition: Condition) -> Optional[CompareVersionParams
     return None
 
 
-def parse_source_code(condition: Condition) -> Optional[SourceCodeParams]:
+def parse_source_code(condition: Condition) -> SourceCodeParams | None:
     """Return validated ``source_code_contains`` params, or ``None``."""
     keyword = condition.get("keyword")
     if not isinstance(keyword, str):
@@ -1367,7 +1361,7 @@ def parse_source_code(condition: Condition) -> Optional[SourceCodeParams]:
     return SourceCodeParams(keyword, "string")
 
 
-def parse_package(condition: Condition) -> Optional[PackageParams]:
+def parse_package(condition: Condition) -> PackageParams | None:
     """Return validated package params, falling back from ``package`` to ``target``."""
     package = condition.get("package") or condition.get("target")
     if not isinstance(package, str) or not package:
@@ -1381,7 +1375,7 @@ def parse_package(condition: Condition) -> Optional[PackageParams]:
 _HOST_JSON_MISSING = object()
 
 
-def _resolve_host_json_pointer(data: object, parts: List[str]) -> object:
+def _resolve_host_json_pointer(data: object, parts: list[str]) -> object:
     """Walk a host.json object along dotted ``parts``.
 
     Returns the resolved node, or ``_HOST_JSON_MISSING`` if any part is absent
@@ -1413,7 +1407,7 @@ _HandlerFn = TypeVar("_HandlerFn", bound=Callable[..., "HandlerResult"])
 
 # Populated at class-definition time by the @_rule_handler decorator:
 # maps a rule type -> the HandlerRegistry method name that handles it.
-_RULE_DISPATCH: Dict[str, str] = {}
+_RULE_DISPATCH: dict[str, str] = {}
 
 
 def _rule_handler(func: _HandlerFn) -> _HandlerFn:

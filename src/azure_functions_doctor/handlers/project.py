@@ -4,7 +4,6 @@ Split out of handlers/registry.py; registration/dispatch stays there.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from azure_functions_doctor.handlers._helpers import (
     HandlerResult,
@@ -22,7 +21,7 @@ class ProjectHandlers:
 
     @_rule_handler
     def _handle_blueprint_registration(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Warn when decorated Blueprint aliases are never registered."""
         unregistered_aliases = sorted(_collect_unregistered_blueprint_aliases(path))
@@ -46,7 +45,7 @@ class ProjectHandlers:
 
     @_rule_handler
     def _handle_decorator_order(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Warn when decorators are stacked outside their expected inner order."""
         condition = rule.get("condition", {})

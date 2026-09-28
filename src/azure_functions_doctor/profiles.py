@@ -10,7 +10,7 @@ rule inventory share a single source of truth.
 
 from __future__ import annotations
 
-from typing import Mapping
+from collections.abc import Mapping
 
 # Rules that validate the local developer environment rather than the deployed
 # application's runtime/hosting correctness.

@@ -1,7 +1,6 @@
 """Tests for the Flex Consumption deprecated app settings check (issue #350)."""
 
 from pathlib import Path
-from typing import Optional
 
 from azure_functions_doctor.compatibility import Catalog, load_catalog
 from azure_functions_doctor.deploy_config import ResolvedField, TargetConfig
@@ -16,8 +15,8 @@ from azure_functions_doctor.handlers.registry import (
 
 def _target_config(
     *,
-    hosting_plan: Optional[str] = None,
-    app_settings: Optional[dict[str, str]] = None,
+    hosting_plan: str | None = None,
+    app_settings: dict[str, str] | None = None,
 ) -> TargetConfig:
     unknown = ResolvedField(None, "unknown")
     return TargetConfig(
@@ -120,7 +119,7 @@ class TestEvaluateFlexDeprecatedSettings:
     def test_all_documented_settings_detected(self) -> None:
         result = _evaluate_flex_deprecated_settings(
             FLEX_CONSUMPTION_PLAN,
-            {name: "x" for name in FLEX_DEPRECATED_APP_SETTINGS},
+            dict.fromkeys(FLEX_DEPRECATED_APP_SETTINGS, "x"),
         )
         assert result["status"] == "fail"
         for name in FLEX_DEPRECATED_APP_SETTINGS:
@@ -158,7 +157,7 @@ class TestEvaluateFlexDeprecatedSettings:
 
 
 class TestHandler:
-    def _run(self, context: Optional[RuleContext], path: Path) -> dict[str, object]:
+    def _run(self, context: RuleContext | None, path: Path) -> dict[str, object]:
         registry = HandlerRegistry()
         return dict(registry._handle_flex_deprecated_settings({}, path, context))
 

@@ -3,8 +3,8 @@
 Split out of handlers/registry.py; registration/dispatch stays there.
 """
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence
 
 from azure_functions_doctor.deploy_config import (
     local_settings_values,
@@ -114,7 +114,7 @@ class BindingHandlers:
 
     @_rule_handler
     def _handle_binding_connection_resolution(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Resolve v2 binding ``connection`` references against configuration (#352).
 

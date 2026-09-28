@@ -8,7 +8,6 @@ with environment-aware defaults and CLI integration.
 import logging
 import os
 import sys
-from typing import Optional
 
 # Default logger name for the application
 DEFAULT_LOGGER_NAME = "azure_functions_doctor"
@@ -18,7 +17,7 @@ LOG_LEVEL_ENV_VAR = "AZURE_FUNCTIONS_DOCTOR_LOG_LEVEL"
 
 
 def setup_logging(
-    level: Optional[str] = None,
+    level: str | None = None,
     format_style: str = "structured",
     enable_console_output: bool = True,
 ) -> logging.Logger:

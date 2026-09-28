@@ -1,15 +1,14 @@
 from pathlib import Path
-from typing import List, Optional
 
 from azure_functions_doctor.doctor import Doctor, SectionResult
 
 
 def run_diagnostics(
     path: str,
-    profile: Optional[str] = None,
-    rules_path: Optional[Path] = None,
-    target_python: Optional[str] = None,
-) -> List[SectionResult]:
+    profile: str | None = None,
+    rules_path: Path | None = None,
+    target_python: str | None = None,
+) -> list[SectionResult]:
     """
     Run diagnostics on the Azure Functions application at the specified path.
 

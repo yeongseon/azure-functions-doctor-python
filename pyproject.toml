@@ -49,7 +49,7 @@ dev = [
     "pre-commit",
     "pytest",
     "pytest-cov",
-    "ruff==0.16.8",
+    "ruff==0.16.9",
     "requests",
     "types-requests",
 ]
@@ -109,7 +109,11 @@ line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+# C4 + UP keep the codebase on modern syntax (PEP 585/604 generics and
+# unions, comprehension forms) instead of the pre-3.10 `typing.List` /
+# `Optional[...]` spellings. target-version = "py310" bounds every fix to
+# syntax the declared floor supports.
+select = ["C4", "E", "F", "I", "UP"]
 fixable = ["ALL"]
 
 [tool.ruff.lint.isort]

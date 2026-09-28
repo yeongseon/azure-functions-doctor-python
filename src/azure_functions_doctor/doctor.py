@@ -1,10 +1,11 @@
 import ast
 from collections import defaultdict
+from collections.abc import Mapping
 import importlib.resources
 import json
 from pathlib import Path
 import time
-from typing import Literal, Mapping, Optional, TypedDict, cast
+from typing import Literal, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
@@ -153,18 +154,18 @@ class Doctor:
     def __init__(
         self,
         path: str = ".",
-        profile: Optional[str] = None,
-        rules_path: Optional[Path] = None,
-        target_python: Optional[str] = None,
+        profile: str | None = None,
+        rules_path: Path | None = None,
+        target_python: str | None = None,
         deployment_mode: str = "remote-build",
-        hosting_plan: Optional[str] = None,
+        hosting_plan: str | None = None,
     ) -> None:
         self.project_path: Path = Path(path).resolve()
         self.profile = profile
-        self.target_python: Optional[str] = target_python
+        self.target_python: str | None = target_python
         self.deployment_mode: str = deployment_mode
-        self.hosting_plan: Optional[str] = hosting_plan
-        self.rules_path: Optional[Path] = None
+        self.hosting_plan: str | None = hosting_plan
+        self.rules_path: Path | None = None
         if rules_path is not None:
             resolved = rules_path.resolve()
             if not resolved.is_file():
@@ -178,7 +179,7 @@ class Doctor:
         self.exclude_globs: list[str] = list(doctor_config["exclude"])
         self.programming_model: ProgrammingModel = self._detect_programming_model()
 
-    def get_report_properties(self) -> dict[str, Optional[str]]:
+    def get_report_properties(self) -> dict[str, str | None]:
         """Return top-level report properties shared across output formats."""
         return {
             "programming_model": self.programming_model,
@@ -350,9 +351,9 @@ class Doctor:
             logger.error(f"Invalid JSON in v2.json: {e}")
             raise RuntimeError(f"Failed to parse v2.json: {e}") from e
 
-        return sorted(list(v2_rules), key=lambda r: r.get("check_order", 999))
+        return sorted(v2_rules, key=lambda r: r.get("check_order", 999))
 
-    def run_all_checks(self, rules: Optional[list[Rule]] = None) -> list[SectionResult]:
+    def run_all_checks(self, rules: list[Rule] | None = None) -> list[SectionResult]:
         rules = self.load_rules() if rules is None else rules
         if self.profile is not None and self.profile != "full":
             if self.profile not in PROFILE_NAMES:

@@ -2,7 +2,6 @@
 
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Optional
 from unittest.mock import patch
 
 from azure_functions_doctor.compatibility import load_catalog
@@ -23,8 +22,8 @@ SUPPORTED_LANGUAGES = "https://learn.microsoft.com/azure/azure-functions/support
 
 def _target_config(
     *,
-    extension_version: Optional[str] = None,
-    hosting_plan: Optional[str] = None,
+    extension_version: str | None = None,
+    hosting_plan: str | None = None,
 ) -> TargetConfig:
     """Build a minimal :class:`TargetConfig` for handler-level tests."""
     unknown = ResolvedField(None, "unknown")
@@ -174,7 +173,7 @@ class TestCatalogHelpers:
 class TestHandlerWiring:
     """Handler-level tests exercising context resolution."""
 
-    def _run(self, method: str, context: Optional[RuleContext]) -> dict[str, object]:
+    def _run(self, method: str, context: RuleContext | None) -> dict[str, object]:
         registry = HandlerRegistry()
         handler = getattr(registry, method)
         with patch("azure_functions_doctor.handlers.runtime.date") as mock_date:

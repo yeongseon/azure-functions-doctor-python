@@ -9,7 +9,6 @@ from pathlib import Path
 import re
 import shutil
 import sys
-from typing import List, Optional
 
 from packaging.version import InvalidVersion
 from packaging.version import parse as parse_version
@@ -47,7 +46,7 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_compare_version(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Handle version comparison checks."""
         condition = rule.get("condition", {}) or {}
@@ -120,7 +119,7 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_env_var_exists(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Handle environment variable existence checks."""
         condition = rule.get("condition", {}) or {}
@@ -137,7 +136,7 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_path_exists(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Handle path existence checks."""
         condition = rule.get("condition", {}) or {}
@@ -161,7 +160,7 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_file_exists(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Handle file existence checks."""
         condition = rule.get("condition", {}) or {}
@@ -179,7 +178,7 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_conditional_exists(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Handle host.json checks that only matter when a related feature is detected."""
         durable_keywords = [
@@ -236,7 +235,7 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_callable_detection(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Detect ASGI/WSGI callable exposure in source files (basic heuristics).
 
@@ -261,8 +260,8 @@ class GenericHandlers:
             r"ASGIApp|WSGIApp|asgi_app|wsgi_app",
         ]
 
-        exposure_hits: List[str] = []
-        framework_hits: List[str] = []
+        exposure_hits: list[str] = []
+        framework_hits: list[str] = []
         try:
             for py_file in iter_project_files(path, "*.py"):
                 content = _read_project_python_file(py_file)
@@ -302,7 +301,7 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_executable_exists(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Check if an executable is available on PATH."""
         condition = rule.get("condition", {}) or {}
@@ -319,7 +318,7 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_any_of_exists(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Check if any of a list of targets exist (env vars, host.json keys, files)."""
         condition = rule.get("condition", {}) or {}
@@ -352,14 +351,14 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_file_glob_check(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Detect unwanted files by glob patterns."""
         condition = rule.get("condition", {}) or {}
         patterns = condition.get("patterns", [])
         if not patterns or not isinstance(patterns, list):
             return _create_result("fail", "Missing 'patterns' list for file_glob_check")
-        matches: List[str] = []
+        matches: list[str] = []
         try:
             for pat in patterns:
                 for p in iter_project_files(path, pat):
@@ -376,7 +375,7 @@ class GenericHandlers:
 
     @_rule_handler
     def _handle_source_code_contains(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Handle source code keyword search checks (string or AST mode)."""
         condition = rule.get("condition", {}) or {}

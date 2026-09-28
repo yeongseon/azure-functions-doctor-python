@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Optional
 
 from azure_functions_doctor.deploy_config import (
     ResolvedField,
@@ -17,7 +16,7 @@ from azure_functions_doctor.handlers.registry import (
 )
 
 
-def _target_config(*, hosting_plan: Optional[str] = None) -> TargetConfig:
+def _target_config(*, hosting_plan: str | None = None) -> TargetConfig:
     unknown = ResolvedField(None, "unknown")
     return TargetConfig(
         hosting_plan=ResolvedField(hosting_plan, "test") if hosting_plan else unknown,
@@ -169,7 +168,7 @@ class TestFlexDeploymentStorageShape:
 
 
 class TestHandler:
-    def _run(self, context: Optional[RuleContext], path: Path) -> dict[str, object]:
+    def _run(self, context: RuleContext | None, path: Path) -> dict[str, object]:
         registry = HandlerRegistry()
         return dict(registry._handle_flex_deployment_storage({}, path, context))
 
