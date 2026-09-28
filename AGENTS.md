@@ -204,6 +204,14 @@ When using AI-assisted development:
 If it is not automated, it will drift.
 If it is not documented, it is not a stable rule.
 
+## Merge Policy
+
+- `main` requires a pull request, every required status check green, and all conversations resolved. It requires **zero approving reviews**: `yeongseon` is the only account with push access and GitHub forbids approving your own PR, so a required approval could only ever be met by an administrator bypass. The required checks are what guard `main`.
+- **Never use `gh pr merge --admin` to skip a failing or pending required check.**
+- Review is still expected, just not enforced. An AI review (`COMMENTED`) is not an approval.
+- **Dependabot:** `pip` patch/minor updates auto-merge on green CI. `github-actions` updates never auto-merge — confirm each pinned SHA matches its claimed tag (`git ls-remote --tags <repo>`, compare against the dereferenced `^{}` commit) before merging. `dependabot-automerge.yml` enforces the split on all three of its auto-merge paths (security fast path, 3-day maturity, scheduled sweep).
+- If a second maintainer ever gets push access, raise the approval count back to 1.
+
 ## Branch Hygiene
 
 - Merged PR branches are deleted automatically ("Automatically delete head branches" is enabled on this repository); keep that setting on.
