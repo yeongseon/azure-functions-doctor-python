@@ -22,15 +22,19 @@ jobs:
 
       # Security updates stay on the fast path: no maturation cooldown, so
       # vulnerability fixes are not delayed (audit finding MEDIUM, issue #337).
+      # All three auto-merge paths below are pip only. github-actions bumps are
+      # SHA-pinned, and verifying that the SHA matches its claimed tag needs a
+      # human; with zero required approvals these conditions are the only thing
+      # keeping them out of auto-merge (see AGENTS.md).
       - name: Enable auto-merge for security updates (fast path)
-        if: contains(github.event.pull_request.labels.*.name, 'security')
+        if: ${{ steps.meta.outputs.package-ecosystem == 'pip' && contains(github.event.pull_request.labels.*.name, 'security') }}
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check PR maturity (3-day cooldown for patch/minor updates)
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'security') && (steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor') }}
+        if: ${{ steps.meta.outputs.package-ecosystem == 'pip' && !contains(github.event.pull_request.labels.*.name, 'security') && (steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor') }}
         id: matured
         env:
           PR_CREATED_AT: ${{ github.event.pull_request.created_at }}
@@ -64,8 +68,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
-          prs=$(gh pr list --repo "$REPO" --state open --json number,author,isDraft \
-            --jq '.[] | select(.author.login == "dependabot[bot]" and (.isDraft | not)) | .number')
+          prs=$(gh pr list --repo "$REPO" --state open --json number,author,isDraft,headRefName \
+            --jq '.[] | select(.author.login == "dependabot[bot]" and (.isDraft | not) and (.headRefName | startswith("dependabot/pip/"))) | .number')
           for pr in $prs; do
             created=$(gh pr view "$pr" --repo "$REPO" --json createdAt --jq '.createdAt')
             labels=$(gh pr view "$pr" --repo "$REPO" --json labels --jq '[.labels[].name]')

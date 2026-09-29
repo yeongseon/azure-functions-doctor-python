@@ -5,7 +5,6 @@ Split out of handlers/registry.py; registration/dispatch stays there.
 
 import importlib.util
 from pathlib import Path
-from typing import Optional
 
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name
@@ -35,7 +34,7 @@ class DependencyHandlers:
 
     @_rule_handler
     def _handle_dependency_manifest(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Validate the dependency manifest against the deployment mode.
 
@@ -77,7 +76,7 @@ class DependencyHandlers:
 
     @_rule_handler
     def _handle_package_installed(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Handle Python package installation checks."""
         condition = rule.get("condition", {}) or {}
@@ -98,7 +97,7 @@ class DependencyHandlers:
 
     @_rule_handler
     def _handle_package_declared(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Check that a package name appears in requirements.txt (declaration-level)."""
         condition = rule.get("condition", {}) or {}
@@ -159,7 +158,7 @@ class DependencyHandlers:
 
     @_rule_handler
     def _handle_package_forbidden(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Warn when a package that should NOT be pinned appears in requirements.txt."""
         condition = rule.get("condition", {}) or {}
@@ -190,7 +189,7 @@ class DependencyHandlers:
 
     @_rule_handler
     def _handle_native_dependency_risk(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Warn when requirements.txt includes packages with native extension risk."""
         condition = rule.get("condition", {}) or {}
@@ -222,7 +221,7 @@ class DependencyHandlers:
 
     @_rule_handler
     def _handle_unpinned_requirements(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Warn when ``requirements.txt`` declares unpinned/unbounded dependencies.
 

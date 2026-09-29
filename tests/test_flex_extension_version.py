@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Optional
 
 from azure_functions_doctor.deploy_config import ResolvedField, TargetConfig
 from azure_functions_doctor.handlers._helpers import RuleContext
@@ -15,8 +14,8 @@ from azure_functions_doctor.handlers.registry import (
 
 def _target_config(
     *,
-    hosting_plan: Optional[str] = None,
-    extension_version: Optional[str] = None,
+    hosting_plan: str | None = None,
+    extension_version: str | None = None,
 ) -> TargetConfig:
     unknown = ResolvedField(None, "unknown")
     return TargetConfig(
@@ -31,7 +30,7 @@ def _target_config(
     )
 
 
-def _write_local_settings(path: Path, ext: Optional[str]) -> None:
+def _write_local_settings(path: Path, ext: str | None) -> None:
     values = {} if ext is None else {"FUNCTIONS_EXTENSION_VERSION": ext}
     (path / "local.settings.json").write_text(json.dumps({"Values": values}), encoding="utf-8")
 
@@ -52,7 +51,7 @@ class TestEvaluateFlexExtensionVersion:
 
 
 class TestHandlerFlexAware:
-    def _run(self, context: Optional[RuleContext], path: Path) -> dict[str, object]:
+    def _run(self, context: RuleContext | None, path: Path) -> dict[str, object]:
         registry = HandlerRegistry()
         return dict(registry._handle_functions_extension_version({}, path, context))
 

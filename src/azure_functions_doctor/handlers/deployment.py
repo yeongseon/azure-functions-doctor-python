@@ -6,7 +6,6 @@ Split out of handlers/registry.py; registration/dispatch stays there.
 import json
 from pathlib import Path
 import re
-from typing import Optional
 
 from azure_functions_doctor.compatibility import Catalog, load_catalog
 from azure_functions_doctor.deploy_config import (
@@ -57,9 +56,9 @@ def _infra_declares_linux_fx_version(path: Path) -> bool:
 
 
 def _evaluate_flex_runtime_config(
-    hosting_plan: Optional[str],
-    runtime_name: Optional[str],
-    runtime_version: Optional[str],
+    hosting_plan: str | None,
+    runtime_name: str | None,
+    runtime_version: str | None,
     *,
     linux_fx_present: bool,
 ) -> HandlerResult:
@@ -123,7 +122,7 @@ def _evaluate_flex_runtime_config(
     return result
 
 
-def _evaluate_flex_extension_version(ext_value: Optional[str]) -> HandlerResult:
+def _evaluate_flex_extension_version(ext_value: str | None) -> HandlerResult:
     """Classify FUNCTIONS_EXTENSION_VERSION for a Flex Consumption app (issue #346).
 
     Flex Consumption does not support the ``FUNCTIONS_EXTENSION_VERSION`` app
@@ -182,11 +181,11 @@ FLEX_DEPRECATED_APP_SETTINGS: dict[str, str] = {
 
 
 def _evaluate_flex_deprecated_settings(
-    hosting_plan: Optional[str],
+    hosting_plan: str | None,
     app_settings: dict[str, str],
     *,
-    catalog: Optional[Catalog] = None,
-    setting_sources: Optional[dict[str, str]] = None,
+    catalog: Catalog | None = None,
+    setting_sources: dict[str, str] | None = None,
 ) -> HandlerResult:
     """Warn on legacy app settings that Flex Consumption ignores (issue #350).
 
@@ -248,8 +247,8 @@ def _evaluate_flex_deprecated_settings(
 
 
 def _evaluate_flex_deployment_storage(
-    hosting_plan: Optional[str],
-    storage: Optional[dict[str, object]],
+    hosting_plan: str | None,
+    storage: dict[str, object] | None,
 ) -> HandlerResult:
     """Validate a Flex Consumption app's deployment storage shape (issue #351).
 
@@ -335,7 +334,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_flex_runtime_config(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Validate a Flex Consumption app's ``functionAppConfig.runtime`` (issue #345).
 
@@ -346,9 +345,9 @@ class DeploymentHandlers:
         hosting-plan matrix.
         """
         target_config = context.get("target_config") if context is not None else None
-        hosting_plan: Optional[str] = None
-        runtime_name: Optional[str] = None
-        runtime_version: Optional[str] = None
+        hosting_plan: str | None = None
+        runtime_name: str | None = None
+        runtime_version: str | None = None
         if target_config is not None:
             hosting_plan = target_config.hosting_plan.value
             runtime_name = target_config.runtime_name.value
@@ -371,7 +370,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_flex_deprecated_settings(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Warn when a Flex Consumption app declares deprecated legacy app settings (#350).
 
@@ -401,7 +400,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_flex_deployment_storage(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Validate a Flex Consumption app's deployment storage shape (#351).
 
@@ -431,7 +430,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_functions_extension_version(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Flag a missing, legacy, or non-v4 FUNCTIONS_EXTENSION_VERSION setting.
 
@@ -478,7 +477,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_linux_fx_version(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Validate any Python ``linuxFxVersion`` declared in infra (bicep) config.
 
@@ -534,7 +533,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_dev_storage_connection(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Flag the Azurite/dev-storage emulator connection in deployable config.
 
@@ -581,7 +580,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_host_json_property(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Check a property exists in host.json using simple jsonpath-like pointer."""
         condition = rule.get("condition", {}) or {}
@@ -605,7 +604,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_host_json_version(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Check that host.json declares \"version\": \"2.0\"."""
         host_path = path / "host.json"
@@ -632,7 +631,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_local_settings_security(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Check that local.settings.json is not tracked by git (security risk)."""
         import subprocess  # nosec B404
@@ -667,7 +666,7 @@ class DeploymentHandlers:
 
     @_rule_handler
     def _handle_host_json_extension_bundle_version(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Check that extensionBundle in host.json uses the recommended v4 range."""
         host_path = path / "host.json"

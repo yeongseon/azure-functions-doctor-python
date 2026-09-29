@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Optional
 
 from azure_functions_doctor.deploy_config import (
     ResolvedField,
@@ -36,7 +35,7 @@ def handle_blob(blob: func.InputStream) -> None:
 """
 
 
-def _target_config(*, app_settings: Optional[dict[str, str]] = None) -> TargetConfig:
+def _target_config(*, app_settings: dict[str, str] | None = None) -> TargetConfig:
     unknown = ResolvedField(None, "unknown")
     return TargetConfig(
         hosting_plan=unknown,
@@ -190,7 +189,7 @@ class TestEvaluateBindingConnectionResolution:
 
 
 class TestHandler:
-    def _run(self, context: Optional[RuleContext], path: Path) -> dict[str, object]:
+    def _run(self, context: RuleContext | None, path: Path) -> dict[str, object]:
         registry = HandlerRegistry()
         return dict(registry._handle_binding_connection_resolution({}, path, context))
 

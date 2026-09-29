@@ -1,7 +1,6 @@
 from pathlib import Path
 import subprocess
 import sys
-from typing import Optional
 
 import pytest
 
@@ -26,7 +25,7 @@ def test_resolve_func_core_tools_version(monkeypatch: pytest.MonkeyPatch) -> Non
         "azure_functions_doctor.target_resolver.shutil.which", lambda name: "/usr/bin/func"
     )
 
-    def mock_check_output(cmd: list[str], text: bool, timeout: Optional[int] = None) -> str:
+    def mock_check_output(cmd: list[str], text: bool, timeout: int | None = None) -> str:
         return "4.0.5198"
 
     monkeypatch.setattr(subprocess, "check_output", mock_check_output)
@@ -40,7 +39,7 @@ def test_resolve_func_core_tools_fallback(monkeypatch: pytest.MonkeyPatch) -> No
         "azure_functions_doctor.target_resolver.shutil.which", lambda name: "/usr/bin/func"
     )
 
-    def mock_check_output(cmd: list[str], text: bool, timeout: Optional[int] = None) -> str:
+    def mock_check_output(cmd: list[str], text: bool, timeout: int | None = None) -> str:
         raise Exception("not found")
 
     monkeypatch.setattr(subprocess, "check_output", mock_check_output)
@@ -63,7 +62,7 @@ def test_resolve_func_core_tools_timeout_expired(monkeypatch: pytest.MonkeyPatch
         "azure_functions_doctor.target_resolver.shutil.which", lambda name: "/usr/bin/func"
     )
 
-    def mock_check_output(cmd: list[str], text: bool, timeout: Optional[int] = None) -> str:
+    def mock_check_output(cmd: list[str], text: bool, timeout: int | None = None) -> str:
         raise subprocess.TimeoutExpired(cmd, 10.0)
 
     monkeypatch.setattr(subprocess, "check_output", mock_check_output)
@@ -76,7 +75,7 @@ def test_resolve_func_core_tools_called_process_error(monkeypatch: pytest.Monkey
         "azure_functions_doctor.target_resolver.shutil.which", lambda name: "/usr/bin/func"
     )
 
-    def mock_check_output(cmd: list[str], text: bool, timeout: Optional[int] = None) -> str:
+    def mock_check_output(cmd: list[str], text: bool, timeout: int | None = None) -> str:
         raise subprocess.CalledProcessError(2, cmd)
 
     monkeypatch.setattr(subprocess, "check_output", mock_check_output)

@@ -4,7 +4,6 @@ Split out of handlers/registry.py; registration/dispatch stays there.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from azure_functions_doctor.handlers._helpers import (
     HandlerResult,
@@ -21,7 +20,7 @@ class DurableHandlers:
 
     @_rule_handler
     def _handle_durable_nondeterminism(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Fail when orchestrator functions call nondeterministic APIs."""
         condition = rule.get("condition", {}) or {}

@@ -9,7 +9,6 @@ so the matrix stays correct as the catalog rolls forward.
 """
 
 from datetime import date, timedelta
-from typing import Optional
 
 import pytest
 
@@ -189,5 +188,5 @@ class TestFunctionsRuntimeVerdicts:
         assert "stop" in detail.lower() or "v3" in detail
 
 
-def _optional_fact(catalog: Catalog, plan: str) -> Optional[object]:
+def _optional_fact(catalog: Catalog, plan: str) -> object | None:
     return catalog.hosting_plan_lifecycle_fact(plan)

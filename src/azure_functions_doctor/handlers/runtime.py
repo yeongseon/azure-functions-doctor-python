@@ -6,7 +6,6 @@ Split out of handlers/registry.py; registration/dispatch stays there.
 from datetime import date
 from pathlib import Path
 import re
-from typing import Optional
 
 from azure_functions_doctor.compatibility import Catalog, Fact, load_catalog
 from azure_functions_doctor.handlers._helpers import (
@@ -33,7 +32,7 @@ def _evaluate_python_lifecycle(
     version: str,
     *,
     today: date,
-    catalog: Optional[Catalog] = None,
+    catalog: Catalog | None = None,
 ) -> HandlerResult:
     """Classify a Python ``version`` against its catalog end-of-support date.
 
@@ -116,7 +115,7 @@ FUNCTIONS_RUNTIME_CURRENT = "4.x"
 HOSTING_PLAN_RETIRING_SOON_WINDOW_DAYS = 180
 
 
-def _normalize_functions_runtime(ext_version: Optional[str]) -> Optional[str]:
+def _normalize_functions_runtime(ext_version: str | None) -> str | None:
     """Map a ``FUNCTIONS_EXTENSION_VERSION`` value to a ``"N.x"`` runtime key.
 
     Accepts the pinned forms Azure uses (``"~4"``, ``"4"``, ``"4.0.1"``) and
@@ -154,11 +153,11 @@ def _attach_catalog_evidence(
 
 
 def _evaluate_functions_runtime_lifecycle(
-    runtime_version: Optional[str],
-    hosting_plan: Optional[str],
+    runtime_version: str | None,
+    hosting_plan: str | None,
     *,
     today: date,
-    catalog: Optional[Catalog] = None,
+    catalog: Catalog | None = None,
 ) -> HandlerResult:
     """Classify the Azure Functions runtime major version for a Python app.
 
@@ -266,10 +265,10 @@ def _evaluate_functions_runtime_lifecycle(
 
 
 def _evaluate_hosting_plan_lifecycle(
-    hosting_plan: Optional[str],
+    hosting_plan: str | None,
     *,
     today: date,
-    catalog: Optional[Catalog] = None,
+    catalog: Catalog | None = None,
 ) -> HandlerResult:
     """Classify a hosting plan against its published retirement date (issue #344).
 
@@ -339,7 +338,7 @@ class RuntimeHandlers:
 
     @_rule_handler
     def _handle_python_runtime_lifecycle(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Flag a target Python runtime that is retiring soon or unsupported.
 
@@ -354,7 +353,7 @@ class RuntimeHandlers:
 
     @_rule_handler
     def _handle_functions_runtime_lifecycle(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Check the Azure Functions runtime major version for a Python app.
 
@@ -363,8 +362,8 @@ class RuntimeHandlers:
         with Python first, with lifecycle dates sourced from the catalog.
         """
         target_config = context.get("target_config") if context is not None else None
-        runtime_version: Optional[str] = None
-        hosting_plan: Optional[str] = None
+        runtime_version: str | None = None
+        hosting_plan: str | None = None
         if target_config is not None:
             runtime_version = target_config.extension_version.value
             hosting_plan = target_config.hosting_plan.value
@@ -379,7 +378,7 @@ class RuntimeHandlers:
 
     @_rule_handler
     def _handle_hosting_plan_lifecycle(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Check the resolved hosting plan against its published retirement date."""
         target_config = context.get("target_config") if context is not None else None

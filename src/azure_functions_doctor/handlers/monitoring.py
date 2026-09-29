@@ -6,7 +6,6 @@ Split out of handlers/registry.py; registration/dispatch stays there.
 import json
 import os
 from pathlib import Path
-from typing import Optional
 
 from azure_functions_doctor.handlers._helpers import (
     _HOST_JSON_MISSING,
@@ -29,7 +28,7 @@ class MonitoringHandlers:
 
     @_rule_handler
     def _handle_app_insights_connection(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Validate Application Insights connection configuration.
 
@@ -103,7 +102,7 @@ class MonitoringHandlers:
 
     @_rule_handler
     def _handle_host_json_log_level_conflict(
-        self, rule: Rule, path: Path, context: Optional[RuleContext] = None
+        self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Flag host.json logLevel entries that conflict with the default level.
 
