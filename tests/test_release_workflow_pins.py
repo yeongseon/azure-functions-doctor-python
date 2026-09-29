@@ -54,13 +54,13 @@ def test_detects_unpinned_tag() -> None:
     assert errors and "not pinned to a 40-hex SHA" in errors[0]
 
 
-def test_detects_missing_verify_azure_certification() -> None:
-    # Drop verify-azure-certification while keeping build + lib-tests + tiers.
+def test_detects_missing_azure_e2e_gate() -> None:
+    # Drop azure-e2e while keeping build + lib-tests + tiers.
     tiers = ", ".join(lint_mod.REQUIRED_RUNTIME_TIERS)
     joined = "build, lib-tests" + (f", {tiers}" if tiers else "")
     text = f"  publish:\n    needs: [{joined}]\n"
     errors = lint_mod.check_publish_needs(text, "publish-pypi.yml")
-    assert any("verify-azure-certification" in e for e in errors)
+    assert any("azure-e2e" in e for e in errors)
 
 
 def test_detects_regressed_needs() -> None:
