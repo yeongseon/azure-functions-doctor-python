@@ -1,4 +1,64 @@
 # Changelog
+## [0.21.0](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.20.0...v0.21.0) (2026-09-29)
+
+
+### Features
+
+* **contract:** publish a JSON Schema for schema_version 2.0 ([#417](https://github.com/yeongseon/azure-functions-doctor-python/issues/417)) ([21b7fec](https://github.com/yeongseon/azure-functions-doctor-python/commit/21b7fec1c76b745434d152d229f899e6f98a8963))
+* **sarif:** attach locations to AST-rule and infra-rule findings ([#408](https://github.com/yeongseon/azure-functions-doctor-python/issues/408) groups B+C) ([#424](https://github.com/yeongseon/azure-functions-doctor-python/issues/424)) ([3ba6b0c](https://github.com/yeongseon/azure-functions-doctor-python/commit/3ba6b0c32bd3a580020556b8afed83b3c31f7090))
+* **sarif:** cite the config file in config-rule findings ([#408](https://github.com/yeongseon/azure-functions-doctor-python/issues/408) group A+D) ([#422](https://github.com/yeongseon/azure-functions-doctor-python/issues/422)) ([0173f52](https://github.com/yeongseon/azure-functions-doctor-python/commit/0173f52ed52101f7ecc383ff2241b9e23a67aed0))
+* **sarif:** thread lineno through the AST collectors ([#408](https://github.com/yeongseon/azure-functions-doctor-python/issues/408) residual) ([#425](https://github.com/yeongseon/azure-functions-doctor-python/issues/425)) ([a49b2f8](https://github.com/yeongseon/azure-functions-doctor-python/commit/a49b2f8d7ff9c1a4f90ab753a370755b4e3059bf))
+
+
+### Bug Fixes
+
+* **ci:** align branch-name check with AGENTS.md and make it advisory ([#462](https://github.com/yeongseon/azure-functions-doctor-python/issues/462)) ([598fe9c](https://github.com/yeongseon/azure-functions-doctor-python/commit/598fe9c8bee36dc84f87849df4afe4351757709f)), closes [#461](https://github.com/yeongseon/azure-functions-doctor-python/issues/461)
+* **ci:** correct release wording and stale.yml inputs ([#466](https://github.com/yeongseon/azure-functions-doctor-python/issues/466)) ([4e59c5a](https://github.com/yeongseon/azure-functions-doctor-python/commit/4e59c5a9f5ddb377afd985125dc2aaf385decd2d)), closes [#465](https://github.com/yeongseon/azure-functions-doctor-python/issues/465)
+* **ci:** exclude machine-level rules from the soak baseline comparison ([#431](https://github.com/yeongseon/azure-functions-doctor-python/issues/431)) ([82c5e64](https://github.com/yeongseon/azure-functions-doctor-python/commit/82c5e6415eee8afbcbe151af0070cd29484f4f2a)), closes [#428](https://github.com/yeongseon/azure-functions-doctor-python/issues/428)
+* **ci:** normalize quote style breaking Ruff format check ([#464](https://github.com/yeongseon/azure-functions-doctor-python/issues/464)) ([38886ba](https://github.com/yeongseon/azure-functions-doctor-python/commit/38886ba5db2fa2f88313f628cc25c50f05c3eda7)), closes [#463](https://github.com/yeongseon/azure-functions-doctor-python/issues/463)
+* **ci:** stop the changed-file format gate failing open ([#459](https://github.com/yeongseon/azure-functions-doctor-python/issues/459)) ([f53bc27](https://github.com/yeongseon/azure-functions-doctor-python/commit/f53bc27a988cbe3dedac733ab158018fe9cabaa3))
+* **rules:** skip scan_before_spec without an azure-functions-openapi dependency ([#427](https://github.com/yeongseon/azure-functions-doctor-python/issues/427)) ([79f9057](https://github.com/yeongseon/azure-functions-doctor-python/commit/79f9057ac059bf679a620c73fc5c0f9f8b65a239)), closes [#426](https://github.com/yeongseon/azure-functions-doctor-python/issues/426)
+* **templates:** use Conventional Commit prefixes in issue forms ([#468](https://github.com/yeongseon/azure-functions-doctor-python/issues/468)) ([f49843d](https://github.com/yeongseon/azure-functions-doctor-python/commit/f49843d48b1022207070257c59b08365e6e4a6c9))
+
+
+### Documentation
+
+* 3-minute quickstart, CI recipes, and package metadata polish ([#423](https://github.com/yeongseon/azure-functions-doctor-python/issues/423)) ([4a23734](https://github.com/yeongseon/azure-functions-doctor-python/commit/4a237346c21cd9660bb1a18b5789efc58a629509)), closes [#414](https://github.com/yeongseon/azure-functions-doctor-python/issues/414)
+* align the contributor contract with the actual configuration ([#460](https://github.com/yeongseon/azure-functions-doctor-python/issues/460)) ([173eb42](https://github.com/yeongseon/azure-functions-doctor-python/commit/173eb42dea3ccd4ff42788ca4923572ffa6fae25))
+* document catalog operations (update procedure, freshness policy, incomplete target config) ([#419](https://github.com/yeongseon/azure-functions-doctor-python/issues/419)) ([4cf2522](https://github.com/yeongseon/azure-functions-doctor-python/commit/4cf25224d1f0d0b37fdd95f4e4bc001379d61a28))
+* **examples:** cover the deploy-profile scenarios with fixtures ([#421](https://github.com/yeongseon/azure-functions-doctor-python/issues/421)) ([df2bbc0](https://github.com/yeongseon/azure-functions-doctor-python/commit/df2bbc0377956b55208c882695d661697204d472))
+
+
+### Testing
+
+* **catalog:** add a hosting-plan x Python verdict matrix ([#420](https://github.com/yeongseon/azure-functions-doctor-python/issues/420)) ([9b8ae90](https://github.com/yeongseon/azure-functions-doctor-python/commit/9b8ae90e6180839a74fc0d04fb8e368b167a0fb5))
+* round-trip XML-sensitive JUnit findings ([#454](https://github.com/yeongseon/azure-functions-doctor-python/issues/454)) ([a894d45](https://github.com/yeongseon/azure-functions-doctor-python/commit/a894d45ef6c2be93222221dd9b26b2a5be448814))
+
+
+### Miscellaneous Tasks
+
+* add hatch-matrix hygiene lint to guard the CI matrix ([#433](https://github.com/yeongseon/azure-functions-doctor-python/issues/433)) ([955d327](https://github.com/yeongseon/azure-functions-doctor-python/commit/955d3276f9aa95cc6b297731ce6b01a0f3ee611f)), closes [#432](https://github.com/yeongseon/azure-functions-doctor-python/issues/432)
+* add post-release [@v1](https://github.com/v1) consumer smoke ([#416](https://github.com/yeongseon/azure-functions-doctor-python/issues/416)) ([e0aa03c](https://github.com/yeongseon/azure-functions-doctor-python/commit/e0aa03ca912be84b716fa17be1276928903bcc26)), closes [#410](https://github.com/yeongseon/azure-functions-doctor-python/issues/410)
+* adopt release-please and gate PyPI on in-chain Azure e2e ([#476](https://github.com/yeongseon/azure-functions-doctor-python/issues/476)) ([86f0ef7](https://github.com/yeongseon/azure-functions-doctor-python/commit/86f0ef78b612acef693452da02f62a5471478411))
+* allow build/ branch prefix in branch-naming validation ([#438](https://github.com/yeongseon/azure-functions-doctor-python/issues/438)) ([8c6a646](https://github.com/yeongseon/azure-functions-doctor-python/commit/8c6a6464f7d8a5f2f618ae1bc0b31d17b2d006b9))
+* **deps:** bump dependabot/fetch-metadata from 2.5.0 to 3.1.0 ([#330](https://github.com/yeongseon/azure-functions-doctor-python/issues/330)) ([9077192](https://github.com/yeongseon/azure-functions-doctor-python/commit/907719218eb3f1ac678a47bf4700643c7d2717fa))
+* **deps:** bump ruff ([#439](https://github.com/yeongseon/azure-functions-doctor-python/issues/439)) ([a97cbe0](https://github.com/yeongseon/azure-functions-doctor-python/commit/a97cbe0e0a55ae6d22172a2de5f0a01bc6928134))
+* **deps:** bump ruff in the python-dependencies group ([#436](https://github.com/yeongseon/azure-functions-doctor-python/issues/436)) ([215e680](https://github.com/yeongseon/azure-functions-doctor-python/commit/215e680c5d854f38006007c2fb05399887a417f8))
+* **deps:** bump the github-actions group across 1 directory with 5 updates ([#455](https://github.com/yeongseon/azure-functions-doctor-python/issues/455)) ([8e6e236](https://github.com/yeongseon/azure-functions-doctor-python/commit/8e6e23651dd42d26da750d535c60781ab137acfd))
+* **deps:** bump the github-actions group with 3 updates ([#437](https://github.com/yeongseon/azure-functions-doctor-python/issues/437)) ([e25601b](https://github.com/yeongseon/azure-functions-doctor-python/commit/e25601b3170f9627f9d15297dfb89f85cb4377a8))
+* enforce Ruff formatting in PR quality checks ([#453](https://github.com/yeongseon/azure-functions-doctor-python/issues/453)) ([d2ee9f5](https://github.com/yeongseon/azure-functions-doctor-python/commit/d2ee9f581559138d62b39035ae6980200ba87c9c))
+* ignore major bumps for pinned artifact actions ([#435](https://github.com/yeongseon/azure-functions-doctor-python/issues/435)) ([edb66bd](https://github.com/yeongseon/azure-functions-doctor-python/commit/edb66bdd9df7f32e7a5047b9b6e3aac9bb52d11b))
+* ignore uv.lock ([#472](https://github.com/yeongseon/azure-functions-doctor-python/issues/472)) ([e68acb5](https://github.com/yeongseon/azure-functions-doctor-python/commit/e68acb55ab0c2770a655e494279b10e389e9f442)), closes [#471](https://github.com/yeongseon/azure-functions-doctor-python/issues/471)
+* modernize typing and pin ruff, complete AGENTS.md, unify Azure e2e auth ([#474](https://github.com/yeongseon/azure-functions-doctor-python/issues/474)) ([7e8f2af](https://github.com/yeongseon/azure-functions-doctor-python/commit/7e8f2af9d78d601c0cf83b1bfdb38d7f6d5f1480))
+* remove an accidentally committed uv.lock ([#470](https://github.com/yeongseon/azure-functions-doctor-python/issues/470)) ([b8ca057](https://github.com/yeongseon/azure-functions-doctor-python/commit/b8ca057019bc67d673a13ae3b0c300151545b4bf)), closes [#469](https://github.com/yeongseon/azure-functions-doctor-python/issues/469)
+* schedule the cookbook example soak as a regression gate ([#430](https://github.com/yeongseon/azure-functions-doctor-python/issues/430)) ([e16bc29](https://github.com/yeongseon/azure-functions-doctor-python/commit/e16bc297c3d2abe315d6f7f74bacf0845d827987))
+* wire and harden the hatch default-env-pin lint ([#434](https://github.com/yeongseon/azure-functions-doctor-python/issues/434)) ([c2336a0](https://github.com/yeongseon/azure-functions-doctor-python/commit/c2336a08933fd78de93669038f17f412f1afc96b))
+
+
+### Other
+
+* **deps:** add Dependabot cooldown to age new releases ([#339](https://github.com/yeongseon/azure-functions-doctor-python/issues/339)) ([36ecc41](https://github.com/yeongseon/azure-functions-doctor-python/commit/36ecc410fcc95213e89478eb8a95458294107869))
+
 ## [0.20.0] - 2026-09-06
 
 - 0.20.0 migration notes (56f38936ac6520e9f19a91f63e18df11e091957f)
@@ -1195,4 +1255,3 @@ Add SARIF and JUnit output (fe04a752bdfeeadaf08c22bf3dfa36ad6334fc17)
 - initial project setup with CLI, Makefile, docs, and packaging (a39efbd9a2d2b953905b6ce3925badab2b44c117)
 
 - Initial commit (457425ebde591e34042116d1e5f92ac7006a03cd)
-
