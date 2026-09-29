@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 # Verify-before-publish gate (see AGENTS.md):
-#   build -> lib-tests -> doctor-runtime-gate -> verify-azure-certification -> publish
+#   build -> lib-tests -> doctor-runtime-gate -> azure-e2e -> publish
 # Tiered runtime verification before any PyPI upload:
 #   * lib-tests             : the library's own unit suite.
 #   * doctor-runtime-gate   : install the candidate wheel, assert the installed version
@@ -25,10 +25,10 @@ permissions:
 #                             Function App. Unlike a host-boot smoke, this imports and
 #                             exercises this package's primary runtime surface (the
 #                             diagnostic CLI) end to end.
-#   * verify-azure-certification : requires the EXACT release commit to have passed a
-#                             real-Azure deploy+live-e2e certification (e2e-azure.yml)
-#                             that is fresh and version/SHA-matched. Real Azure is
-#                             certified per release, not per publish.
+#   * azure-e2e            : calls e2e-azure.yml to deploy to real Azure and run the live e2e suite
+#                            against the tag being published. Because it runs inside this chain at
+#                            the same ref, certification covers the exact published commit by
+#                            construction -- no cross-run SHA/freshness matching is required.
 # The publish job uploads the EXACT artifact that was tested; it never rebuilds.
 # A tag whose gate fails is a failed release candidate: the version stays
 # unpublished. Recover by fixing forward and cutting the next patch tag
@@ -39,6 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -69,6 +70,7 @@ jobs:
             exit 1
           fi
           echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Build distribution packages
         run: python -m build
@@ -148,86 +150,24 @@ jobs:
             --path examples/v2/http-trigger \
             --profile minimal
 
-  verify-azure-certification:
-    name: Verify Azure release certification
+  azure-e2e:
+    name: Azure release certification
     needs: build
-    runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
-      actions: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
-
-      - name: Resolve release commit
-        id: commit
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Locate successful Azure certification for this commit
-        id: cert
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          COMMIT: ${{ steps.commit.outputs.sha }}
-        run: |
-          # A release may only publish if the EXACT commit was certified against
-          # real Azure by the trusted certification workflow (see e2e-azure.yml).
-          RUN_ID=$(gh run list \
-            --workflow e2e-azure.yml \
-            --json databaseId,headSha,conclusion \
-            --limit 50 \
-            --jq "[.[] | select(.headSha==\"$COMMIT\" and .conclusion==\"success\")] | first | .databaseId")
-          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
-            echo "::error ::No successful Azure certification run found for commit $COMMIT. Dispatch the 'e2e-azure' workflow on this release commit before publishing."
-            exit 1
-          fi
-          echo "Found certification run: $RUN_ID"
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-
-      - name: Download certification record
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: azure-cert
-          path: cert
-          run-id: ${{ steps.cert.outputs.run_id }}
-          github-token: ${{ github.token }}
-
-      - name: Assert certification matches this release
-        env:
-          COMMIT: ${{ steps.commit.outputs.sha }}
-          VERSION: ${{ needs.build.outputs.version }}
-          FRESHNESS_DAYS: "14"
-        run: |
-          python3 - "$COMMIT" "$VERSION" "$FRESHNESS_DAYS" <<'PY'
-          import json, sys, datetime, pathlib
-          commit, version, fresh_days = sys.argv[1], sys.argv[2], int(sys.argv[3])
-          cert = json.loads(pathlib.Path("cert/certification.json").read_text())
-          def fail(m):
-              print(f"::error ::{m}")
-              sys.exit(1)
-          if cert.get("result") != "success":
-              fail("certification result is not success")
-          if cert.get("package") != "azure-functions-doctor":
-              fail(f"cert package {cert.get('package')} != azure-functions-doctor")
-          if cert.get("commit") != commit:
-              fail(f"cert commit {cert.get('commit')} != release commit {commit}")
-          if cert.get("version") != version:
-              fail(f"cert version {cert.get('version')} != release version {version}")
-          ts = cert.get("certified_at")
-          if not ts:
-              fail("cert missing certified_at")
-          certified = datetime.datetime.fromisoformat(ts.replace("Z", "+00:00"))
-          age = datetime.datetime.now(datetime.timezone.utc) - certified
-          if age > datetime.timedelta(days=fresh_days):
-              fail(f"certification is stale: {age.days}d > {fresh_days}d")
-          print(f"Azure certification verified: {version}@{commit[:12]} certified {age.days}d ago")
-          PY
+    uses: ./.github/workflows/e2e-azure.yml
+    with:
+      ref: ${{ needs.build.outputs.tag }}
+      version: ${{ needs.build.outputs.version }}
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
   publish:
     name: Publish to PyPI
-    needs: [build, lib-tests, doctor-runtime-gate, verify-azure-certification]
+    needs: [build, lib-tests, doctor-runtime-gate, azure-e2e]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
