@@ -35,24 +35,7 @@ This guide provides instructions for contributing to Azure Functions Doctor. Fol
 
 ## Commit Message Convention
 
-We follow the Conventional Commits specification. Messages should follow this pattern: `<type>(<scope>): <description>`.
-
-| Type | Description |
-|------|-------------|
-| feat | A new feature |
-| fix | A bug fix |
-| docs | Documentation only changes |
-| style | Changes that do not affect the meaning of the code (white-space, formatting, etc) |
-| refactor | A code change that neither fixes a bug nor adds a feature |
-| test | Adding missing tests or correcting existing tests |
-| chore | Changes to the build process or auxiliary tools and libraries |
-
-**Scopes**: Common scopes include `handlers`, `cli`, `rules`, and `docs`.
-
-**Examples**:
-- `feat(handlers): add new diagnostic rule for local settings`
-- `fix(cli): correct exit code on failure`
-- `docs(readme): clarify installation steps`
+Titles for issues, pull requests, and commits follow the **Title Convention** in [`CONTRIBUTING.md`](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/CONTRIBUTING.md#title-convention), the single source of truth for the format and the allowed types.
 
 ## Code Quality Standards
 
