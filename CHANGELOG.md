@@ -1,4 +1,11 @@
 # Changelog
+## [0.21.1](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.21.0...v0.21.1) (2026-09-30)
+
+
+### Miscellaneous Tasks
+
+* add a PR title check and unify the title convention ([#479](https://github.com/yeongseon/azure-functions-doctor-python/issues/479)) ([f18d040](https://github.com/yeongseon/azure-functions-doctor-python/commit/f18d040105a531a6f8a00cb356f725e2e8ee02c6))
+
 ## [0.21.0](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.20.0...v0.21.0) (2026-09-29)
 
 
