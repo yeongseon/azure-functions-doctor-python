@@ -178,10 +178,12 @@ Issue titles are not enforced. Anyone can open an issue without knowing this con
 
 Merging to `main` does not publish a release.
 
-Releases are initiated by pushing a version tag (`v*`), or by the documented
-manual dispatch of the publish workflow, and only after the release
-verification requirements have been satisfied. Contributors never need to bump
-a version or tag anything in an ordinary pull request.
+Release Please keeps an open **Release PR** showing what the next version would
+be; merging that PR is what cuts the release, and it is what creates the `v*`
+tag that starts the publish workflow. Publishing happens only after the release
+verification requirements have been satisfied. Contributors never need to bump a
+version or tag anything in an ordinary pull request.
+
 
 See `AGENTS.md` for the maintainer-only release procedure.
 
