@@ -123,3 +123,35 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_RETRIES: 3
+
+  # The single required status check for branch protection.
+  #
+  # Branch protection matches required checks by literal name, so requiring
+  # matrix cells couples it to the matrix: dropping a version removes the job
+  # that produced that name, the check is then never reported, and GitHub holds
+  # it pending forever -- blocking every PR, Dependabot and Release Please
+  # included, until an admin edits settings.
+  #
+  # This job's name survives matrix changes. `if: always()` guarantees it always
+  # reports, and it reads every dependency's result, so a skipped or cancelled
+  # job cannot pass by not being a failure.
+  ci-required:
+    needs: [quality, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate required checks
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'EVAL'
+          import json, os, sys
+
+          results = json.loads(os.environ["RESULTS"])
+          for job, data in sorted(results.items()):
+              print(f"{job}: {data['result']}")
+          failed = sorted(j for j, d in results.items() if d["result"] != "success")
+          if failed:
+              sys.exit(f"::error::Required checks did not all succeed: {failed}")
+          print("All gating jobs succeeded.")
+          EVAL
