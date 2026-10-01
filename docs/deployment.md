@@ -46,7 +46,7 @@ In this guide you will:
 | Azure account | [portal.azure.com](https://portal.azure.com) | [Create free account](https://azure.microsoft.com/free/) |
 | Azure CLI | `az --version` | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
 | Azure Functions Core Tools v4 | `func --version` | [Install Core Tools](https://learn.microsoft.com/azure/azure-functions/functions-run-local#install-the-azure-functions-core-tools) |
-| Python 3.10-3.14 | `python3 --version` | [python.org](https://www.python.org/downloads/) |
+| Python 3.11-3.14 | `python3 --version` | [python.org](https://www.python.org/downloads/) |
 | Doctor CLI v0.21.0 | `pip show azure-functions-doctor` | `python3 -m pip install azure-functions-doctor` |
 
 Install doctor if needed:

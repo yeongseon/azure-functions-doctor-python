@@ -4,7 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/azure-functions-doctor.svg)](https://pypi.org/project/azure-functions-doctor/)
 [![Downloads](https://static.pepy.tech/badge/azure-functions-doctor/month)](https://pepy.tech/project/azure-functions-doctor)
-[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://pypi.org/project/azure-functions-doctor/)
+[![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://pypi.org/project/azure-functions-doctor/)
 [![CI](https://github.com/yeongseon/azure-functions-doctor-python/actions/workflows/ci-test.yml/badge.svg)](https://github.com/yeongseon/azure-functions-doctor-python/actions/workflows/ci-test.yml)
 [![Release](https://github.com/yeongseon/azure-functions-doctor-python/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/yeongseon/azure-functions-doctor-python/actions/workflows/publish-pypi.yml)
 [![Security Scans](https://github.com/yeongseon/azure-functions-doctor-python/actions/workflows/security.yml/badge.svg)](https://github.com/yeongseon/azure-functions-doctor-python/actions/workflows/security.yml)
@@ -318,7 +318,7 @@ The default ruleset includes checks for:
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - Hatch for development workflows
 - Azure Functions Core Tools v4+ recommended for local runs
 
@@ -386,7 +386,7 @@ This repository includes `llms.txt` and `llms-full.txt` for LLM-friendly documen
 
 When working with this codebase, LLM assistants should:
 
-1. **Use `llms.txt` for quick reference** — the canonical package version (0.21.0), Python requirements (>=3.10,<3.15), CLI entry points
+1. **Use `llms.txt` for quick reference** — the canonical package version (0.21.0), Python requirements (>=3.11,<3.15), CLI entry points
 2. **Refer to `llms-full.txt` for implementation details** — output contracts, rule structure, custom rule patterns, handler types
 3. **Check `src/azure_functions_doctor/cli.py`** — authoritative source for CLI options and validation
 4. **Review `src/azure_functions_doctor/assets/rules/v2.json`** — complete ruleset with check definitions

@@ -11,11 +11,11 @@ permissions:
 
 jobs:
   # Lint, type-check, docs-consistency and security run once on a single
-  # pinned interpreter (Python 3.10, matching the mypy/ruff target-version in
+  # pinned interpreter (Python 3.11, matching the mypy/ruff target-version in
   # pyproject). These checks are interpreter-agnostic, so fanning them across
   # the test matrix would only duplicate work (#382).
   quality:
-    name: Lint, type-check, docs & security (Py 3.10)
+    name: Lint, type-check, docs & security (Py 3.11)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -23,10 +23,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.10
+      - name: Set up Python 3.11
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Install package with dev extras
         run: |
@@ -70,7 +70,7 @@ jobs:
       fail-fast: false
       matrix:
         # Python 3.14 is stable and required in this matrix (not allow-fail).
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout code
@@ -105,16 +105,16 @@ jobs:
 
       - name: Run tests on the matrix interpreter
         # Raw pytest on the interpreter provisioned above (NOT through the
-        # Python-3.10-pinned hatch env). The repo pytest config enables
+        # pinned hatch env). The repo pytest config enables
         # --cov with fail_under=95; coverage.xml is produced on every cell
-        # but only uploaded once (from the 3.10 cell) to avoid duplicates.
+        # but only uploaded once (from the 3.11 cell) to avoid duplicates.
         run: pytest
 
       - name: Verify coverage output
         run: ls -lh coverage.xml
 
       - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.10' && github.actor != 'dependabot[bot]'
+        if: matrix.python-version == '3.11' && github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

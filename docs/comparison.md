@@ -34,7 +34,7 @@ inside your coding agent.
 | **Offline / CI-safe** | Yes — fully offline, no network or cloud, safe to run on PR workspaces | Deep mode needs an AI agent with elevated permissions and **refuses to run on PR workspaces** (prompt-injection risk); `--no-deep` is the CI-safe tier |
 | **Transparency / auditability** | Every finding cites a rule in a source-linked catalog; output is reproducible | Deep findings come from LLM reasoning; `--no-deep` is deterministic |
 | **Language focus** | **Python v2** decorator model — deep runtime/hosting-plan/deploy checks (Python lifecycle, hosting-plan Python caps, Flex config, binding connection resolution) | Multi-language, not Python-specific |
-| **Runtime required** | Python 3.10+ | Node.js 20+ (Node 24+ for Copilot CLI) |
+| **Runtime required** | Python 3.11+ | Node.js 20+ (Node 24+ for Copilot CLI) |
 | **Determinism** | Deterministic — same inputs produce the same findings | Deep mode is non-deterministic; `--no-deep` is deterministic |
 
 ## Naming relationship

@@ -6,7 +6,7 @@ Use this guide to diagnose common install, runtime, output, and CI issues with `
 
 Before deep debugging:
 
-1. Confirm Python version is supported (`>=3.10,<3.15`)
+1. Confirm Python version is supported (`>=3.11,<3.15`)
 2. Confirm you are in the intended project directory (`--path` if needed)
 3. Re-run with `--verbose` for fix hints
 4. Re-run with `--debug` for diagnostic logging context
@@ -35,7 +35,7 @@ python -m azure_functions_doctor.cli doctor
 
 ### Problem: install fails due to Python version
 
-The package requires Python `>=3.10,<3.15`.
+The package requires Python `>=3.11,<3.15`.
 
 Action:
 
