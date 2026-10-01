@@ -73,6 +73,16 @@ sources = ["src"]
 
 [tool.hatch.build.targets.wheel]
 
+[tool.hatch.build.targets.sdist]
+# Documentation images and CI config are needed by neither a build nor a test
+# run, and dominated the published sdist.
+exclude = [
+  "**/*.png",
+  "**/*.gif",
+  "**/*.jpg",
+  ".github",
+]
+
 [tool.hatch.version]
 path = "src/azure_functions_doctor/__init__.py"
 
