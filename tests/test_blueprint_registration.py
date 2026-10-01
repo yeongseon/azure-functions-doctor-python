@@ -28,16 +28,16 @@ app = func.FunctionApp()
 def test_collect_register_functions_args_only_accepts_official_api() -> None:
     handlers = import_module("azure_functions_doctor.handlers")
     source = """
+import azure.functions as func
+
+app = func.FunctionApp()
 app.register_functions(bp)
 loader.register_functions(other_bp)
 loader.register_blueprint(flask_bp)
 register_blueprint(flask_bare)
 app.register_functions(factory())
 """
-    assert handlers._collect_register_functions_args(source) == {
-        "bp",
-        "other_bp",
-    }
+    assert handlers._collect_register_functions_args(source) == {"bp"}
 
 
 def test_collect_unregistered_blueprint_aliases_tracks_project_level_registration(
@@ -57,7 +57,10 @@ def test_collect_unregistered_blueprint_aliases_tracks_project_level_registratio
         "    return req\n",
         encoding="utf-8",
     )
-    (tmp_path / "loader.py").write_text("app.register_functions(bp)\n", encoding="utf-8")
+    (tmp_path / "loader.py").write_text(
+        "import azure.functions as func\napp = func.FunctionApp()\napp.register_functions(bp)\n",
+        encoding="utf-8",
+    )
 
     assert handlers._collect_unregistered_blueprint_aliases(tmp_path) == {"other_bp"}
 
@@ -95,6 +98,11 @@ def test_blueprint_registration_fixture_passes_when_registered() -> None:
 
 def test_blueprint_registration_fixture_warns_when_unregistered() -> None:
     item_map = _item_status_by_label(FIXTURES_DIR / "blueprint_unregistered")
+    assert item_map["Blueprint registration"] == "warn"
+
+
+def test_blueprint_registration_fixture_ignores_unrelated_registration() -> None:
+    item_map = _item_status_by_label(FIXTURES_DIR / "blueprint_unrelated_registration")
     assert item_map["Blueprint registration"] == "warn"
 
 

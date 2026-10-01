@@ -254,6 +254,36 @@ def _collect_register_functions_args(source: str) -> set[str]:
     except SyntaxError:
         return set()
 
+    constructor_names = {"FunctionApp"}
+    module_names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "azure.functions":
+            constructor_names.update(
+                alias.asname or alias.name for alias in node.names if alias.name == "FunctionApp"
+            )
+        elif isinstance(node, ast.Import):
+            module_names.update(
+                alias.asname
+                for alias in node.names
+                if alias.name == "azure.functions" and alias.asname is not None
+            )
+
+    app_names: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Call):
+            continue
+        func_node = node.value.func
+        is_constructor = (
+            isinstance(func_node, ast.Name) and func_node.id in constructor_names
+        ) or (
+            isinstance(func_node, ast.Attribute)
+            and func_node.attr == "FunctionApp"
+            and isinstance(func_node.value, ast.Name)
+            and func_node.value.id in module_names
+        )
+        if is_constructor:
+            app_names.update(target.id for target in node.targets if isinstance(target, ast.Name))
+
     names: set[str] = set()
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
@@ -263,6 +293,8 @@ def _collect_register_functions_args(source: str) -> set[str]:
         if not isinstance(func_node, ast.Attribute):
             continue
         if func_node.attr != "register_functions":
+            continue
+        if not isinstance(func_node.value, ast.Name) or func_node.value.id not in app_names:
             continue
 
         for arg in node.args:
