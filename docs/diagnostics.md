@@ -69,7 +69,7 @@ These checks run in both `full` and `minimal` profiles.
 
 | Check | Purpose |
 | --- | --- |
-| Python version | Ensure Python 3.10 or newer. |
+| Python version | Ensure Python 3.11 or newer. |
 | `requirements.txt` | Ensure dependency declarations exist. |
 | `azure-functions` package | Ensure the Functions library is declared. |
 | `host.json` | Ensure the project includes host configuration. |
