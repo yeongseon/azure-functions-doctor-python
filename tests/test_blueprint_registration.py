@@ -1,6 +1,7 @@
 from importlib import import_module
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "v2"
@@ -95,6 +96,17 @@ def test_blueprint_registration_fixture_passes_when_registered() -> None:
 
 def test_blueprint_registration_fixture_warns_when_unregistered() -> None:
     item_map = _item_status_by_label(FIXTURES_DIR / "blueprint_unregistered")
+    assert item_map["Blueprint registration"] == "warn"
+
+
+@pytest.mark.parametrize(
+    "fixture_name",
+    ["blueprint_aliased_unregistered", "blueprint_module_aliased_unregistered"],
+)
+def test_blueprint_registration_fixture_warns_for_aliased_constructors(
+    fixture_name: str,
+) -> None:
+    item_map = _item_status_by_label(FIXTURES_DIR / fixture_name)
     assert item_map["Blueprint registration"] == "warn"
 
 

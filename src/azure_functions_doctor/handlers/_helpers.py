@@ -224,16 +224,33 @@ def _collect_blueprint_aliases(source: str) -> set[str]:
     except SyntaxError:
         return set()
 
+    constructor_names = {"Blueprint"}
+    module_names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "azure.functions":
+            constructor_names.update(
+                alias.asname or alias.name for alias in node.names if alias.name == "Blueprint"
+            )
+        elif isinstance(node, ast.Import):
+            module_names.update(
+                alias.asname
+                for alias in node.names
+                if alias.name == "azure.functions" and alias.asname is not None
+            )
+
     names: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
             func_node = node.value.func
-            attr_name: str | None = None
-            if isinstance(func_node, ast.Attribute):
-                attr_name = func_node.attr
-            elif isinstance(func_node, ast.Name):
-                attr_name = func_node.id
-            if attr_name != "Blueprint":
+            is_constructor = (
+                isinstance(func_node, ast.Name) and func_node.id in constructor_names
+            ) or (
+                isinstance(func_node, ast.Attribute)
+                and func_node.attr == "Blueprint"
+                and isinstance(func_node.value, ast.Name)
+                and func_node.value.id in module_names
+            )
+            if not is_constructor:
                 continue
             for target in node.targets:
                 if isinstance(target, ast.Name):
