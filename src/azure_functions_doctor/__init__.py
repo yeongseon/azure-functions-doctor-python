@@ -6,7 +6,7 @@ This module initializes the Azure Functions Doctor package and defines the versi
 import sys
 import warnings
 
-__version__ = "0.21.0"
+__version__ = "0.21.1"
 
 
 if sys.version_info < (3, 11):
