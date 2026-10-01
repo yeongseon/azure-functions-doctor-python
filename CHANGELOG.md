@@ -1,4 +1,13 @@
 # Changelog
+## [0.21.1](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.21.0...v0.21.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **ast:** detect aliased Blueprint constructors ([#492](https://github.com/yeongseon/azure-functions-doctor-python/issues/492)) ([09a4f64](https://github.com/yeongseon/azure-functions-doctor-python/commit/09a4f64c8b15f148cb5ac1a60c7fc94d0e88b10f))
+* **ast:** only count register_functions on a FunctionApp ([#493](https://github.com/yeongseon/azure-functions-doctor-python/issues/493)) ([83e95b8](https://github.com/yeongseon/azure-functions-doctor-python/commit/83e95b83d837fe2aefdc2db089836115c0ef81dd))
+* **compat:** deprecate Python 3.10 ahead of its removal ([#491](https://github.com/yeongseon/azure-functions-doctor-python/issues/491)) ([a22479e](https://github.com/yeongseon/azure-functions-doctor-python/commit/a22479ea7f1f1314cc99ee0dc6581aa57264e80f))
+
 ## [0.21.0](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.20.0...v0.21.0) (2026-09-29)
 
 
