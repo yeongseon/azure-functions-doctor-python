@@ -328,7 +328,7 @@ That is the entire integration: findings appear in the repository's
 **Security → Code scanning** tab on pushes and on pull requests from
 branches in the same repository. The Action's
 `format: sarif` + `upload-sarif: "true"` inputs map directly to the doctor CLI
-and the `upload-sarif` step in [`action.yml`](../../action.yml); no separate
+and the `upload-sarif` step in [`action.yml`](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/action.yml); no separate
 upload step is needed.
 
 > **Fork pull requests.** Pull requests opened from a *fork* run with a
