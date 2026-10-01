@@ -7,7 +7,7 @@ and release behavior stable across supported Python versions.
 
 ## Prerequisites
 
-- Python 3.11+
+- Python 3.10+
 - Hatch
 - Make
 
