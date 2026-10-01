@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 import re
 import sys
-import tomllib
 from typing import (
     TYPE_CHECKING,
     Literal,
@@ -18,6 +17,11 @@ from typing import (
 
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name
+
+try:  # Python 3.11+ ships tomllib in the stdlib
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised on Python 3.10
+    import tomli as tomllib
 
 from azure_functions_doctor.logging_config import get_logger
 

@@ -1,6 +1,6 @@
 // infra/main.bicep
 // Minimal Azure resources for e2e testing.
-// Creates: Storage Account + Function App (Consumption/Linux/Python 3.11).
+// Creates: Storage Account + Function App (Consumption/Linux/Python 3.10).
 // Optionally creates Application Insights (enableAppInsights=true).
 //
 // Usage:
@@ -69,7 +69,7 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
   properties: {
     serverFarmId: hostingPlan.id
     siteConfig: {
-      linuxFxVersion: 'Python|3.11'
+      linuxFxVersion: 'Python|3.10'
       appSettings: concat(
         [
           { name: 'AzureWebJobsStorage', value: storageConnectionString }

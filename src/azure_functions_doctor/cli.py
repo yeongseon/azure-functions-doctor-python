@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -315,7 +315,7 @@ def doctor(
             logger.warning(f"Failed to write summary JSON to {summary_json}: {exc}")
 
     if format == "json":
-        generated_at = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         metadata = {
             "tool_version": __version__,
             "generated_at": generated_at,

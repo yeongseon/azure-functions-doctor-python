@@ -2,10 +2,10 @@
 
 ## Python
 
-Azure Functions Doctor supports **Python 3.11 and above**.
+Azure Functions Doctor supports **Python 3.10 and above**.
 
-- Minimum supported version: 3.11
-- Targeted versions: 3.11, 3.12, 3.13, 3.14
+- Minimum supported version: 3.10
+- Targeted versions: 3.10, 3.11, 3.12, 3.13, 3.14
 
 ### Python Compatibility Notes
 
@@ -55,7 +55,7 @@ The CI pipeline should continuously validate package behavior against supported 
 | Dimension | Values |
 | --- | --- |
 | OS | `ubuntu-latest` |
-| Python versions | `3.11`, `3.12`, `3.13`, `3.14` |
+| Python versions | `3.10`, `3.11`, `3.12`, `3.13`, `3.14` |
 | Test gates | lint, typecheck, unit tests, security checks |
 
 Representative GitHub Actions matrix shape:
@@ -64,7 +64,7 @@ Representative GitHub Actions matrix shape:
 strategy:
   matrix:
     os: [ubuntu-latest]
-    python-version: ["3.11", "3.12", "3.13", "3.14"]
+    python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 ```
 
 ## CLI and API Compatibility Expectations

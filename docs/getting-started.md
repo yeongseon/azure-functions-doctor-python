@@ -6,7 +6,7 @@ This guide walks through your first successful run with `azure-functions-doctor`
 
 Before running diagnostics, confirm:
 
-- Python `>=3.11,<3.15`
+- Python `>=3.10,<3.15`
 - A local Azure Functions project (Python v2 decorators)
 - `azure-functions-doctor` installed
 
