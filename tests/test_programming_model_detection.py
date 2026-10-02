@@ -72,6 +72,15 @@ app = func.FunctionApp()
             doctor = Doctor(str(temp_path))
             assert doctor.programming_model == "v2"
 
+    def test_detect_v2_with_utf8_bom_and_crlf(self, tmp_path: Path) -> None:
+        (tmp_path / "function_app.py").write_bytes(
+            b"\xef\xbb\xbfimport azure.functions as func\r\napp = func.FunctionApp()\r\n"
+        )
+
+        doctor = Doctor(str(tmp_path))
+
+        assert doctor.programming_model == "v2"
+
     def test_has_v2_decorators_with_various_patterns(self) -> None:
         """Test _has_v2_decorators with various @app patterns."""
         with tempfile.TemporaryDirectory() as temp_dir:
