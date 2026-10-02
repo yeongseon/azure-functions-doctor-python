@@ -24,7 +24,8 @@ jobs:
           stale-issue-label: "stale"
           stale-pr-label: "stale"
           exempt-issue-labels: "needs-triage,pinned,security,enhancement,bug,documentation,chore,good first issue,help wanted"
-          exempt-pr-labels: "pinned,security,enhancement,bug,documentation,wip"
+          exempt-pr-labels: "pinned,security,enhancement,bug,documentation"
+          exempt-draft-pr: true
           days-before-stale: 30
           days-before-issue-close: 7
           days-before-pr-close: -1
