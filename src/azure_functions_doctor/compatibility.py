@@ -385,7 +385,7 @@ def load_catalog() -> Catalog:
         "compatibility/catalog.json"
     )
     try:
-        with catalog_path.open(encoding="utf-8") as handle:
+        with catalog_path.open(encoding="utf-8-sig") as handle:
             raw = json.load(handle)
     except FileNotFoundError as exc:  # pragma: no cover - packaging safeguard
         logger.error("compatibility catalog.json not found")
