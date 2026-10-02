@@ -72,6 +72,16 @@ def test_functions_extension_version_passes_on_v4(tmp_path: Path) -> None:
     assert _result("functions_extension_version", tmp_path)["status"] == "pass"
 
 
+def test_functions_extension_version_passes_with_utf8_bom(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        "local.settings.json",
+        "\ufeff" + json.dumps({"Values": {"FUNCTIONS_EXTENSION_VERSION": "~4"}}),
+    )
+
+    assert _result("functions_extension_version", tmp_path)["status"] == "pass"
+
+
 def test_functions_extension_version_respects_condition_value(tmp_path: Path) -> None:
     _write(
         tmp_path,

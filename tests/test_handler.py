@@ -653,6 +653,16 @@ def test_host_json_version_pass(tmp_path: Path) -> None:
     assert '"2.0"' in res.get("detail", "")
 
 
+def test_host_json_version_passes_with_utf8_bom(tmp_path: Path) -> None:
+    host = tmp_path / "host.json"
+    host.write_text('\ufeff{"version": "2.0"}\r\n', encoding="utf-8")
+    rule = _make_rule("host_json_version", {})
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "pass"
+
+
 def test_host_json_version_fail_wrong_version(tmp_path: Path) -> None:
     """Test host_json_version fails when host.json has wrong version."""
     host = tmp_path / "host.json"
@@ -769,6 +779,20 @@ def test_extension_bundle_v4_pass(tmp_path: Path) -> None:
     res = generic_handler(rule, tmp_path)
     assert res["status"] == "pass"
     assert "4" in res.get("detail", "")
+
+
+def test_extension_bundle_v4_passes_with_utf8_bom(tmp_path: Path) -> None:
+    host = tmp_path / "host.json"
+    host.write_text(
+        '\ufeff{"version": "2.0", "extensionBundle": '
+        '{"id": "Microsoft.Azure.Functions.ExtensionBundle", "version": "[4.*, 5.0.0)"}}\r\n',
+        encoding="utf-8",
+    )
+    rule = _make_rule("host_json_extension_bundle_version", {})
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "pass"
 
 
 def test_extension_bundle_v4_fail_old_version(tmp_path: Path) -> None:

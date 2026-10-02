@@ -454,7 +454,7 @@ class DeploymentHandlers:
                 "local.settings.json not present; FUNCTIONS_EXTENSION_VERSION check skipped",
             )
         try:
-            data = json.loads(settings_path.read_text(encoding="utf-8"))
+            data = json.loads(settings_path.read_text(encoding="utf-8-sig"))
         except Exception as exc:
             return _handle_specific_exceptions("reading local.settings.json", exc)
         values = data.get("Values") if isinstance(data, dict) else None
@@ -549,7 +549,7 @@ class DeploymentHandlers:
         ]
         for candidate in sorted(candidates):
             try:
-                text = candidate.read_text(encoding="utf-8")
+                text = candidate.read_text(encoding="utf-8-sig")
             except OSError:
                 continue
             if "AzureWebJobsStorage" in text and emulator in text:
@@ -595,7 +595,7 @@ class DeploymentHandlers:
         if not host_path.exists():
             return _create_result("fail", "host.json not found")
         try:
-            host_data = json.loads(host_path.read_text(encoding="utf-8"))
+            host_data = json.loads(host_path.read_text(encoding="utf-8-sig"))
         except Exception as exc:
             return _handle_specific_exceptions("reading host.json", exc)
         if _resolve_host_json_path(host_data, jsonpath) is _HOST_JSON_MISSING:
@@ -615,7 +615,7 @@ class DeploymentHandlers:
                 file="host.json",
             )
         try:
-            host_data = json.loads(host_path.read_text(encoding="utf-8"))
+            host_data = json.loads(host_path.read_text(encoding="utf-8-sig"))
         except json.JSONDecodeError as exc:
             msg = f"host.json is not valid JSON: {exc}"
             return _create_result("fail", msg, internal_error=True)
@@ -677,7 +677,7 @@ class DeploymentHandlers:
                 file="host.json",
             )
         try:
-            host_data = json.loads(host_path.read_text(encoding="utf-8"))
+            host_data = json.loads(host_path.read_text(encoding="utf-8-sig"))
         except Exception as exc:
             return _handle_specific_exceptions("reading host.json", exc)
 
