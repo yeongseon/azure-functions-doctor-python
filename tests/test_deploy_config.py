@@ -113,6 +113,18 @@ def test_flex_consumption_from_function_app_config_json(tmp_path: Path) -> None:
     assert cfg.hosting_plan.value == PLAN_FLEX_CONSUMPTION
 
 
+def test_infra_json_with_utf8_bom_is_ingested(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        "main.json",
+        "\ufeff" + json.dumps({"resources": [{"functionAppConfig": {"runtime": {}}}]}),
+    )
+
+    cfg = resolve_target_config(tmp_path)
+
+    assert cfg.hosting_plan.value == PLAN_FLEX_CONSUMPTION
+
+
 def test_linux_consumption_from_dynamic_sku(tmp_path: Path) -> None:
     _write(tmp_path, "plan.json", _arm_with_sku("Y1", "Dynamic"))
     cfg = resolve_target_config(tmp_path)
