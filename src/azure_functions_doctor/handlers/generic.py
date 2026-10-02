@@ -221,7 +221,7 @@ class GenericHandlers:
             return _create_result("fail", "host.json missing (durable usage)")
 
         try:
-            host_data = json.loads(host_path.read_text(encoding="utf-8"))
+            host_data = json.loads(host_path.read_text(encoding="utf-8-sig"))
         except Exception as exc:
             return _handle_specific_exceptions("reading host.json", exc)
 
@@ -332,7 +332,7 @@ class GenericHandlers:
                 host_path = path / "host.json"
                 if host_path.exists():
                     try:
-                        data = json.loads(host_path.read_text(encoding="utf-8"))
+                        data = json.loads(host_path.read_text(encoding="utf-8-sig"))
                         node = _resolve_host_json_pointer(data, key.split("."))
                         if node is not _HOST_JSON_MISSING and node is not None:
                             return _create_result("pass", f"host.json:{key} present")
