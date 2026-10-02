@@ -1013,13 +1013,13 @@ def _iter_project_py_contents(path: Path) -> Iterator[tuple[Path, str]]:
 def _read_project_python_file(py_file: Path) -> str | None:
     """Read Python source without failing the whole traversal."""
     try:
-        return py_file.read_text(encoding="utf-8")
+        return py_file.read_text(encoding="utf-8-sig")
     except PermissionError:
         logger.warning(f"Permission denied reading {py_file}")
         return None
     except UnicodeDecodeError:
         try:
-            return py_file.read_text(encoding="utf-8", errors="ignore")
+            return py_file.read_text(encoding="utf-8-sig", errors="ignore")
         except (OSError, PermissionError, ValueError) as exc:
             logger.debug(f"Skip {py_file}: {exc}")
             return None
