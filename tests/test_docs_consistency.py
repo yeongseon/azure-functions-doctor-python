@@ -3,12 +3,20 @@
 import importlib.util
 import json
 from pathlib import Path
+import re
 from types import ModuleType
+
+from typer.core import TyperGroup, TyperOption
+from typer.main import get_command
+
+from azure_functions_doctor.cli import SUPPORTED_DEPLOYMENT_MODES, cli
+from azure_functions_doctor.target_resolver import SUPPORTED_HOSTING_PLANS
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "check_docs_consistency.py"
 RULES_JSON = ROOT / "src" / "azure_functions_doctor" / "assets" / "rules" / "v2.json"
 README = ROOT / "README.md"
+USAGE = ROOT / "docs" / "usage.md"
 
 
 def _load_module() -> ModuleType:
@@ -52,3 +60,40 @@ class TestReadmeRuleCount:
     def test_full_check_passes(self) -> None:
         module = _load_module()
         assert module.main() == 0
+
+
+def test_usage_option_reference_matches_doctor_help() -> None:
+    # Given: the documented full option table and the live doctor command
+    usage = USAGE.read_text()
+    option_table = usage[usage.index("## Full option reference") : usage.index("!!! note")]
+    documented = set(re.findall(r"--[a-z][\w-]+", option_table))
+
+    # When: the doctor command's Click options are inspected directly
+    root_command = get_command(cli)
+    assert isinstance(root_command, TyperGroup)
+    doctor_command = root_command.commands["doctor"]
+    help_options = {
+        option
+        for param in doctor_command.params
+        if isinstance(param, TyperOption)
+        for option in (*param.opts, *param.secondary_opts)
+        if option.startswith("--")
+    } - {"--no-debug"}
+
+    # Then: every long command option is present in the full reference
+    assert documented == help_options
+
+
+def test_usage_documents_all_context_values() -> None:
+    # Given: the deployment context values accepted by the CLI
+    usage = USAGE.read_text()
+
+    # When: the full option reference is inspected
+    deployment_row = usage.split("| `--deployment-mode`")[1].splitlines()[0]
+    hosting_row = usage.split("| `--hosting-plan`")[1].splitlines()[0]
+    deployment_values = set(re.findall(r"`([\w-]+)`", deployment_row))
+    hosting_values = set(re.findall(r"`([\w-]+)`", hosting_row))
+
+    # Then: both option rows list every accepted value
+    assert deployment_values == set(SUPPORTED_DEPLOYMENT_MODES)
+    assert hosting_values == set(SUPPORTED_HOSTING_PLANS)
