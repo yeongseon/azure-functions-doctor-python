@@ -315,7 +315,7 @@ class Doctor:
     def load_rules(self) -> list[Rule]:
         """Load and validate rules from a custom path or the built-in v2 ruleset."""
         if self.rules_path is not None:
-            with self.rules_path.open(encoding="utf-8") as f:
+            with self.rules_path.open(encoding="utf-8-sig") as f:
                 rules: list[Rule] = json.load(f)
         else:
             rules = self._load_v2_rules()
@@ -327,7 +327,7 @@ class Doctor:
         schema_path = importlib.resources.files("azure_functions_doctor.schemas").joinpath(
             "rules.schema.json"
         )
-        with schema_path.open(encoding="utf-8") as f:
+        with schema_path.open(encoding="utf-8-sig") as f:
             schema = json.load(f)
 
         try:
@@ -342,7 +342,7 @@ class Doctor:
         # Load v2 rules from assets/rules/v2.json only
         try:
             rules_path = files_obj.joinpath("rules/v2.json")
-            with rules_path.open(encoding="utf-8") as f:
+            with rules_path.open(encoding="utf-8-sig") as f:
                 v2_rules = json.load(f)
         except FileNotFoundError as e:
             logger.error("v2.json not found")

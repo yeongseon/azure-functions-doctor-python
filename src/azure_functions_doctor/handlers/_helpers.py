@@ -940,7 +940,7 @@ def _collect_unsupported_metadata_versions(
 
     def _load(p: Path) -> object:
         try:
-            return json.loads(p.read_text(encoding="utf-8"))
+            return json.loads(p.read_text(encoding="utf-8-sig"))
         except (OSError, ValueError, UnicodeDecodeError):
             return None
 

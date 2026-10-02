@@ -142,7 +142,7 @@ def _shared_traversal() -> Callable[[Path, str | tuple[str, ...] | list[str]], I
 
 def _read_text(candidate: Path) -> str | None:
     try:
-        return candidate.read_text(encoding="utf-8")
+        return candidate.read_text(encoding="utf-8-sig")
     except (OSError, ValueError, UnicodeDecodeError):
         logger.debug("Skip unreadable infra file %s", candidate)
         return None
@@ -270,7 +270,7 @@ def flex_deployment_storage_shape(project_path: Path) -> dict[str, object] | Non
         if kind != "json":
             continue
         try:
-            data = json.loads(candidate.read_text(encoding="utf-8"))
+            data = json.loads(candidate.read_text(encoding="utf-8-sig"))
         except (ValueError, UnicodeDecodeError, OSError):
             continue
         for obj in _walk_json(data):
