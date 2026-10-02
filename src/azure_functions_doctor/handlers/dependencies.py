@@ -136,7 +136,7 @@ class DependencyHandlers:
             content = req_path.read_text(encoding="utf-8")
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
-        normalized = _parse_requirements_names(content)
+        normalized = _parse_requirements_names(content, req_path)
         declared = normalized_target in normalized
         if not declared and normalized_target in pyproject_dependency_names(path):
             if is_local_prebuilt_deployment(path, context):
@@ -177,7 +177,7 @@ class DependencyHandlers:
             content = req_path.read_text(encoding="utf-8")
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
-        normalized = _parse_requirements_names(content)
+        normalized = _parse_requirements_names(content, req_path)
         declared = canonicalize_name(package_name) in normalized
         if declared:
             return _create_result(

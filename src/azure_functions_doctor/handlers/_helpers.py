@@ -471,7 +471,9 @@ def _project_declares_openapi_dep(path: Path) -> bool:
     content = _read_project_python_file(req_path)
     if content is None:
         return False
-    return canonicalize_name("azure-functions-openapi") in _parse_requirements_names(content)
+    return canonicalize_name("azure-functions-openapi") in _parse_requirements_names(
+        content, req_path
+    )
 
 
 def _project_declares_validation_dep(path: Path) -> bool:
@@ -484,7 +486,9 @@ def _project_declares_validation_dep(path: Path) -> bool:
     content = _read_project_python_file(req_path)
     if content is None:
         return False
-    return canonicalize_name("azure-functions-validation") in _parse_requirements_names(content)
+    return canonicalize_name("azure-functions-validation") in _parse_requirements_names(
+        content, req_path
+    )
 
 
 _SPEC_SERVING_CALL_NAMES: frozenset[str] = frozenset(
@@ -881,7 +885,7 @@ def _project_declares_opentelemetry(path: Path) -> bool:
     if req_path.exists():
         content = _read_project_python_file(req_path)
         if content is not None:
-            declared |= _parse_requirements_names(content)
+            declared |= _parse_requirements_names(content, req_path)
     return any(name.startswith("opentelemetry") for name in declared)
 
 
@@ -1028,42 +1032,69 @@ def _read_project_python_file(py_file: Path) -> str | None:
         return None
 
 
-def _parse_requirements_names(content: str) -> set[str]:
+def _parse_requirements_names(content: str, source_path: Path | None = None) -> set[str]:
     """Extract normalized package names from requirements.txt content.
 
     Handles extras (``requests[security]``), environment markers (``;``),
     URL installs (``@``), pip directives (``-r``, ``-e``), and inline comments.
     """
-    content = content.removeprefix("\ufeff")
+    contents = [content.removeprefix("\ufeff")]
+    if source_path is not None:
+        seen = {source_path.resolve()}
+
+        def collect_includes(text: str, including_path: Path, depth: int) -> None:
+            if depth >= 10:
+                return
+            for raw_line in text.splitlines():
+                match = re.match(r"^(?:-r\s+|--requirement(?:\s+|=))(.+)$", raw_line.strip())
+                if match is None:
+                    continue
+                include_value = match.group(1).split(" #", 1)[0].strip().strip("'\"")
+                if "://" in include_value:
+                    continue
+                include_path = (including_path.parent / include_value).resolve()
+                if include_path in seen or not include_path.is_file():
+                    continue
+                seen.add(include_path)
+                try:
+                    included = include_path.read_text(encoding="utf-8-sig")
+                except (OSError, UnicodeDecodeError):
+                    continue
+                contents.append(included)
+                collect_includes(included, include_path, depth + 1)
+
+        collect_includes(content, source_path, 0)
+
     names: set[str] = set()
-    for raw_line in content.splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        # Skip -r / -c / --requirement / --constraint includes
-        if line.startswith(("-r ", "-c ", "--requirement", "--constraint")):
-            continue
-        # Handle editable installs: -e git+...#egg=name
-        if line.startswith(("-e ", "--editable")):
-            egg_match = re.search(r"#egg=([^&\s]+)", line)
-            if egg_match:
-                names.add(canonicalize_name(egg_match.group(1)))
-            continue
-        # Skip other pip flags (--find-links, --index-url, etc.)
-        if line.startswith("-"):
-            continue
-        # Strip inline comments
-        line = line.split("#")[0].strip()
-        if not line:
-            continue
-        try:
-            req = Requirement(line)
-            names.add(canonicalize_name(req.name))
-        except InvalidRequirement:
-            # Fall back to a simple split for unparseable lines
-            name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
-            if name:
-                names.add(canonicalize_name(name))
+    for requirements_content in contents:
+        for raw_line in requirements_content.splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            # Skip -r / -c / --requirement / --constraint includes
+            if line.startswith(("-r ", "-c ", "--requirement", "--constraint")):
+                continue
+            # Handle editable installs: -e git+...#egg=name
+            if line.startswith(("-e ", "--editable")):
+                egg_match = re.search(r"#egg=([^&\s]+)", line)
+                if egg_match:
+                    names.add(canonicalize_name(egg_match.group(1)))
+                continue
+            # Skip other pip flags (--find-links, --index-url, etc.)
+            if line.startswith("-"):
+                continue
+            # Strip inline comments
+            line = line.split("#")[0].strip()
+            if not line:
+                continue
+            try:
+                req = Requirement(line)
+                names.add(canonicalize_name(req.name))
+            except InvalidRequirement:
+                # Fall back to a simple split for unparseable lines
+                name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
+                if name:
+                    names.add(canonicalize_name(name))
     return names
 
 

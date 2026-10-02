@@ -258,6 +258,55 @@ def test_package_declared_rule_supports_extras_syntax(tmp_path: Path) -> None:
     assert result["status"] == "pass"
 
 
+def test_package_declared_resolves_nested_relative_requirement_includes(tmp_path: Path) -> None:
+    requirements = tmp_path / "requirements"
+    requirements.mkdir()
+    (tmp_path / "requirements.txt").write_text("-r requirements/base.txt\n", encoding="utf-8")
+    (requirements / "base.txt").write_text("--requirement=shared.txt\n", encoding="utf-8")
+    (requirements / "shared.txt").write_text(
+        "azure-functions==1.25.0\n-r base.txt\n",
+        encoding="utf-8",
+    )
+    rule = _make_rule(
+        "package_declared",
+        {"package": "azure-functions", "file": "requirements.txt"},
+    )
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "pass"
+
+
+def test_package_declared_ignores_remote_and_constraint_includes(tmp_path: Path) -> None:
+    (tmp_path / "requirements.txt").write_text(
+        "-r https://example.com/requirements.txt\n-c constraints.txt\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "constraints.txt").write_text("azure-functions==1.25.0\n", encoding="utf-8")
+    rule = _make_rule(
+        "package_declared",
+        {"package": "azure-functions", "file": "requirements.txt"},
+    )
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "fail"
+
+
+def test_package_declared_stops_at_requirement_include_depth_limit(tmp_path: Path) -> None:
+    for depth in range(12):
+        content = f"-r {depth + 1}.txt\n" if depth < 11 else "azure-functions==1.25.0\n"
+        (tmp_path / f"{depth}.txt").write_text(content, encoding="utf-8")
+    rule = _make_rule(
+        "package_declared",
+        {"package": "azure-functions", "file": "0.txt"},
+    )
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "fail"
+
+
 def test_package_forbidden_rule_supports_extras_syntax(tmp_path: Path) -> None:
     """Issue #98: package_forbidden rule detects forbidden package with extras."""
     (tmp_path / "requirements.txt").write_text(
