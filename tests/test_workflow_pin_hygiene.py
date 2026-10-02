@@ -23,6 +23,14 @@ def test_repo_workflows_are_pin_clean() -> None:
     assert lint_mod.lint() == []
 
 
+def test_preflight_template_is_not_an_active_repository_workflow() -> None:
+    workflow_path = _REPO_ROOT / ".github" / "workflows" / "azure-functions-preflight.yml"
+    example_path = _REPO_ROOT / "examples" / "github-actions" / "azure-functions-preflight.yml"
+
+    assert not workflow_path.exists()
+    assert example_path.is_file()
+
+
 def test_sha_with_comment_passes() -> None:
     text = "      - uses: actions/checkout@" + "a" * 40 + " # v7.0.1\n"
     assert lint_mod.check_pin_hygiene(text, "fake.yml") == []

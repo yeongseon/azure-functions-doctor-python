@@ -7,15 +7,12 @@
 #   Copy this file into your repository's .github/workflows/ directory.
 #   Adjust the `working-directory` and Python version as needed.
 #
-# Action pinning exception:
+# Action pinning guidance:
 #   The `uses:` references below are intentionally pinned to floating major
 #   tags (e.g. `@v6`) instead of commit SHAs. This file is distributed as a
 #   copy-paste template for end-user repositories, so SHAs hard-coded here
 #   would go stale immediately on the consumer's side. All workflows that
-#   run as part of this repository's own CI (`ci-test.yml`,
-#   `action-integration.yml`, `e2e-azure.yml`, etc.) follow the
-#   SHA-pinning policy without exception. See CONTRIBUTING.md
-#   § "GitHub Actions Pinning" for the full policy.
+#   run as part of this repository's own CI follow its SHA-pinning policy.
 
 name: Azure Functions Pre-flight Check
 
@@ -29,12 +26,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        # Tag-pinned (not SHA): example workflow exception, see file header.
-        uses: actions/checkout@v7.0.1 # pin-exempt: distributed example template; intentionally tag-pinned to floating major (see file header)
+        uses: actions/checkout@v7.0.1
 
       - name: Set up Python
-        # Tag-pinned (not SHA): example workflow exception, see file header.
-        uses: actions/setup-python@v7 # pin-exempt: distributed example template; intentionally tag-pinned to floating major (see file header)
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
