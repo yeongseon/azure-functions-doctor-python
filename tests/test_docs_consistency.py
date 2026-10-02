@@ -6,7 +6,8 @@ from pathlib import Path
 import re
 from types import ModuleType
 
-from typer.testing import CliRunner
+from typer.core import TyperGroup, TyperOption
+from typer.main import get_command
 
 from azure_functions_doctor.cli import SUPPORTED_DEPLOYMENT_MODES, cli
 from azure_functions_doctor.target_resolver import SUPPORTED_HOSTING_PLANS
@@ -67,12 +68,19 @@ def test_usage_option_reference_matches_doctor_help() -> None:
     option_table = usage[usage.index("## Full option reference") : usage.index("!!! note")]
     documented = set(re.findall(r"--[a-z][\w-]+", option_table))
 
-    # When: Typer renders the command's help surface
-    result = CliRunner().invoke(cli, ["doctor", "--help"])
+    # When: the doctor command's Click options are inspected directly
+    root_command = get_command(cli)
+    assert isinstance(root_command, TyperGroup)
+    doctor_command = root_command.commands["doctor"]
+    help_options = {
+        option
+        for param in doctor_command.params
+        if isinstance(param, TyperOption)
+        for option in (*param.opts, *param.secondary_opts)
+        if option.startswith("--")
+    } - {"--no-debug"}
 
-    # Then: every long option in help is present in the full reference
-    assert result.exit_code == 0
-    help_options = set(re.findall(r"--[a-z][\w-]+", result.stdout)) - {"--help", "--no-debug"}
+    # Then: every long command option is present in the full reference
     assert documented == help_options
 
 
