@@ -84,14 +84,6 @@ the call site:
 - `pypa/gh-action-pypi-publish@release/v1` — PyPA-maintained stable
   release channel; this pinning style is explicitly recommended upstream.
 - Local composite actions (`uses: ./...`) — versioned with the repo.
-- `.github/workflows/azure-functions-preflight.yml` — example/template
-  workflow distributed to end-user repositories as a copy-paste
-  pre-deployment health check. Its external `uses:` references are
-  intentionally tag-pinned (`@v6`) so consumers receive a working
-  starting point rather than commit SHAs that would go stale immediately
-  on their side. All workflows that run as part of this repository's
-  own CI (`ci-test.yml`, `action-integration.yml`, `e2e-azure.yml`,
-  etc.) follow the SHA-pinning policy without exception.
 
 When adding a new external Action, resolve the SHA with
 `git ls-remote <repo-url> 'refs/tags/<tag>^{}'`. The trailing `^{}`

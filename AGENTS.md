@@ -52,7 +52,7 @@ relevant root document in the same pull request or commit series.
 - Each translated README carries a staleness banner linking back to the canonical English README. Keep that banner in place so readers always know the translation may be out of date.
 
 ### Action Pinning
-- All external `uses:` references in `.github/workflows/` must be SHA-pinned per `CONTRIBUTING.md` § "GitHub Actions Pinning". The PyPA publish action, local composite actions (`uses: ./...`), and the end-user `azure-functions-preflight.yml` template are the only documented exceptions and must carry an inline comment at the call site.
+- All external `uses:` references in `.github/workflows/` must be SHA-pinned per `CONTRIBUTING.md` § "GitHub Actions Pinning". The PyPA publish action and local composite actions (`uses: ./...`) are the only documented exceptions and must carry an inline comment at the call site.
 
 ## Issue Conventions
 
