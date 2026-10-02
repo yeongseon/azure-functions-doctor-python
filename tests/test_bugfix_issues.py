@@ -236,6 +236,12 @@ def test_parse_requirements_names_handles_inline_comments() -> None:
     assert names == {"package1", "package2"}
 
 
+def test_parse_requirements_names_handles_utf8_bom_and_crlf() -> None:
+    names = _parse_requirements_names("\ufeffazure-functions==1.25.0\r\n")
+
+    assert names == {"azure-functions"}
+
+
 def test_package_declared_rule_supports_extras_syntax(tmp_path: Path) -> None:
     """Issue #98: package_declared rule matches package declared with extras."""
     (tmp_path / "requirements.txt").write_text(
