@@ -1034,6 +1034,7 @@ def _parse_requirements_names(content: str) -> set[str]:
     Handles extras (``requests[security]``), environment markers (``;``),
     URL installs (``@``), pip directives (``-r``, ``-e``), and inline comments.
     """
+    content = content.removeprefix("\ufeff")
     names: set[str] = set()
     for raw_line in content.splitlines():
         line = raw_line.strip()
