@@ -24,14 +24,6 @@
     "check_local_settings",
     "check_requirements_txt"
   ],
-  "examples/ai-and-agents/knowledge_notion_search": [
-    "check_app_insights",
-    "check_azure_functions_library",
-    "check_azure_functions_worker",
-    "check_funcignore",
-    "check_local_settings",
-    "check_requirements_txt"
-  ],
   "examples/ai-and-agents/langgraph_agent": [
     "check_app_insights",
     "check_azure_functions_library",
@@ -161,6 +153,20 @@
     "check_local_settings",
     "check_requirements_txt",
     "check_unused_files"
+  ],
+  "examples/apis-and-ingress/openapi_inference": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
+  "examples/apis-and-ingress/openapi_supersedes": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt"
   ],
   "examples/apis-and-ingress/scaffold_walkthrough_app": [
     "check_app_insights",
@@ -411,16 +417,6 @@
     "check_local_settings",
     "check_requirements_txt",
     "check_unused_files"
-  ],
-  "examples/orchestration-and-workflows/durable_graph_fan_out": [
-    "check_app_insights",
-    "check_azure_functions_library",
-    "check_azure_functions_worker",
-    "check_durabletask_config",
-    "check_funcignore",
-    "check_local_settings",
-    "check_requirements_txt",
-    "check_scan_before_spec"
   ],
   "examples/orchestration-and-workflows/durable_hello_sequence": [
     "check_app_insights",
