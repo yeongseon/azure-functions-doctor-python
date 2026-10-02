@@ -1,4 +1,14 @@
 # Changelog
+## [0.21.2](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.21.1...v0.21.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ast:** accept UTF-8 BOM in project source ([#505](https://github.com/yeongseon/azure-functions-doctor-python/issues/505)) ([4d5780a](https://github.com/yeongseon/azure-functions-doctor-python/commit/4d5780a7bf05afe9ba99c7ea6a0834853c4a6f9c))
+* **config:** accept UTF-8 BOM in host.json ([#509](https://github.com/yeongseon/azure-functions-doctor-python/issues/509)) ([af86b92](https://github.com/yeongseon/azure-functions-doctor-python/commit/af86b9286976b2758359adfa8c3bee6caeb12470))
+* **dependencies:** accept UTF-8 BOM in requirements ([#506](https://github.com/yeongseon/azure-functions-doctor-python/issues/506)) ([23b431c](https://github.com/yeongseon/azure-functions-doctor-python/commit/23b431c0521fe1ea35cfe10212d92c025d80eed2))
+* **dependencies:** resolve requirement file includes ([#511](https://github.com/yeongseon/azure-functions-doctor-python/issues/511)) ([97705df](https://github.com/yeongseon/azure-functions-doctor-python/commit/97705dfb1e21ca28e28012fb0675c43cd99d7a3f))
+
 ## [0.21.1](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.21.0...v0.21.1) (2026-10-01)
 
 

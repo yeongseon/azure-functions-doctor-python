@@ -386,7 +386,7 @@ This repository includes `llms.txt` and `llms-full.txt` for LLM-friendly documen
 
 When working with this codebase, LLM assistants should:
 
-1. **Use `llms.txt` for quick reference** — the canonical package version (0.21.1), Python requirements (>=3.10,<3.15), CLI entry points
+1. **Use `llms.txt` for quick reference** — the canonical package version (0.21.2), Python requirements (>=3.10,<3.15), CLI entry points
 2. **Refer to `llms-full.txt` for implementation details** — output contracts, rule structure, custom rule patterns, handler types
 3. **Check `src/azure_functions_doctor/cli.py`** — authoritative source for CLI options and validation
 4. **Review `src/azure_functions_doctor/assets/rules/v2.json`** — complete ruleset with check definitions
