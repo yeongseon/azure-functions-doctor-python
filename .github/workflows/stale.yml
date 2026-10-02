@@ -23,7 +23,7 @@ jobs:
           stale-pr-message: "This pull request has been labelled stale because it has not had recent activity. It will not be closed automatically; the label is a prompt for a maintainer to pick it back up. Comment if it is still relevant."
           stale-issue-label: "stale"
           stale-pr-label: "stale"
-          exempt-issue-labels: "pinned,security,enhancement,bug,documentation,chore,good first issue,help wanted"
+          exempt-issue-labels: "needs-triage,pinned,security,enhancement,bug,documentation,chore,good first issue,help wanted"
           exempt-pr-labels: "pinned,security,enhancement,bug,documentation,wip"
           days-before-stale: 30
           days-before-issue-close: 7

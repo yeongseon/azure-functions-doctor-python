@@ -1,7 +1,7 @@
 name: General Issue
 description: Report a general issue, question, or discussion topic
 title: "chore: "
-labels: ["triage"]
+labels: ["needs-triage"]
 assignees: []
 
 body:
