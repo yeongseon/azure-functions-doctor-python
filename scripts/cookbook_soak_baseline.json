@@ -161,6 +161,13 @@
     "check_local_settings",
     "check_requirements_txt"
   ],
+  "examples/apis-and-ingress/openapi_inference_opt_out": [
+    "check_app_insights",
+    "check_azure_functions_library",
+    "check_azure_functions_worker",
+    "check_local_settings",
+    "check_requirements_txt"
+  ],
   "examples/apis-and-ingress/openapi_supersedes": [
     "check_app_insights",
     "check_azure_functions_library",
