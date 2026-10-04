@@ -117,15 +117,18 @@ def _is_excluded_path(candidate: Path) -> bool:
 
 
 def iter_project_files(
-    project_path: Path, patterns: str | tuple[str, ...] | list[str]
+    project_path: Path,
+    patterns: str | tuple[str, ...] | list[str],
+    *,
+    include_default_excludes: bool = False,
 ) -> Iterator[Path]:
     """Single entry point for project file traversal (issue #393).
 
     Yields files under ``project_path`` matching ``patterns`` (rglob syntax),
-    honoring ``EXCLUDED_PROJECT_DIRS`` and the user's
+    honoring ``EXCLUDED_PROJECT_DIRS`` by default and always honoring the user's
     ``[tool.azure-functions-doctor].exclude`` globs. Handlers must traverse
     through this helper instead of calling ``Path.rglob`` directly so
-    virtualenvs, node_modules, caches, and user excludes are never scanned -
+    extra excludes. Cleanup checks may request default-excluded paths explicitly;
     a regression test forbids raw rglob outside this module.
     """
     pattern_list: tuple[str, ...]
@@ -135,7 +138,10 @@ def iter_project_files(
         pattern_list = tuple(patterns)
     for pattern in pattern_list:
         for candidate in sorted(project_path.rglob(pattern)):
-            if not _is_excluded_path(candidate):
+            if include_default_excludes:
+                if not _matches_extra_exclude(candidate):
+                    yield candidate
+            elif not _is_excluded_path(candidate):
                 yield candidate
 
 
