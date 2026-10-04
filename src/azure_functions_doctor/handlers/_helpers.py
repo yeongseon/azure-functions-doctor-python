@@ -193,8 +193,16 @@ NATIVE_DEPENDENCY_PACKAGES: dict[str, str] = {
 }
 
 
+FUNCTION_APP_CONTAINERS = {
+    "AsgiFunctionApp",
+    "DFApp",
+    "FunctionApp",
+    "WsgiFunctionApp",
+}
+
+
 def _discover_functionapp_aliases(source: str) -> set[str]:
-    """Extract variable names assigned a ``FunctionApp()`` or ``Blueprint()`` call.
+    """Extract variable names assigned a supported app container or ``Blueprint()`` call.
 
     Scans AST assignments like ``app = func.FunctionApp()`` and
     ``bp = Blueprint()`` to discover alias names used for decorators.
@@ -206,7 +214,7 @@ def _discover_functionapp_aliases(source: str) -> set[str]:
         return {"app"}
 
     names: set[str] = set()
-    target_attrs = {"FunctionApp", "Blueprint"}
+    target_attrs = FUNCTION_APP_CONTAINERS | {"Blueprint"}
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
             func_node = node.value.func

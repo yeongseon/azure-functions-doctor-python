@@ -16,6 +16,7 @@ from azure_functions_doctor.handlers._helpers import (
     _PYTHON_CANDIDATES,
     _RULE_DISPATCH,
     EXCLUDED_PROJECT_DIRS,
+    FUNCTION_APP_CONTAINERS,
     NATIVE_DEPENDENCY_PACKAGES,
     Condition,
     DoctorConfig,
@@ -49,6 +50,7 @@ from azure_functions_doctor.handlers.registry import (
 from azure_functions_doctor.target_resolver import resolve_target_value
 
 __all__ = [
+    "FUNCTION_APP_CONTAINERS",
     "EXCLUDED_PROJECT_DIRS",
     "NATIVE_DEPENDENCY_PACKAGES",
     "Condition",

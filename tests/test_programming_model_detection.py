@@ -4,6 +4,8 @@ from pathlib import Path
 import tempfile
 from unittest.mock import patch
 
+import pytest
+
 from azure_functions_doctor.doctor import Doctor
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
@@ -71,6 +73,26 @@ app = func.FunctionApp()
 
             doctor = Doctor(str(temp_path))
             assert doctor.programming_model == "v2"
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "import azure.durable_functions as df\napp = df.DFApp()\n",
+            "from azure.durable_functions import DFApp\napp = DFApp()\n",
+            "import azure.functions as func\napp = func.AsgiFunctionApp(app=None)\n",
+            "from azure.functions import AsgiFunctionApp\napp = AsgiFunctionApp(app=None)\n",
+            "import azure.functions as func\napp = func.WsgiFunctionApp(app=None)\n",
+            "from azure.functions import WsgiFunctionApp\napp = WsgiFunctionApp(app=None)\n",
+        ],
+    )
+    def test_detect_v2_with_supported_function_app_containers(
+        self, tmp_path: Path, source: str
+    ) -> None:
+        (tmp_path / "function_app.py").write_text(source, encoding="utf-8")
+
+        doctor = Doctor(str(tmp_path))
+
+        assert doctor.programming_model == "v2"
 
     def test_detect_v2_with_utf8_bom_and_crlf(self, tmp_path: Path) -> None:
         (tmp_path / "function_app.py").write_bytes(
