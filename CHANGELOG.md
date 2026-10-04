@@ -1,4 +1,18 @@
 # Changelog
+## [0.21.3](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.21.2...v0.21.3) (2026-10-04)
+
+
+### Bug Fixes
+
+* **ast:** recognize register_blueprint on function apps ([#527](https://github.com/yeongseon/azure-functions-doctor-python/issues/527)) ([f370aa0](https://github.com/yeongseon/azure-functions-doctor-python/commit/f370aa0730a9d38185374d5f8682ee12c65e11bd))
+* **cleanup:** align unused-file checks with traversal and funcignore ([#529](https://github.com/yeongseon/azure-functions-doctor-python/issues/529)) ([40f83a0](https://github.com/yeongseon/azure-functions-doctor-python/commit/40f83a04da4fa0c76a3b192dc4f1d31a5987db1e))
+* **cli:** honor table output and validate profiles ([#531](https://github.com/yeongseon/azure-functions-doctor-python/issues/531)) ([7bf017f](https://github.com/yeongseon/azure-functions-doctor-python/commit/7bf017f18db076cefb43e2719c5c5ae1e70a6dcd))
+* **config:** read settings Values and detect Durable imports precisely ([#528](https://github.com/yeongseon/azure-functions-doctor-python/issues/528)) ([64cb9af](https://github.com/yeongseon/azure-functions-doctor-python/commit/64cb9af8235c22215f8e91ded9aa5b113d7f06fc))
+* **deploy:** disable repository git hooks during scans ([#532](https://github.com/yeongseon/azure-functions-doctor-python/issues/532)) ([5d832ec](https://github.com/yeongseon/azure-functions-doctor-python/commit/5d832ec2eb90dfda52886b1ce06dc59b5ae12225))
+* **deploy:** infer Linux Consumption limits from infrastructure files ([#530](https://github.com/yeongseon/azure-functions-doctor-python/issues/530)) ([5e1463e](https://github.com/yeongseon/azure-functions-doctor-python/commit/5e1463e3b8daaa1e590d52d579aa58d2457550aa))
+* **detection:** recognize supported FunctionApp container classes ([#526](https://github.com/yeongseon/azure-functions-doctor-python/issues/526)) ([f6e3ea3](https://github.com/yeongseon/azure-functions-doctor-python/commit/f6e3ea38c6fe1543e39c184280c4b74a99a63aff))
+* **scan:** scope default excluded directories to the project root ([#524](https://github.com/yeongseon/azure-functions-doctor-python/issues/524)) ([8e32413](https://github.com/yeongseon/azure-functions-doctor-python/commit/8e324134c5eafe26b8ba51960acbf3a3af5554ed))
+
 ## [0.21.2](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.21.1...v0.21.2) (2026-10-02)
 
 
