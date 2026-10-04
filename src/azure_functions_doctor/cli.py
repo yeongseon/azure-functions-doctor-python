@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 from datetime import datetime, timezone
 import hashlib
+from io import StringIO
 import json
 import os
 from pathlib import Path
@@ -25,6 +26,7 @@ from azure_functions_doctor.logging_config import (
     log_diagnostic_start,
     setup_logging,
 )
+from azure_functions_doctor.profiles import PROFILE_NAMES
 from azure_functions_doctor.target_resolver import (
     SUPPORTED_HOSTING_PLANS,
     SUPPORTED_PYTHON_VERSIONS,
@@ -235,6 +237,10 @@ def doctor(
     """
     # Validate inputs before proceeding
     _validate_inputs(path, format, output, target_python, deployment_mode, hosting_plan)
+    if profile is not None and profile not in PROFILE_NAMES:
+        raise typer.BadParameter(
+            f"Invalid profile: {profile}. Supported values: {', '.join(PROFILE_NAMES)}"
+        )
 
     if rules is not None and not rules.exists():
         raise typer.BadParameter(f"Rules path does not exist: {rules}")
@@ -541,23 +547,25 @@ def doctor(
 
     # Note: Top header removed per UI change; programming model header intentionally omitted
 
+    table_buffer = StringIO() if output is not None else None
+    table_console = Console(file=table_buffer, force_terminal=False) if table_buffer else console
     if debug:
-        console.print("[dim]Debug logging enabled - check stderr for detailed logs[/dim]\n")
+        table_console.print("[dim]Debug logging enabled - check stderr for detailed logs[/dim]\n")
 
     # Table-format user-facing output (requested design)
-    console.print("Azure Functions Doctor   ")
-    console.print(f"Path: {resolved_path}")
+    table_console.print("Azure Functions Doctor   ")
+    table_console.print(f"Path: {resolved_path}")
     if target_python is not None:
-        console.print(f"Target Python: {target_python} (override)")
+        table_console.print(f"Target Python: {target_python} (override)")
     else:
         resolved_target, target_source = resolve_python_target(resolved_path)
         if target_source != "tool-runtime":
-            console.print(f"Target Python: {resolved_target} ({target_source})")
+            table_console.print(f"Target Python: {resolved_target} ({target_source})")
 
     # Print each section with simple title and items
     for section in results:
-        console.print()
-        console.print(section["title"])
+        table_console.print()
+        table_console.print(section["title"])
 
         for item in section["items"]:
             label = item.get("label", "")
@@ -575,7 +583,7 @@ def doctor(
             if status != "pass":
                 line.append(f" ({status})", "italic dim")
 
-            console.print(line)
+            table_console.print(line)
 
             # Finding Contract v2 (issue #348): surface source-verified freshness
             # for date / compatibility findings that carry it.
@@ -583,29 +591,35 @@ def doctor(
                 item.get("last_verified", ""), item.get("source_url", "")
             )
             if freshness:
-                console.print(f"    [dim]{freshness}[/dim]")
+                table_console.print(f"    [dim]{freshness}[/dim]")
 
             # show hint as 'fix:' only when verbose is enabled
             if status != "pass" and verbose:
                 hint = item.get("hint", "")
                 if hint:
                     prefix = "↪ "
-                    console.print(f"    {prefix}fix: {hint}")
+                    table_console.print(f"    {prefix}fix: {hint}")
 
     # Use the precomputed counts from earlier for final output
-    console.print()
+    table_console.print()
     # Print Doctor summary at the bottom like the requested sample
-    console.print("Doctor summary (to see all details, run azure-functions-doctor doctor -v):")
+    table_console.print(
+        "Doctor summary (to see all details, run azure-functions-doctor doctor -v):"
+    )
     # Use singular/plural simple form as in sample (error vs errors)
     # Summary now reflects canonical statuses: fails, warnings, passed
     w_label = "warning" if warning_count == 1 else "warnings"
     f_label = "fail" if fail_count == 1 else "fails"
     # 'passed' label remains same for singular/plural in current design
-    console.print(f"  {fail_count} {f_label}, {warning_count} {w_label}, {passed_count} passed")
+    table_console.print(
+        f"  {fail_count} {f_label}, {warning_count} {w_label}, {passed_count} passed"
+    )
     if skipped_count:
-        console.print(f"  {skipped_count} skipped")
+        table_console.print(f"  {skipped_count} skipped")
     exit_code = 1 if fail_count > 0 else 0
-    console.print(f"Exit code: {exit_code}")
+    table_console.print(f"Exit code: {exit_code}")
+    if table_buffer is not None:
+        _write_output(table_buffer.getvalue(), output, "Table")
     if exit_code != 0:
         raise typer.Exit(exit_code)
 

@@ -43,6 +43,26 @@ def test_cli_table_output() -> None:
     assert any(icon in result.output for icon in ["✓", "✗", "!"])
 
 
+def test_cli_table_output_writes_output_file(tmp_path: Path) -> None:
+    output = tmp_path / "table.out"
+
+    result = runner.invoke(
+        app,
+        ["doctor", "--path", V2_FIXTURE_PATH, "--format", "table", "--output", str(output)],
+    )
+
+    assert result.exit_code == 0
+    assert "Azure Functions Doctor" in output.read_text(encoding="utf-8")
+
+
+def test_cli_rejects_invalid_profile_without_traceback() -> None:
+    result = runner.invoke(app, ["doctor", "--profile", "bad"])
+
+    assert result.exit_code == 2
+    assert "Invalid profile: bad" in result.output
+    assert "Traceback" not in result.output
+
+
 def test_cli_json_output() -> None:
     """Test JSON output and ensure the exit code matches the fail count."""
     result = runner.invoke(app, ["doctor", "--format", "json"])
