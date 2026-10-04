@@ -2241,7 +2241,7 @@ def test_conditional_exists_durable_with_all_keywords() -> None:
         tmp_path = Path(tmpdir)
 
         # Create Python files with different durable keywords
-        (tmp_path / "orchest.py").write_text("def orchestrator():")
+        (tmp_path / "orchest.py").write_text("import azure.durable_functions\n")
         (tmp_path / "host.json").write_text('{"extensions": {"durableTask": {}}}')
 
         rule: Rule = {
@@ -2263,7 +2263,9 @@ def test_conditional_exists_durable_context() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir)
 
-        (tmp_path / "ctx.py").write_text("context: DurableOrchestrationContext")
+        (tmp_path / "ctx.py").write_text(
+            "from azure.durable_functions import DurableOrchestrationContext\n"
+        )
         (tmp_path / "host.json").write_text('{"version": "2.0"}')
 
         rule: Rule = {

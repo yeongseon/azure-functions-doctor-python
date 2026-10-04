@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 
+from azure_functions_doctor.deploy_config import local_settings_values
 from azure_functions_doctor.handlers._helpers import (
     _HOST_JSON_MISSING,
     HandlerResult,
@@ -39,9 +40,19 @@ class MonitoringHandlers:
         ``APPLICATIONINSIGHTS_AUTHENTICATION_STRING`` is recognised for Entra
         (AAD) authentication.
         """
-        conn = (os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING") or "").strip()
-        auth = (os.getenv("APPLICATIONINSIGHTS_AUTHENTICATION_STRING") or "").strip()
-        ik_env = (os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY") or "").strip()
+        settings = local_settings_values(path)
+        conn = (
+            os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
+            or settings.get("APPLICATIONINSIGHTS_CONNECTION_STRING", "")
+        ).strip()
+        auth = (
+            os.getenv("APPLICATIONINSIGHTS_AUTHENTICATION_STRING")
+            or settings.get("APPLICATIONINSIGHTS_AUTHENTICATION_STRING", "")
+        ).strip()
+        ik_env = (
+            os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")
+            or settings.get("APPINSIGHTS_INSTRUMENTATIONKEY", "")
+        ).strip()
 
         ik_host = False
         host_path = path / "host.json"

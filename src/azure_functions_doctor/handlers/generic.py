@@ -3,6 +3,7 @@
 Split out of handlers/registry.py; registration/dispatch stays there.
 """
 
+import ast
 import json
 import os
 from pathlib import Path
@@ -181,12 +182,6 @@ class GenericHandlers:
         self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Handle host.json checks that only matter when a related feature is detected."""
-        durable_keywords = [
-            "durable",
-            "DurableOrchestrationContext",
-            "durable_functions",
-            "orchestrator",
-        ]
         uses_durable = False
 
         try:
@@ -194,8 +189,31 @@ class GenericHandlers:
                 content = _read_project_python_file(py_file)
                 if content is None:
                     continue
-                lowered = content.lower()
-                if any(k in lowered for k in durable_keywords):
+                try:
+                    tree = ast.parse(content)
+                except SyntaxError:
+                    continue
+                durable_import = any(
+                    (
+                        isinstance(node, ast.Import)
+                        and any(
+                            alias.name in {"azure.durable_functions", "durable_functions"}
+                            for alias in node.names
+                        )
+                    )
+                    or (
+                        isinstance(node, ast.ImportFrom)
+                        and node.module in {"azure.durable_functions", "durable_functions"}
+                    )
+                    for node in ast.walk(tree)
+                )
+                durable_decorator = any(
+                    isinstance(node, ast.Attribute)
+                    and node.attr
+                    in {"durable_client_input", "entity_trigger", "orchestration_trigger"}
+                    for node in ast.walk(tree)
+                )
+                if durable_import or durable_decorator:
                     uses_durable = True
                     break
         except Exception as exc:
