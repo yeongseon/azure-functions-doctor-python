@@ -106,7 +106,12 @@ def _matches_extra_exclude(candidate: Path) -> bool:
 
 def _is_excluded_path(candidate: Path) -> bool:
     """True when ``candidate`` is under an excluded dir or an extra glob."""
-    if any(part in EXCLUDED_PROJECT_DIRS for part in candidate.parts):
+    root, _ = _extra_excludes.get()
+    try:
+        relative_parts = candidate.resolve().relative_to(root.resolve()).parts
+    except ValueError:
+        relative_parts = candidate.parts
+    if any(part in EXCLUDED_PROJECT_DIRS for part in relative_parts):
         return True
     return _matches_extra_exclude(candidate)
 

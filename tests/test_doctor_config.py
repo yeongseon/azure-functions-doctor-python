@@ -117,6 +117,16 @@ class TestExtraExcludes:
     def test_excluded_dir_still_wins_without_globs(self, tmp_path: Path) -> None:
         assert _is_excluded_path(tmp_path / ".venv" / "lib" / "a.py") is True
 
+    def test_default_excluded_dir_ignores_absolute_path_ancestors(self, tmp_path: Path) -> None:
+        project = tmp_path / "build" / "project"
+        project.mkdir(parents=True)
+        token = set_extra_excludes(project, ())
+        try:
+            assert _is_excluded_path(project / "function_app.py") is False
+            assert _is_excluded_path(project / "build" / "generated.py") is True
+        finally:
+            reset_extra_excludes(token)
+
     def test_iter_py_contents_respects_extra_globs(self, tmp_path: Path) -> None:
         (tmp_path / "keep.py").write_text("x = 1\n", encoding="utf-8")
         legacy = tmp_path / "legacy"
