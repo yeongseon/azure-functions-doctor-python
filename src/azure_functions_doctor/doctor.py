@@ -10,6 +10,7 @@ from typing import Literal, TypedDict, cast
 from jsonschema import ValidationError, validate
 
 from azure_functions_doctor.handlers import (
+    FUNCTION_APP_CONTAINERS,
     HandlerResult,
     Rule,
     RuleContext,
@@ -236,7 +237,7 @@ class Doctor:
         if discovered_aliases != {"app"}:
             return True
 
-        target_names = {"FunctionApp", "Blueprint"}
+        target_names = FUNCTION_APP_CONTAINERS | {"Blueprint"}
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
