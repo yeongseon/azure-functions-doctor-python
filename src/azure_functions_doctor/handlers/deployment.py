@@ -479,7 +479,7 @@ class DeploymentHandlers:
     def _handle_linux_fx_version(
         self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
-        """Validate any Python ``linuxFxVersion`` declared in infra (bicep) config.
+        """Validate any Python ``linuxFxVersion`` declared in infrastructure config.
 
         Scoped to legacy Linux / Premium / Dedicated / classic Consumption apps.
         Flex Consumption declares its runtime under ``functionAppConfig.runtime``
@@ -496,7 +496,9 @@ class DeploymentHandlers:
             )
         findings: list[tuple[str, str]] = []
         pattern = re.compile(r"linuxFxVersion['\"]?\s*[:=]\s*['\"]?[Pp]ython\|(\d+\.\d+)")
-        for bicep in iter_project_files(path, "*.bicep"):
+        for bicep in iter_project_files(path, ("*.bicep", "*.json")):
+            if bicep.name == "local.settings.json":
+                continue
             try:
                 text = bicep.read_text(encoding="utf-8")
             except OSError:
@@ -507,7 +509,16 @@ class DeploymentHandlers:
             return _create_result(
                 "skip", "No Python linuxFxVersion found in infra config; check skipped"
             )
-        unsupported = [(loc, ver) for loc, ver in findings if not is_supported_python_target(ver)]
+        hosting_plan = target_config.hosting_plan.value if target_config is not None else None
+        unsupported = [
+            (loc, ver)
+            for loc, ver in findings
+            if not (
+                is_supported_python_for_plan(ver, hosting_plan)
+                if hosting_plan is not None
+                else is_supported_python_target(ver)
+            )
+        ]
         if not unsupported:
             return _create_result(
                 "pass", "linuxFxVersion Python runtime(s) target a supported version"

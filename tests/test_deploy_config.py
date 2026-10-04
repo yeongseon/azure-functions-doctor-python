@@ -178,6 +178,32 @@ def test_runtime_from_linux_fx_version_bicep(tmp_path: Path) -> None:
     assert cfg.runtime_version.value == "3.12"
 
 
+def test_linux_consumption_plan_from_bicep_sku(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        "main.bicep",
+        "resource plan 'Microsoft.Web/serverfarms@2023-01-01' = {\n"
+        "  sku: { name: 'Y1', tier: 'Dynamic' }\n}",
+    )
+
+    cfg = resolve_target_config(tmp_path)
+
+    assert cfg.hosting_plan.value == PLAN_LINUX_CONSUMPTION
+
+
+def test_runtime_from_linux_fx_version_arm_json(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        "main.json",
+        json.dumps({"resources": [{"properties": {"linuxFxVersion": "Python|3.13"}}]}),
+    )
+
+    cfg = resolve_target_config(tmp_path)
+
+    assert cfg.runtime_name.value == "python"
+    assert cfg.runtime_version.value == "3.13"
+
+
 def test_runtime_from_function_app_config_json(tmp_path: Path) -> None:
     _write(
         tmp_path,

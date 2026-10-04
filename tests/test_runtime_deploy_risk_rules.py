@@ -16,6 +16,7 @@ import pytest
 import typer
 
 from azure_functions_doctor.cli import _validate_inputs
+from azure_functions_doctor.deploy_config import resolve_target_config
 from azure_functions_doctor.handlers._helpers import (
     HandlerResult,
     Rule,
@@ -123,6 +124,27 @@ def test_linux_fx_version_scans_nested_infra(tmp_path: Path) -> None:
     infra.mkdir()
     _write(infra, "main.bicep", "linuxFxVersion='Python|3.15'")
     assert _result("linux_fx_version", tmp_path)["status"] == "fail"
+
+
+def test_linux_fx_version_enforces_resolved_consumption_limit(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        "main.json",
+        json.dumps(
+            {
+                "resources": [
+                    {"sku": {"name": "Y1", "tier": "Dynamic"}},
+                    {"properties": {"linuxFxVersion": "Python|3.13"}},
+                ]
+            }
+        ),
+    )
+
+    rule = cast(Rule, {"type": "linux_fx_version", "required": False, "condition": {}})
+    result = registry.handle(rule, tmp_path, {"target_config": resolve_target_config(tmp_path)})
+
+    assert result["status"] == "fail"
+    assert "Python|3.13" in result["detail"]
 
 
 # ---------------------------------------------------------------------------
