@@ -395,6 +395,32 @@ def test_conditional_exists_no_durable_usage_pass() -> None:
         assert result["status"] == "skip"
 
 
+def test_conditional_exists_ignores_durable_substrings(tmp_path: Path) -> None:
+    (tmp_path / "function.py").write_text("message = 'not durable at all'\n", encoding="utf-8")
+    rule: Rule = {
+        "type": "conditional_exists",
+        "condition": {"jsonpath": "$.extensions.durableTask"},
+    }
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "skip"
+
+
+def test_conditional_exists_detects_durable_module_import(tmp_path: Path) -> None:
+    (tmp_path / "function.py").write_text(
+        "import azure.durable_functions as df\napp = df.DFApp()\n", encoding="utf-8"
+    )
+    rule: Rule = {
+        "type": "conditional_exists",
+        "condition": {"jsonpath": "$.extensions.durableTask"},
+    }
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "fail"
+
+
 def test_conditional_exists_durable_missing_host_fail() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a Python file that contains durable keyword
@@ -509,6 +535,43 @@ def test_app_insights_connection_string_passes(tmp_path: Path, monkeypatch: Monk
     res = generic_handler(rule, tmp_path)
     assert res["status"] == "pass"
     assert "connection string configured" in res["detail"]
+
+
+def test_app_insights_reads_local_settings_values(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    _clear_app_insights_env(monkeypatch)
+    (tmp_path / "local.settings.json").write_text(
+        json.dumps(
+            {
+                "Values": {
+                    "APPLICATIONINSIGHTS_CONNECTION_STRING": "InstrumentationKey=local",
+                    "APPLICATIONINSIGHTS_AUTHENTICATION_STRING": "Authorization=AAD",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    rule = _make_rule("app_insights_connection", {})
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "pass"
+    assert "Entra auth" in result["detail"]
+
+
+def test_app_insights_reads_legacy_key_from_local_settings(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    _clear_app_insights_env(monkeypatch)
+    (tmp_path / "local.settings.json").write_text(
+        json.dumps({"Values": {"APPINSIGHTS_INSTRUMENTATIONKEY": "legacy"}}),
+        encoding="utf-8",
+    )
+    rule = _make_rule("app_insights_connection", {})
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "fail"
+    assert "ingestion ended" in result["detail"]
 
 
 def test_app_insights_connection_string_with_auth(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
