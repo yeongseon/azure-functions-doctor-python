@@ -4,6 +4,7 @@ Split out of handlers/registry.py; registration/dispatch stays there.
 """
 
 import json
+import os
 from pathlib import Path
 import re
 
@@ -654,7 +655,18 @@ class DeploymentHandlers:
         # Check if the file is tracked by git
         try:
             result = subprocess.run(  # nosec B603 B607
-                ["git", "-C", str(path), "ls-files", "--error-unmatch", str(settings_path)],
+                [
+                    "git",
+                    "-c",
+                    "core.fsmonitor=false",
+                    "-c",
+                    f"core.hooksPath={os.devnull}",
+                    "-C",
+                    str(path),
+                    "ls-files",
+                    "--error-unmatch",
+                    str(settings_path),
+                ],
                 capture_output=True,
                 timeout=10,
             )
