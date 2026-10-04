@@ -242,6 +242,17 @@ def _runtime_from_function_app_config(node: object) -> tuple[str, str] | None:
     return None
 
 
+def _runtime_from_linux_fx_version(node: object) -> tuple[str, str] | None:
+    for obj in _walk_json(node):
+        linux_fx_version = obj.get("linuxFxVersion")
+        if not isinstance(linux_fx_version, str):
+            continue
+        match = re.fullmatch(r"[Pp]ython\|(\d+\.\d+)", linux_fx_version)
+        if match is not None:
+            return "python", match.group(1)
+    return None
+
+
 def _deployment_storage_from_json(node: object) -> str | None:
     """Return a Flex ``functionAppConfig.deployment.storage.value`` URL if present."""
     for obj in _walk_json(node):
@@ -315,6 +326,8 @@ def _scan_json_file(text: str, rel: str, scan: _IaCScan) -> None:
         scan.hosting_plan = ResolvedField(plan, rel)
 
     runtime = _runtime_from_function_app_config(data)
+    if runtime is None:
+        runtime = _runtime_from_linux_fx_version(data)
     if runtime is not None:
         if scan.runtime_name is None:
             scan.runtime_name = ResolvedField(runtime[0], rel)
@@ -339,6 +352,14 @@ def _scan_json_file(text: str, rel: str, scan: _IaCScan) -> None:
 def _scan_bicep_file(text: str, rel: str, scan: _IaCScan) -> None:
     if scan.hosting_plan is None and "functionAppConfig" in text:
         scan.hosting_plan = ResolvedField(PLAN_FLEX_CONSUMPTION, rel)
+    sku_name = re.search(r"\bname\s*:\s*'([^']+)'", text)
+    sku_tier = re.search(r"\btier\s*:\s*'([^']+)'", text)
+    plan = _plan_from_sku(
+        sku_name.group(1) if sku_name is not None else None,
+        sku_tier.group(1) if sku_tier is not None else None,
+    )
+    if scan.hosting_plan is None and plan is not None:
+        scan.hosting_plan = ResolvedField(plan, rel)
     match = _LINUX_FX_PYTHON_RE.search(text)
     if match is not None:
         if scan.runtime_name is None:
