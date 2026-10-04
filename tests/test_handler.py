@@ -667,6 +667,27 @@ def test_file_glob_check(tmp_path: Path) -> None:
     assert res2["status"] == "pass"
 
 
+def test_unused_file_check_inspects_excluded_targets_and_honors_funcignore(
+    tmp_path: Path,
+) -> None:
+    for relative_path in ("__pycache__/x.pyc", ".venv/x", "tests/x.py"):
+        target = tmp_path / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("unused", encoding="utf-8")
+    (tmp_path / ".funcignore").write_text("tests/\n", encoding="utf-8")
+    rule = _make_rule(
+        "file_glob_check",
+        {"patterns": ["**/__pycache__", "**/*.pyc", ".venv", "tests/"]},
+    )
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "fail"
+    assert "__pycache__" in result["detail"]
+    assert ".venv" in result["detail"]
+    assert "tests" not in result["detail"]
+
+
 def test_host_json_property_pass_and_fail(tmp_path: Path) -> None:
     host = tmp_path / "host.json"
     host.write_text(json.dumps({"extensionBundle": {"id": "bundle"}}))

@@ -376,11 +376,26 @@ class GenericHandlers:
         patterns = condition.get("patterns", [])
         if not patterns or not isinstance(patterns, list):
             return _create_result("fail", "Missing 'patterns' list for file_glob_check")
+        funcignore_path = path / ".funcignore"
+        funcignore_patterns = (
+            [
+                line.strip().rstrip("/")
+                for line in funcignore_path.read_text(encoding="utf-8").splitlines()
+            ]
+            if funcignore_path.is_file()
+            else []
+        )
         matches: list[str] = []
         try:
             for pat in patterns:
-                for p in iter_project_files(path, pat):
-                    matches.append(str(p.relative_to(path)))
+                for p in iter_project_files(path, pat, include_default_excludes=True):
+                    relative = p.relative_to(path)
+                    if any(
+                        pattern and (relative.match(pattern) or pattern in relative.parts)
+                        for pattern in funcignore_patterns
+                    ):
+                        continue
+                    matches.append(str(relative))
                     if len(matches) >= 5:
                         break
                 if len(matches) >= 5:
