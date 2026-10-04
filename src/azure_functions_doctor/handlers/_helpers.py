@@ -274,10 +274,7 @@ def _collect_blueprint_aliases(source: str) -> set[str]:
 def _collect_register_functions_args(source: str) -> set[str]:
     """Collect Blueprint aliases passed to ``register_functions(...)`` calls.
 
-    Only the official Azure Functions Python v2 API (``app.register_functions``)
-    is recognized. Flask/FastAPI-style ``register_blueprint`` is intentionally
-    not accepted because it is not a valid registration call for the Azure
-    Functions runtime.
+    Only calls on a discovered FunctionApp-family instance are recognized.
     """
     try:
         tree = ast.parse(source)
@@ -322,7 +319,7 @@ def _collect_register_functions_args(source: str) -> set[str]:
         func_node = node.func
         if not isinstance(func_node, ast.Attribute):
             continue
-        if func_node.attr != "register_functions":
+        if func_node.attr not in {"register_blueprint", "register_functions"}:
             continue
         if not isinstance(func_node.value, ast.Name) or func_node.value.id not in app_names:
             continue

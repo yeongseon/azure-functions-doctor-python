@@ -33,12 +33,29 @@ import azure.functions as func
 
 app = func.FunctionApp()
 app.register_functions(bp)
+app.register_blueprint(alias_bp)
 loader.register_functions(other_bp)
 loader.register_blueprint(flask_bp)
 register_blueprint(flask_bare)
 app.register_functions(factory())
 """
-    assert handlers._collect_register_functions_args(source) == {"bp"}
+    assert handlers._collect_register_functions_args(source) == {"alias_bp", "bp"}
+
+
+def test_blueprint_registration_accepts_function_app_register_blueprint(tmp_path: Path) -> None:
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n"
+        "app = func.FunctionApp()\n"
+        "bp = func.Blueprint()\n"
+        "@bp.route(route='hello')\n"
+        "def hello(req): return req\n"
+        "app.register_blueprint(bp)\n",
+        encoding="utf-8",
+    )
+
+    item_map = _item_status_by_label(tmp_path)
+
+    assert item_map["Blueprint registration"] == "pass"
 
 
 def test_collect_unregistered_blueprint_aliases_tracks_project_level_registration(
