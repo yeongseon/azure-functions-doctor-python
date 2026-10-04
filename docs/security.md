@@ -51,7 +51,8 @@ To ensure the integrity of our codebase, we employ several automated security sc
 ## Security Scope
 
 ### Within Scope
-- **Diagnostic Rule Integrity**: Rules must not execute arbitrary code. The core logic of the doctor is designed to evaluate state, not provide a platform for execution.
+- **Diagnostic Rule Integrity**: Rules do not import or execute scanned Python modules. The core logic evaluates project files and may invoke documented local tools such as Git and Azure Functions Core Tools.
+- **Git Isolation**: The local-settings tracking check runs `git ls-files` with repository-configured filesystem monitors disabled and hooks redirected to the operating system null device. This prevents repository Git configuration from executing hook or fsmonitor programs during the scan.
 - **Custom Rules Trust Boundary**: When a user specifies a custom `rules.json` path, that file is treated as a trusted input.
 - **Network Behavior**: The documented diagnostics and version checks do not make outbound network requests. The Azure Functions Core Tools version check invokes the locally installed `func` CLI via a subprocess rather than contacting a remote registry.
 - **Input Validation**: Path arguments and user-provided inputs are validated to prevent common vulnerabilities like path traversal.

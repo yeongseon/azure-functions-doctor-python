@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 from typing import cast
@@ -831,6 +832,25 @@ def test_local_settings_security_tracked(tmp_path: Path, monkeypatch: MonkeyPatc
     res = generic_handler(rule, tmp_path)
     assert res["status"] == "fail"
     assert ".gitignore" in res.get("detail", "")
+
+
+def test_local_settings_security_disables_repository_fsmonitor(tmp_path: Path) -> None:
+    marker = tmp_path / "fsmonitor-executed"
+    monitor = tmp_path / "fsmonitor.sh"
+    monitor.write_text(f"#!/bin/sh\ntouch '{marker}'\n", encoding="utf-8")
+    monitor.chmod(0o700)
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "core.fsmonitor", str(monitor)], cwd=tmp_path, check=True)
+    settings = tmp_path / "local.settings.json"
+    settings.write_text('{"IsEncrypted": false}', encoding="utf-8")
+    subprocess.run(["git", "add", "local.settings.json"], cwd=tmp_path, check=True)
+    marker.unlink(missing_ok=True)
+    rule = _make_rule("local_settings_security", {})
+
+    result = generic_handler(rule, tmp_path)
+
+    assert result["status"] == "fail"
+    assert marker.exists() is False
 
 
 def test_local_settings_security_git_not_available(
