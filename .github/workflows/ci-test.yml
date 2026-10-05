@@ -136,7 +136,7 @@ jobs:
   # reports, and it reads every dependency's result, so a skipped or cancelled
   # job cannot pass by not being a failure.
   ci-required:
-    needs: [quality, test]
+    needs: [quality, test, host-smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -155,3 +155,54 @@ jobs:
               sys.exit(f"::error::Required checks did not all succeed: {failed}")
           print("All gating jobs succeeded.")
           EVAL
+
+  host-smoke:
+    name: Real Functions host smoke (Py 3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install Functions Core Tools v4 and Azurite
+        run: |
+          npm install --global azure-functions-core-tools@4 --unsafe-perm true
+          npm install --global azurite
+
+      - name: Install the smoke app in its local environment
+        working-directory: tests/host_smoke
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements.txt
+
+      - name: Run the installed doctor against the smoke app
+        working-directory: tests/host_smoke
+        run: .venv/bin/azure-functions-doctor doctor --path .
+
+      - name: Start Azurite and the Functions host
+        working-directory: tests/host_smoke
+        run: |
+          azurite --silent > /tmp/azurite.log 2>&1 &
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          PATH="$PWD/.venv/bin:$PATH" func start --python --port 7071 > /tmp/functions-host.log 2>&1 &
+
+      - name: Call the diagnosed app
+        run: |
+          for attempt in {1..30}; do
+            if grep -Eq "0 functions|Worker failed|Host startup operation has been canceled" /tmp/functions-host.log; then
+              cat /tmp/functions-host.log
+              exit 1
+            fi
+            if response="$(curl --fail --silent http://127.0.0.1:7071/api/smoke)"; then
+              test "$response" = "doctor-host-smoke"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/functions-host.log
+          exit 1
