@@ -44,7 +44,7 @@ relevant root document in the same pull request or commit series.
 - Keep diagnostics deterministic and user-facing messages actionable.
 - Prefer extending existing rule patterns over introducing one-off flows.
 - If a CLI option or exit code changes, update docs and tests in the same change.
-- Preserve Python 3.10+ compatibility declared in `pyproject.toml`.
+- Preserve Python 3.11+ compatibility declared in `pyproject.toml`.
 
 ### Documentation & Translations
 - English (`README.md`) is the **canonical** source of truth for all documentation. Translated READMEs (`README.ko.md`, `README.ja.md`, `README.zh-CN.md`) are **best-effort**, community-maintained, and may lag the English source.
