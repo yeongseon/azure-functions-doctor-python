@@ -41,7 +41,7 @@ Titles for issues, pull requests, and commits follow the **Title Convention** in
 
 All contributions must adhere to the following tools and configurations:
 
-- **black (26.3.0)**: Used for code formatting. Line length is set to 100. Targets Python 3.10 through 3.14.
+- **black (26.3.0)**: Used for code formatting. Line length is set to 100. Targets Python 3.11 through 3.14.
 - **ruff (v0.15.5)**: Used for linting. We select E, F, and I rules. Line length is set to 100.
 - **mypy (v1.19.1)**: Used for static type checking. We use strict mode, ignore missing imports, and exclude the `examples/` directory.
 - **bandit (1.9.4)**: Used for security scanning of the `src/` directory.

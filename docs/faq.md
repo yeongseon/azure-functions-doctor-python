@@ -83,7 +83,7 @@ Contract details are documented in [JSON Output Contract](json_output_contract.m
 
 ## Which Python versions are supported?
 
-The package requires Python `>=3.10,<3.15`.
+The package requires Python `>=3.11,<3.15`.
 
 See [Supported Versions](supported_versions.md).
 

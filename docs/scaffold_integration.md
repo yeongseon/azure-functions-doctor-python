@@ -58,7 +58,7 @@ A freshly scaffolded project should pass all six required checks:
 
 | Check | What it confirms |
 | --- | --- |
-| Python version | Interpreter is 3.10 or newer |
+| Python version | Target app runtime is 3.10 or newer |
 | `requirements.txt` | Dependency file exists |
 | `azure-functions` package | SDK is declared |
 | `host.json` | Host config file exists |

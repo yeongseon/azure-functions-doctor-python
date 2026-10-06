@@ -4,7 +4,7 @@ This page covers supported environments and installation methods for `azure-func
 
 ## Requirements
 
-- Python `>=3.10,<3.15`
+- Python `>=3.11,<3.15`
 - `pip` (or another PEP 517/518 compatible installer)
 - Network access to PyPI for standard installation
 
@@ -119,7 +119,7 @@ python -m azure_functions_doctor.cli doctor
 
 ### Wrong Python version
 
-If installation fails with Python version errors, switch to Python 3.10+ and reinstall.
+If installation fails with Python version errors, switch to Python 3.11+ and reinstall.
 
 ### Permission denied
 

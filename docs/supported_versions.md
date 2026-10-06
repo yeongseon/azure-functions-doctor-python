@@ -2,10 +2,17 @@
 
 ## Python
 
-Azure Functions Doctor supports **Python 3.10 and above**.
+Azure Functions Doctor itself supports **Python 3.11 through 3.14**.
 
-- Minimum supported version: 3.10
-- Targeted versions: 3.10, 3.11, 3.12, 3.13, 3.14
+- Minimum Doctor execution version: 3.11
+- Doctor execution versions: 3.11, 3.12, 3.13, 3.14
+- Inspected app target versions: 3.10, 3.11, 3.12, 3.13, 3.14
+
+The Doctor execution floor and inspected-app policy are independent. Run Doctor
+on Python 3.11 or newer; it can still analyze an app that declares Python 3.10
+through `--target-python 3.10` or `.python-version`. Lifecycle diagnostics then
+report that target's catalog status without rejecting it solely because Doctor
+cannot itself execute on Python 3.10.
 
 ### Python Compatibility Notes
 
@@ -22,7 +29,7 @@ import sys
 def is_supported_python() -> bool:
     major = sys.version_info.major
     minor = sys.version_info.minor
-    return major == 3 and minor >= 10
+    return major == 3 and minor >= 11
 
 
 if __name__ == "__main__":
@@ -55,7 +62,7 @@ The CI pipeline should continuously validate package behavior against supported 
 | Dimension | Values |
 | --- | --- |
 | OS | `ubuntu-latest` |
-| Python versions | `3.10`, `3.11`, `3.12`, `3.13`, `3.14` |
+| Python versions | `3.11`, `3.12`, `3.13`, `3.14` |
 | Test gates | lint, typecheck, unit tests, security checks |
 
 Representative GitHub Actions matrix shape:
@@ -64,7 +71,7 @@ Representative GitHub Actions matrix shape:
 strategy:
   matrix:
     os: [ubuntu-latest]
-    python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    python-version: ["3.11", "3.12", "3.13", "3.14"]
 ```
 
 ## CLI and API Compatibility Expectations
@@ -94,7 +101,7 @@ def smoke(path: str) -> int:
 When the supported baseline changes, update:
 
 - `pyproject.toml`
-- `src/azure_functions_doctor/assets/rules/v2.json`
+- target-analysis rules only when Azure's target support policy changes
 - CI matrices
 - this document and the main README
 

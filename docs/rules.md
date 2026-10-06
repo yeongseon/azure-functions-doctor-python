@@ -101,12 +101,12 @@ Fix: add `app.register_functions(bp)` in function_app.py.
 
 - **What it checks:** Python version evaluated for the app target is `>=3.10`.
 - **Why it matters:** Azure Functions Python runtime compatibility depends on the deployed target version, not just the interpreter running the doctor.
-- **How to fix:** Use Python 3.10+ locally and in CI, or pass `--target-python <3.10|3.11|3.12|3.13|3.14>` when your deploy target differs from the tool runtime. Note that on the Linux Consumption plan the maximum supported runtime is Python 3.12.
+- **How to fix:** Run Doctor on Python 3.11+ and pass `--target-python <3.10|3.11|3.12|3.13|3.14>` when the inspected app target differs from the tool runtime. Note that on the Linux Consumption plan the maximum supported runtime is Python 3.12.
 
 Example output:
 
 ```text
-Python 3.9.18 (tool runtime, >=3.10)
+Target Python: 3.9.18 (.python-version, >=3.10) — Tool runtime: 3.11.14
 ```
 
 With override:

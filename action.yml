@@ -28,7 +28,7 @@ inputs:
   python-version:
     description: Python version to use for running the doctor
     required: false
-    default: "3.12"
+    default: "3.11"
   install-project-deps:
     description: Install project requirements.txt before running checks
     required: false

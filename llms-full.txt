@@ -6,7 +6,7 @@
 
 - PyPI: `pip install azure-functions-doctor`
 - Version: 0.21.3
-- Python: >=3.10, <3.15
+- Python: >=3.11, <3.15
 - License: MIT
 - Docs: https://yeongseon.dev/azure-functions-python/doctor/
 - Repository: https://github.com/yeongseon/azure-functions-doctor
@@ -253,7 +253,7 @@ XML test report format for CI/CD pipeline compatibility:
   <testcase classname="Programming Model" name="Programming model v2"/>
   <testcase classname="Python Env" name="Python version">
     <failure message="Python 3.9 detected">
-      Use Python 3.10 or higher to match Azure Functions runtime.
+      Target Python 3.10 or higher to match the inspected Azure Functions runtime.
     </failure>
   </testcase>
   <testcase classname="Dependencies" name="requirements.txt">
@@ -286,7 +286,7 @@ Rule structure (as returned in JSON format):
   "category": "environment",
   "section": "python_env",
   "label": "Python version",
-  "description": "Checks if the current Python version is 3.10 or higher.",
+  "description": "Checks if the target app Python version is 3.10 or higher.",
   "type": "compare_version",
   "required": true,
   "condition": {
@@ -294,7 +294,7 @@ Rule structure (as returned in JSON format):
     "operator": ">=",
     "value": "3.10"
   },
-  "hint": "Use Python 3.10 or higher...",
+  "hint": "Target Python 3.10 or higher...",
   "hint_url": "https://...",
   "check_order": 1
 }

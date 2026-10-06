@@ -56,7 +56,7 @@ body:
       description: Please provide information about your environment
       placeholder: |
         - OS: [e.g. Windows 11, macOS 14.0, Ubuntu 22.04]
-        - Python version: [e.g. 3.10.16]
+        - Doctor Python version: [e.g. 3.11.14]
         - azure-functions-doctor version: [e.g. 0.1.10]
         - Azure Functions Core Tools version: [e.g. 4.0.5198]
         - Terminal/Shell: [e.g. PowerShell, bash, zsh]

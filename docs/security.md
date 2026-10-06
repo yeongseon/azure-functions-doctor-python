@@ -56,7 +56,7 @@ To ensure the integrity of our codebase, we employ several automated security sc
 - **Custom Rules Trust Boundary**: When a user specifies a custom `rules.json` path, that file is treated as a trusted input.
 - **Network Behavior**: The documented diagnostics and version checks do not make outbound network requests. The Azure Functions Core Tools version check invokes the locally installed `func` CLI via a subprocess rather than contacting a remote registry.
 - **Input Validation**: Path arguments and user-provided inputs are validated to prevent common vulnerabilities like path traversal.
-- **Dependency Security**: We monitor our runtime dependencies (jsonschema, packaging, rich, typer, and `tomli` on Python < 3.11) for known vulnerabilities.
+- **Dependency Security**: We monitor our runtime dependencies (jsonschema, packaging, rich, and typer) for known vulnerabilities.
 
 ### Out of Scope
 - **Diagnosed Project Security**: The security posture of the Azure Functions projects being analyzed is the responsibility of the project owner.
@@ -92,6 +92,5 @@ The project relies on a minimal set of runtime dependencies:
 - **packaging**: For handling version comparisons.
 - **rich**: For formatted terminal output.
 - **typer**: For building the command-line interface.
-- **tomli**: For parsing `pyproject.toml` on Python < 3.11 (the standard-library `tomllib` is used on 3.11+).
 
 We use Dependabot to monitor these dependencies and provide automated updates for security vulnerabilities and version upgrades. All chosen dependencies are widely-used and actively maintained packages.

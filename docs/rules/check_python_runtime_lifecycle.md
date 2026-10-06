@@ -7,7 +7,7 @@
 
 The target Python version against its **published Azure Functions end-of-support date**. The check warns when the target runtime is retiring and fails once it is past end-of-support.
 
-The target version is resolved the same way as [`check_python_version`](../rules.md#3-check_python_version): from `--target-python` when supplied, otherwise the interpreter running the doctor.
+The target version is resolved the same way as [`check_python_version`](../rules.md#3-check_python_version): `--target-python` override, then `.python-version`, then the interpreter running Doctor.
 
 ## Why it matters
 
