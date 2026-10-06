@@ -59,7 +59,7 @@ body:
       description: Provide environment details if relevant to your issue
       placeholder: |
         - OS: [e.g. Windows 11, macOS 14.0, Ubuntu 22.04]
-        - Python version: [e.g. 3.10.16]
+        - Doctor Python version: [e.g. 3.11.14]
         - azure-functions-doctor version: [e.g. 0.1.10]
         - Any other relevant tools or versions
     validations:
