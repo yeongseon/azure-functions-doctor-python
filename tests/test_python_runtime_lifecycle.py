@@ -2,6 +2,7 @@
 
 from datetime import date, timedelta
 from pathlib import Path
+import shutil
 from unittest.mock import patch
 
 from azure_functions_doctor.compatibility import load_catalog
@@ -142,6 +143,29 @@ class TestLifecycleHandlerIntegration:
         assert item["analysis"] == {"type": "deterministic"}
         assert item["last_verified"] == "2026-09-06"
         assert item["catalog_version"] == "1.0.0"
+
+    def test_python_310_override_remains_analyzable(self) -> None:
+        item = self._lifecycle_item(BEFORE_ANY_EOS)
+
+        assert item["status"] == "warn"
+        assert item["severity"] == "warning"
+
+    def test_python_version_file_310_remains_analyzable(self, tmp_path: Path) -> None:
+        shutil.copytree(EXAMPLE_V2, tmp_path, dirs_exist_ok=True)
+        (tmp_path / ".python-version").write_text("3.10\n", encoding="utf-8")
+        doctor = Doctor(str(tmp_path))
+
+        with patch("azure_functions_doctor.handlers.runtime.date") as mock_date:
+            mock_date.today.return_value = BEFORE_ANY_EOS
+            results = doctor.run_all_checks()
+
+        section = next(s for s in results if s["category"] == "python_env")
+        version_item = next(i for i in section["items"] if i["rule_id"] == "check_python_version")
+        lifecycle_item = next(
+            i for i in section["items"] if i["rule_id"] == "check_python_runtime_lifecycle"
+        )
+        assert version_item["status"] == "pass"
+        assert lifecycle_item["status"] == "warn"
 
     def test_unsupported_runtime_gates_the_section(self) -> None:
         doctor = Doctor(str(EXAMPLE_V2), target_python="3.10")
