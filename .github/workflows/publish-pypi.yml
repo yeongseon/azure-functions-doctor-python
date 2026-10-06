@@ -47,7 +47,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.12"
+          python-version: "3.11"
 
       - name: Install build dependencies
         run: |
@@ -94,7 +94,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.12"
+          python-version: "3.11"
 
       - name: Install Hatch
         run: pip install hatch
@@ -115,7 +115,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.12"
+          python-version: "3.11"
 
       - name: Download candidate wheel
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -130,15 +130,26 @@ jobs:
           pip install "$WHEEL"
 
       - name: Verify candidate version is under test
+        working-directory: /tmp
+        env:
+          CHECKOUT: ${{ github.workspace }}
         run: |
           EXPECTED="${{ needs.build.outputs.version }}"
           ACTUAL=$(python -c "import importlib.metadata as m; print(m.version('azure-functions-doctor'))")
+          MODULE=$(python -c "import azure_functions_doctor; print(azure_functions_doctor.__file__)")
           echo "Expected candidate version: $EXPECTED"
           echo "Installed version:          $ACTUAL"
+          echo "Imported module:            $MODULE"
           if [ "$EXPECTED" != "$ACTUAL" ]; then
             echo "::error ::Runtime gate is not exercising the candidate wheel ($ACTUAL != $EXPECTED)"
             exit 1
           fi
+          case "$MODULE" in
+            "$CHECKOUT"/*)
+              echo "::error ::Runtime gate imported checkout source: $MODULE"
+              exit 1
+              ;;
+          esac
 
       - name: Run the installed doctor CLI against the example app
         run: |
