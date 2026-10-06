@@ -28,7 +28,7 @@ jobs:
           profile: minimal
           format: json
           output: doctor-healthy.json
-          python-version: "3.12"
+          python-version: "3.11"
           upload-artifact: "true"
           artifact-name: doctor-healthy-report
           version: local
@@ -58,7 +58,7 @@ jobs:
           profile: full
           format: sarif
           output: doctor.sarif
-          python-version: "3.12"
+          python-version: "3.11"
           upload-artifact: "true"
           artifact-name: doctor-sarif-report
           upload-sarif: "true"
@@ -97,7 +97,7 @@ jobs:
           profile: minimal
           format: json
           output: doctor-promo.json
-          python-version: "3.12"
+          python-version: "3.11"
           upload-artifact: "false"
           upload-sarif: "true"
           sarif-category: azure-functions-doctor-promotion-test
