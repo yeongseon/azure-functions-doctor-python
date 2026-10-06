@@ -89,7 +89,7 @@ When contributing new features or bug fixes, follow these guidelines:
 ## CI Test Matrix
 The test suite runs automatically on GitHub Actions with the following configuration:
 - **OS**: ubuntu-latest
-- **Python Versions**: 3.10, 3.11, 3.12, 3.13, 3.14
+- **Python Versions**: 3.11, 3.12, 3.13, 3.14
 - **Workflow**: .github/workflows/ci-test.yml
 
 ## Real Azure E2E Tests

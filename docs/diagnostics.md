@@ -80,7 +80,7 @@ These checks run in both `full` and `minimal` profiles.
 
 | Label | Rule ID | Handler Type | Fails When |
 | --- | --- | --- | --- |
-| Python version | `check_python_version` | `compare_version` | Current interpreter is lower than `3.10`. |
+| Python version | `check_python_version` | `compare_version` | Resolved target app version is lower than `3.10` or outside the supported target list. |
 | `requirements.txt` | `check_requirements_txt` | `dependency_manifest` | No dependency manifest found (`requirements.txt` or `pyproject.toml` dependency declarations). |
 | `azure-functions` package | `check_azure_functions_library` | `package_declared` | `azure-functions` is not declared in `requirements.txt` or `pyproject.toml`. |
 | `host.json` | `check_host_json` | `file_exists` | `host.json` is missing at project root. |

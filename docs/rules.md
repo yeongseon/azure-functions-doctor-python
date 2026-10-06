@@ -106,7 +106,7 @@ Fix: add `app.register_functions(bp)` in function_app.py.
 Example output:
 
 ```text
-Python 3.9.18 (tool runtime, >=3.10)
+Target Python: 3.9.18 (.python-version, >=3.10) — Tool runtime: 3.11.14
 ```
 
 With override:
