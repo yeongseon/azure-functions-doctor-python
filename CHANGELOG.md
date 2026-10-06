@@ -1,4 +1,16 @@
 # Changelog
+## [0.22.0](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.21.3...v0.22.0) (2026-10-06)
+
+
+### Features
+
+* **python:** require Python 3.11 or newer ([b82260d](https://github.com/yeongseon/azure-functions-doctor-python/commit/b82260d1fef609eef5b74e2bca1cf61d2c4497ae))
+
+
+### Bug Fixes
+
+* **deps:** raise the typer floor to 0.13.0 ([b82260d](https://github.com/yeongseon/azure-functions-doctor-python/commit/b82260d1fef609eef5b74e2bca1cf61d2c4497ae))
+
 ## [0.21.3](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.21.2...v0.21.3) (2026-10-04)
 
 
