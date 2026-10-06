@@ -136,7 +136,7 @@ v1.0.0 リリースでエイリアスが削除される前に、スクリプト�
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - 開発ワークフローのための Hatch
 - ローカル実行のために Azure Functions Core Tools v4+ を推奨
 

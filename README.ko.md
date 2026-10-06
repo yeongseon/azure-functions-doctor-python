@@ -136,7 +136,7 @@ v1.0.0 릴리스에서 별칭이 제거되기 전에 스크립트나 CI 파이�
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - 개발 워크플로우를 위한 Hatch
 - 로컬 실행을 위해 Azure Functions Core Tools v4+ 권장
 

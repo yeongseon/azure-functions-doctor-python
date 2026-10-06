@@ -24,8 +24,6 @@ Read this in: [한국어](README.ko.md) | [日本語](README.ja.md) | [简体中
 Part of the **Azure Functions Python DX Toolkit**
 → Bring FastAPI-like developer experience to Azure Functions
 
-> **Python 3.10 is deprecated.** Support ends in the next minor release — Python 3.10 reaches end of life in October 2026. Importing the package on Python 3.10 emits a `FutureWarning`; upgrade to Python 3.11 or newer.
-
 ## Why this exists
 
 Deploying a broken Azure Functions app is expensive — the worker starts, the host reads config, and only then does it surface the issue in a production log. Common problems that slip through:
@@ -197,7 +195,7 @@ Programming Model
 [✓] Programming model v2: Keyword '@app.|@bp.' found in source code (AST)
 
 Python Env
-[✓] Python version: Python 3.10.12 (tool runtime, >=3.10)
+[✓] Python version: Target Python: 3.10 (.python-version, >=3.10) — Tool runtime: 3.11.14
 [✓] requirements.txt: requirements.txt exists
 [✓] azure-functions package: Package 'azure-functions' declared in requirements.txt
 
@@ -320,7 +318,7 @@ The default ruleset includes checks for:
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - Hatch for development workflows
 - Azure Functions Core Tools v4+ recommended for local runs
 

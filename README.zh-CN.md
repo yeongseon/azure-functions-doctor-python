@@ -135,7 +135,7 @@ azure-functions-doctor doctor --format json
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - 开发工作流所需的 Hatch
 - 建议安装 Azure Functions Core Tools v4+ 以进行本地运行
 
