@@ -1,6 +1,7 @@
 # Development Guide
 
-This project uses Hatch, pytest, Ruff, Black, mypy, and Bandit.
+This project uses Hatch, pytest, Ruff, mypy, and Bandit. Ruff handles both
+linting and formatting; Black is not used.
 
 The development workflow is designed to keep diagnostics deterministic, rules schema-validated,
 and release behavior stable across supported Python versions.
@@ -47,8 +48,11 @@ make check-all
 
 Execution path in normal usage:
 
-1. CLI parses options (`--path`, `--profile`, `--rules`, output format options).
-2. CLI calls `run_diagnostics(path, profile, rules_path)`.
+1. CLI parses options (`--path`, `--profile`, `--rules`, `--target-python`,
+   `--deployment-mode`, `--hosting-plan`, output format options).
+2. CLI constructs `Doctor(path, profile=..., rules_path=..., target_python=...)`
+   directly; embedders call the equivalent `run_diagnostics(...)` wrapper in
+   `api.py`.
 3. `Doctor` loads rules (built-in `v2.json` or custom rules file).
 4. Rule schema validation runs before any handler execution.
 5. `HandlerRegistry` dispatches each rule by `type`.

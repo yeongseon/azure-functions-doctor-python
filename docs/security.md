@@ -8,7 +8,7 @@ We take security issues seriously. If you discover a vulnerability, please repor
 
 ### Preferred: GitHub Security Advisory
 The most secure and efficient way to report a vulnerability is through the GitHub Security Advisory system at:
-https://github.com/yeongseon/azure-functions-doctor/security/advisories/new
+https://github.com/yeongseon/azure-functions-doctor-python/security/advisories/new
 
 ### Alternative: Email
 You can also report security concerns via email to:

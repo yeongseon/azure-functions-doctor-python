@@ -13,13 +13,16 @@ azure-functions-doctor doctor [OPTIONS]
 Core options:
 
 - `--path <directory>` (default `.`)
-- `--profile <minimal|full>`
+- `--profile <minimal|deploy|development|full>`
 - `--format <table|json|sarif|junit>`
 - `--output <file>`
+- `--summary-json <file>`
 - `-v`, `--verbose`
 - `--debug`
 - `--rules <file>`
 - `--target-python <version>`
+- `--deployment-mode <remote-build|local|local-prebuilt|container>` (default `remote-build`)
+- `--hosting-plan <linux-consumption|flex-consumption|premium|dedicated>`
 
 ## Target path configuration
 
@@ -61,6 +64,26 @@ Profiles control which rules execute.
 
 ```bash
 azure-functions-doctor doctor --profile minimal
+```
+
+### `deploy` profile
+
+- Azure runtime, hosting, and deployment correctness (the core rule group minus
+  local dev-environment checks)
+- Best for a pre-deploy gate that runs where no venv or Core Tools exist
+
+```bash
+azure-functions-doctor doctor --profile deploy
+```
+
+### `development` profile
+
+- Local dev-environment checks only: virtual environment, Python executable,
+  Core Tools, `local.settings.json`
+- Best for onboarding and workstation setup verification
+
+```bash
+azure-functions-doctor doctor --profile development
 ```
 
 See [Minimal Profile](minimal_profile.md) for complete rule coverage.
@@ -148,6 +171,59 @@ Behavior:
 - Rules are sorted by `check_order`
 
 See [Rules](rules.md) and [Examples: Custom Rules](examples/custom_rules.md).
+
+## Summary file configuration
+
+`--summary-json` writes a small counts-only document alongside whatever
+`--format` produces. It is format-independent, and the parent directory is
+created when needed.
+
+```bash
+azure-functions-doctor doctor --format table --summary-json artifacts/summary.json
+```
+
+The file contains the counts for the run, for example:
+
+```json
+{"passed": 23, "warned": 3, "failed": 0, "skipped": 15}
+```
+
+That is enough for a CI badge or a job summary without parsing the full report.
+
+## Deployment mode configuration
+
+`--deployment-mode` tells the dependency checks how the app's packages reach
+Azure, so they stop reporting problems that do not apply to your pipeline.
+
+| Value | Meaning |
+| --- | --- |
+| `remote-build` (default) | Azure builds dependencies from `requirements.txt` during deployment. |
+| `local` / `local-prebuilt` | Dependencies are built or vendored locally and shipped with the package. |
+| `container` | Dependencies are baked into a custom container image. |
+
+```bash
+azure-functions-doctor doctor --deployment-mode container
+```
+
+## Hosting plan configuration
+
+`--hosting-plan` declares the Azure hosting plan you are targeting so that
+Python-version validation matches the plan's real constraints.
+
+| Value | Meaning |
+| --- | --- |
+| `linux-consumption` | Legacy Linux Consumption; caps at Python 3.12 and retires 30 September 2028. |
+| `flex-consumption` | Flex Consumption, the recommended serverless plan. |
+| `premium` | Elastic Premium plan. |
+| `dedicated` | App Service (Dedicated) plan. |
+
+```bash
+azure-functions-doctor doctor --hosting-plan flex-consumption
+```
+
+Without this flag, Doctor infers the plan from infrastructure files (for example
+a Bicep `functionAppConfig` block) when it can, and skips plan-specific version
+caps when it cannot.
 
 ## Environment variables
 

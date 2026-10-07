@@ -98,7 +98,7 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/yeongseon/azure-functions-doctor
+      link: https://github.com/yeongseon/azure-functions-doctor-python
   copyright: |
     © 2026 Yeongseon Choe – MIT Licensed
 

@@ -14,11 +14,14 @@ If `--output` is omitted, JSON is printed to stdout.
 
 ## Top-level shape
 
+The example below uses `X.Y.Z` for `tool_version`; a real run emits the
+installed package version. See the package metadata for the current release.
+
 ```json
 {
   "schema_version": "2.0",
   "metadata": {
-    "tool_version": "0.19.2",
+    "tool_version": "X.Y.Z",
     "generated_at": "2026-10-07T10:40:20.731Z",
     "target_path": "/absolute/path/to/project",
     "programming_model": "v2",

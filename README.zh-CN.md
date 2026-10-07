@@ -30,6 +30,13 @@ Azure Functions Doctor 是一个用于诊断基于 **Azure Functions Python v2 �
 
 设置 Azure Functions Python 项目需要多个配置文件、依赖项和工具。缺少任何一个都会导致令人困惑的运行时错误。`azure-functions-doctor` 会根据精选的规则集检查项目，并在问题到达生产环境之前报告。
 
+## What it does
+
+- **41 项诊断检查** — Python 版本、依赖项、`host.json`、Core Tools、Durable Functions 等
+- **多种输出格式** — 便于 CI 集成的 table、JSON、SARIF、JUnit
+- **配置文件支持** — 按需选择 `minimal`、`deploy`、`development` 或 `full` 规则集
+- **官方 GitHub Action** — 用于 CI 门禁的 `yeongseon/azure-functions-doctor@v1`
+
 ## Scope
 
 本项目仅针对基于装饰器的 Azure Functions Python v2 编程模型。
@@ -48,8 +55,8 @@ pip install azure-functions-doctor
 从源码安装：
 
 ```bash
-git clone https://github.com/yeongseon/azure-functions-doctor.git
-cd azure-functions-doctor
+git clone https://github.com/yeongseon/azure-functions-doctor-python.git
+cd azure-functions-doctor-python
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
@@ -80,6 +87,27 @@ azure-functions-doctor doctor --profile minimal
 ```bash
 azure-functions-doctor doctor --format json
 ```
+
+### CLI 选项
+
+所有入口点都要求显式指定 `doctor` 子命令；省略时仅会输出帮助信息。
+
+| 选项 | 说明 |
+| --- | --- |
+| `--path <路径>` | 目标 Azure Functions 应用路径（默认 `.`） |
+| `--profile <minimal\|deploy\|development\|full>` | 要执行的规则集 |
+| `--format <table\|json\|sarif\|junit>` | 输出格式（默认 `table`） |
+| `--output <文件>` | 将结果保存到文件 |
+| `--summary-json <文件>` | 将通过/警告/失败/跳过计数摘要写入 JSON |
+| `--rules <文件>` | 自定义规则文件 |
+| `--target-python <版本>` | 覆盖目标 Python 运行时 |
+| `--deployment-mode <remote-build\|local\|local-prebuilt\|container>` | 依赖项交付到 Azure 的方式（默认 `remote-build`） |
+| `--hosting-plan <linux-consumption\|flex-consumption\|premium\|dedicated>` | 用于 Python 版本校验的 Azure 托管计划 |
+| `-v`, `--verbose` | 显示失败检查的详细提示 |
+| `--debug` | 启用输出到 stderr 的调试日志 |
+
+共有四种配置文件：`minimal`（必需的门禁检查）、`deploy`（Azure 运行时/托管/部署正确性）、
+`development`（本地开发环境检查）、`full`（全部规则）。
 
 ### 命令名称与已弃用的别名
 

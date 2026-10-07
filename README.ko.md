@@ -30,6 +30,13 @@ Azure Functions Doctor는 **Azure Functions Python v2 프로그래밍 모델**�
 
 Azure Functions Python 프로젝트를 설정하려면 여러 설정 파일, 의존성, 도구가 필요합니다. 그 중 하나라도 빠지면 이해하기 어려운 런타임 오류가 발생합니다. `azure-functions-doctor`는 엄선된 규칙 집합을 기반으로 프로젝트를 점검하고, 문제가 프로덕션에 도달하기 전에 보고합니다.
 
+## What it does
+
+- **41개 진단 검사** — Python 버전, 의존성, `host.json`, Core Tools, Durable Functions 등
+- **다양한 출력 형식** — CI 연동을 위한 table, JSON, SARIF, JUnit
+- **프로필 지원** — 필요에 따라 `minimal`, `deploy`, `development`, `full` 규칙 집합 선택
+- **공식 GitHub Action** — CI 게이트용 `yeongseon/azure-functions-doctor@v1`
+
 ## Scope
 
 이 리포지토리는 데코레이터 기반의 Azure Functions Python v2 프로그래밍 모델만을 대상으로 합니다.
@@ -49,7 +56,7 @@ pip install azure-functions-doctor
 
 ```bash
 git clone https://github.com/yeongseon/azure-functions-doctor-python.git
-cd azure-functions-doctor
+cd azure-functions-doctor-python
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
@@ -80,6 +87,27 @@ CI를 위한 JSON 출력:
 ```bash
 azure-functions-doctor doctor --format json
 ```
+
+### CLI 옵션
+
+모든 진입점은 명시적인 `doctor` 하위 명령을 요구합니다. 하위 명령 없이 실행하면 도움말만 출력됩니다.
+
+| 옵션 | 설명 |
+| --- | --- |
+| `--path <경로>` | 점검할 Azure Functions 앱 경로 (기본값 `.`) |
+| `--profile <minimal\|deploy\|development\|full>` | 실행할 규칙 집합 |
+| `--format <table\|json\|sarif\|junit>` | 출력 형식 (기본값 `table`) |
+| `--output <파일>` | 결과를 파일로 저장 |
+| `--summary-json <파일>` | 통과/경고/실패/건너뜀 개수 요약을 JSON으로 저장 |
+| `--rules <파일>` | 사용자 정의 규칙 파일 |
+| `--target-python <버전>` | 대상 Python 런타임 재정의 |
+| `--deployment-mode <remote-build\|local\|local-prebuilt\|container>` | 의존성이 Azure에 전달되는 방식 (기본값 `remote-build`) |
+| `--hosting-plan <linux-consumption\|flex-consumption\|premium\|dedicated>` | Python 버전 검증에 사용할 Azure 호스팅 플랜 |
+| `-v`, `--verbose` | 실패한 검사에 대한 자세한 힌트 표시 |
+| `--debug` | stderr로 디버그 로깅 활성화 |
+
+프로필은 네 가지입니다: `minimal`(필수 게이트 검사), `deploy`(Azure 런타임/호스팅/배포 정합성),
+`development`(로컬 개발 환경 검사), `full`(모든 규칙).
 
 ### 명령 이름과 사용 중단된 별칭
 

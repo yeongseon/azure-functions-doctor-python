@@ -20,12 +20,22 @@ pip install azure-functions-doctor
 
 ## CLI Entry Points
 
-All three commands are aliases to the same CLI:
+Three console scripts ship with the package. They all run the same engine, and
+they all require the explicit `doctor` subcommand:
 
 ```bash
-azure-functions-doctor doctor [OPTIONS]
-azure-functions-doctor doctor [OPTIONS]
-fdoctor doctor [OPTIONS]
+azure-functions-doctor doctor [OPTIONS]   # canonical
+azure-functions doctor [OPTIONS]          # deprecated, removal targeted for v1.0.0
+fdoctor doctor [OPTIONS]                  # deprecated, removal targeted for v1.0.0
+```
+
+The two deprecated aliases print a one-line warning to stderr and otherwise
+behave identically, including exit codes.
+
+A module fallback is available when the script directory is not on `PATH`:
+
+```bash
+python -m azure_functions_doctor.cli doctor
 ```
 
 ## Command: doctor
@@ -84,10 +94,30 @@ azure-functions-doctor doctor [OPTIONS]
 
 - `--summary-json PATH` (optional)
   - Write a JSON summary of counts to a separate file
-  - Summary format: `{"passed": N, "warned": M, "failed": K}`
+  - Summary format: `{"passed": N, "warned": M, "failed": K, "skipped": S}`
   - Created in addition to regular output (format-independent)
   - Parent directories created automatically
   - Example: `--summary-json summary.json`
+
+#### Runtime and Hosting Targets
+
+- `--target-python TEXT` (optional)
+  - Override the target Python runtime used for version checks
+  - Useful when the interpreter running Doctor differs from the deployment target
+  - Example: `--target-python 3.12`
+
+- `--deployment-mode TEXT` (default: `remote-build`)
+  - How dependencies reach Azure: `remote-build`, `local`, `local-prebuilt`, or `container`
+  - **remote-build**: Azure builds dependencies from `requirements.txt` at deploy time
+  - **local** / **local-prebuilt**: dependencies are built or vendored locally and shipped
+  - **container**: dependencies are baked into a custom container image
+  - Example: `--deployment-mode container`
+
+- `--hosting-plan TEXT` (optional)
+  - Target Azure hosting plan for Python-version validation
+  - `linux-consumption` (caps at Python 3.12, retires 30 September 2028), `flex-consumption`, `premium`, or `dedicated`
+  - When omitted, Doctor infers the plan from infrastructure files where possible
+  - Example: `--hosting-plan flex-consumption`
 
 #### Verbosity and Debugging
 
@@ -226,7 +256,7 @@ Static Analysis Results Format (SARIF 2.1.0) compatible with GitHub Security tab
         "driver": {
           "name": "azure-functions-doctor",
           "version": "0.22.1",
-          "informationUri": "https://github.com/yeongseon/azure-functions-doctor",
+          "informationUri": "https://github.com/yeongseon/azure-functions-doctor-python",
           "rules": [...]
         }
       },
@@ -374,7 +404,7 @@ Load with: `--rules ./custom-rules.json`
 
 ```yaml
 - name: Run Azure Functions Doctor
-  run: azure-functions-doctor --format sarif --output sarif.json
+  run: azure-functions-doctor doctor --format sarif --output sarif.json
 
 - name: Upload SARIF
   uses: github/codeql-action/upload-sarif@v2
@@ -397,7 +427,7 @@ Load with: `--rules ./custom-rules.json`
 ```yaml
 azure-functions-doctor:
   script:
-    - azure-functions-doctor --format json --output diagnostics.json
+    - azure-functions-doctor doctor --format json --output diagnostics.json
   artifacts:
     reports:
       dotenv: summary.json
@@ -407,7 +437,7 @@ azure-functions-doctor:
 
 ```yaml
 - script: |
-    azure-functions-doctor --format junit --output test-results.xml
+    azure-functions-doctor doctor --format junit --output test-results.xml
   displayName: Run Azure Functions Doctor
 
 - task: PublishTestResults@2
@@ -421,18 +451,23 @@ azure-functions-doctor:
 - **0** — All required checks passed
 - **1** — At least one required check failed
 
-Use exit code for CI gates: `azure-functions-doctor || exit 1`
+Use exit code for CI gates: `azure-functions-doctor doctor || exit 1`
 
 ## Environment Variables
 
-Doctor uses standard Python and system environment variables:
+Doctor reads these environment variables (and the matching `local.settings.json`
+values) while running checks:
 
 - `VIRTUAL_ENV` — Virtual environment path (if activated)
 - `CONDA_PREFIX` — Conda environment path (if activated)
 - `UV_PROJECT_ENVIRONMENT` — UV environment path (if using uv)
-- `APPINSIGHTS_INSTRUMENTATION_KEY` — Application Insights key (for telemetry checks)
-- `APPLICATIONINSIGHTS_CONNECTION_STRING` — Alt telemetry connection string
-- `AZURE_FUNCTIONS_ENVIRONMENT` — Deployment environment (local, staging, production)
+- `APPLICATIONINSIGHTS_CONNECTION_STRING` — Application Insights connection string (required; instrumentation-key ingestion ended 2025-03-31)
+- `APPLICATIONINSIGHTS_AUTHENTICATION_STRING` — Entra (AAD) auth for Application Insights
+- `APPINSIGHTS_INSTRUMENTATIONKEY` — Legacy instrumentation key; detected and reported as stale
+
+Doctor's own behavior is configured by one variable:
+
+- `AZURE_FUNCTIONS_DOCTOR_LOG_LEVEL` — Internal logging verbosity (for example `DEBUG`, `INFO`, `WARNING`)
 
 ## Programming Model Detection
 
@@ -492,5 +527,5 @@ With `--debug`: +20–50ms overhead for structured logging.
 ## Support
 
 - Documentation: https://yeongseon.dev/azure-functions-python/doctor/
-- GitHub Issues: https://github.com/yeongseon/azure-functions-doctor/issues
-- GitHub Discussions: https://github.com/yeongseon/azure-functions-doctor/discussions
+- GitHub Issues: https://github.com/yeongseon/azure-functions-doctor-python/issues
+- GitHub Discussions: https://github.com/yeongseon/azure-functions-doctor-python/discussions
