@@ -106,19 +106,19 @@ def _evaluate_flex_runtime_config(
     if is_supported_python_for_plan(runtime_version, FLEX_CONSUMPTION_PLAN):
         return _create_result(
             "pass",
-            f"Flex Consumption runtime Python {runtime_version} is supported.",
+            f"Flex Consumption runtime Python {runtime_version} is recognized for analysis.",
         )
 
     allowed = PYTHON_HOSTING_PLAN_MATRIX.get(FLEX_CONSUMPTION_PLAN, SUPPORTED_PYTHON_VERSIONS)
-    supported_range = f"{allowed[0]}\u2013{allowed[-1]}" if allowed else "the supported set"
+    target_range = f"{allowed[0]}\u2013{allowed[-1]}" if allowed else "the recognized set"
     detail = (
-        f"Flex Consumption runtime Python {runtime_version} is not supported; "
-        f"target a supported Python runtime ({supported_range})."
+        f"Flex Consumption runtime Python {runtime_version} is not recognized; "
+        f"target an analyzable Python runtime ({target_range})."
     )
     result = _create_result("fail", detail)
     result["severity"] = "error"
     result["gate"] = True
-    result["expected"] = f"A supported Flex Consumption Python runtime ({supported_range})"
+    result["expected"] = f"An analyzable Flex Consumption Python runtime ({target_range})"
     result["actual"] = f"functionAppConfig.runtime = python {runtime_version}"
     return result
 
@@ -522,15 +522,15 @@ class DeploymentHandlers:
         ]
         if not unsupported:
             return _create_result(
-                "pass", "linuxFxVersion Python runtime(s) target a supported version"
+                "pass", "linuxFxVersion Python runtime(s) target a recognized version"
             )
-        supported_range = f"{SUPPORTED_PYTHON_VERSIONS[0]}\u2013{SUPPORTED_PYTHON_VERSIONS[-1]}"
+        target_range = f"{SUPPORTED_PYTHON_VERSIONS[0]}\u2013{SUPPORTED_PYTHON_VERSIONS[-1]}"
         detail = "\n".join(
             [
                 "Unsupported Python linuxFxVersion runtime(s) in infra config:",
                 *[f"- {loc}: Python|{ver}" for loc, ver in unsupported[:10]],
                 "",
-                f"Fix: target a supported Python runtime ({supported_range}).",
+                f"Fix: target an analyzable Python runtime ({target_range}).",
             ]
         )
         return _create_result(

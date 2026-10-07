@@ -84,7 +84,7 @@ class TestEvaluateFlexRuntimeConfig:
             FLEX_CONSUMPTION_PLAN, "python", "3.12", linux_fx_present=False
         )
         assert result["status"] == "pass"
-        assert "3.12 is supported" in result["detail"]
+        assert "3.12 is recognized for analysis" in result["detail"]
 
     def test_supported_python_314_passes(self) -> None:
         result = _evaluate_flex_runtime_config(
@@ -99,7 +99,7 @@ class TestEvaluateFlexRuntimeConfig:
         assert result["status"] == "fail"
         assert result["severity"] == "error"
         assert result["gate"] is True
-        assert "not supported" in result["detail"]
+        assert "not recognized" in result["detail"]
         assert result["actual"] == "functionAppConfig.runtime = python 3.9"
 
 
