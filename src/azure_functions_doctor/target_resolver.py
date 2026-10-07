@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 # combinations such as Python 3.14 on Linux Consumption, so support is modelled as
 # a per-plan matrix.
 _CATALOG = load_catalog()
-SUPPORTED_PYTHON_VERSIONS: tuple[str, ...] = _CATALOG.supported_python_versions()
+SUPPORTED_PYTHON_VERSIONS: tuple[str, ...] = _CATALOG.known_python_versions()
 PYTHON_HOSTING_PLAN_MATRIX: dict[str, tuple[str, ...]] = dict(_CATALOG.hosting_plan_matrix())
 
 # Hosting plans recognized by the Python-version compatibility matrix.

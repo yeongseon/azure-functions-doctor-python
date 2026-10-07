@@ -71,9 +71,9 @@ class GenericHandlers:
                 ">": current > expected,
                 "<": current < expected,
             }.get(operator, False)
-            supported = is_supported_python_target(current_version)
-            passed = operator_passed and supported
-            supported_range = f"{SUPPORTED_PYTHON_VERSIONS[0]}\u2013{SUPPORTED_PYTHON_VERSIONS[-1]}"
+            recognized = is_supported_python_target(current_version)
+            passed = operator_passed and recognized
+            target_range = f"{SUPPORTED_PYTHON_VERSIONS[0]}\u2013{SUPPORTED_PYTHON_VERSIONS[-1]}"
             if source == "override":
                 detail = (
                     f"Target Python: {current_version} (override) "
@@ -86,10 +86,8 @@ class GenericHandlers:
                     f"Target Python: {current_version} ({source}, {operator}{value}) "
                     f"\u2014 Tool runtime: {tool_runtime}"
                 )
-            if not supported:
-                detail += (
-                    f" \u2014 unsupported target; Azure Functions supports Python {supported_range}"
-                )
+            if not recognized:
+                detail += f" \u2014 unrecognized target; Doctor analyzes Python {target_range}"
             return _create_result(
                 "pass" if passed else "fail",
                 detail,
