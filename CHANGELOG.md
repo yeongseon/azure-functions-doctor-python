@@ -1,4 +1,11 @@
 # Changelog
+## [0.22.1](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.22.0...v0.22.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **catalog:** refresh Python runtime lifecycle data ([#544](https://github.com/yeongseon/azure-functions-doctor-python/issues/544)) ([90a71b3](https://github.com/yeongseon/azure-functions-doctor-python/commit/90a71b3560ca0c79a5cee3ee81d2543aa8d817e9)), closes [#541](https://github.com/yeongseon/azure-functions-doctor-python/issues/541)
+
 ## [0.22.0](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.21.3...v0.22.0) (2026-10-06)
 
 
