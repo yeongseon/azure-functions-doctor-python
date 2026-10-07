@@ -12,11 +12,11 @@
       "fact_id": "python-3.10-eos",
       "category": "python_runtime_lifecycle",
       "applies_to": { "python": "3.10" },
-      "status": "unsupported",
+      "status": "supported",
       "support_end": { "value": "2026-10", "precision": "month" },
       "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
       "last_verified": "2026-09-17",
-      "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.10 GA end-of-support as 'October 2026' (month precision, no day published); the lifecycle status is end-of-support from that month."
+      "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.10 GA end-of-support as 'October 2026' (month precision, no day published)."
     },
     {
       "fact_id": "python-3.11-eos",

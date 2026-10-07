@@ -145,9 +145,6 @@ class Fact:
         if eos is None:
             return self.status
         current = today if today is not None else date.today()
-        if self.status == "unsupported" and self.support_end.precision == "month":
-            if current >= eos.replace(day=1):
-                return "unsupported"
         if current > eos:
             return "unsupported"
         if self.status == "unsupported":

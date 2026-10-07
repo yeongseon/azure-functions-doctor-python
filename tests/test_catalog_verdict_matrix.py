@@ -107,6 +107,25 @@ class TestPythonLifecycleBoundaries:
 
         assert checked >= 5, "expected every supported Python to carry an EOS fact"
 
+    @pytest.mark.parametrize("today", [date(2026, 10, 1), date(2026, 10, 31)])
+    def test_python_310_warns_through_published_end_month(self, today: date) -> None:
+        result = _evaluate_python_lifecycle("3.10", today=today)
+
+        assert (result["status"], result.get("severity"), result.get("gate")) == (
+            "fail",
+            "warning",
+            False,
+        )
+
+    def test_python_310_gates_after_published_end_month(self) -> None:
+        result = _evaluate_python_lifecycle("3.10", today=date(2026, 11, 1))
+
+        assert (result["status"], result.get("severity"), result.get("gate")) == (
+            "fail",
+            "error",
+            True,
+        )
+
 
 class TestHostingPlanLifecycleBoundaries:
     """Plan verdicts flip at the catalog's retirement dates."""
