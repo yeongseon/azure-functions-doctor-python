@@ -291,7 +291,6 @@ def test_cli_target_python_override_end_to_end() -> None:
 
 
 def test_cli_target_python_invalid_value() -> None:
-    """Test unsupported target_python values fail with supported versions listed."""
     result = runner.invoke(app, ["doctor", "--target-python", "3.99"])
     assert result.exit_code != 0
     assert "Invalid target Python: 3.99" in result.output

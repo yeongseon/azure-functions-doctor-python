@@ -33,7 +33,7 @@
     "category": "environment",
     "section": "python_env",
     "label": "Python version",
-    "description": "Checks that the target Python version is a supported Azure Functions runtime (3.10\u20133.14).",
+    "description": "Checks that the target Python version is analyzable by Doctor (3.10\u20133.14); lifecycle support is checked separately.",
     "type": "compare_version",
     "required": true,
     "condition": {
@@ -41,12 +41,12 @@
       "operator": ">=",
       "value": "3.10"
     },
-    "hint": "Target a Python version supported by Azure Functions: 3.10, 3.11, 3.12, 3.13, or 3.14.",
+    "hint": "Target a Python version Doctor can analyze: 3.10, 3.11, 3.12, 3.13, or 3.14. The lifecycle check reports end-of-support versions.",
     "hint_url": "https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-python#supported-python-versions",
     "source_type": "ms_learn",
     "source_title": "Azure Functions Python developer guide — Supported Python versions",
     "source_url": "https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-python#supported-python-versions",
-    "why_it_matters": "Azure Functions supports only Python 3.10\u20133.14. Targeting an older interpreter (\u2264 3.9) or a version newer than the runtime supports causes deployment failures and unsupported runtime errors.",
+    "why_it_matters": "Doctor analyzes Python 3.10\u20133.14 and evaluates lifecycle support separately. Older targets (\u2264 3.9) or versions newer than Doctor recognizes can cause deployment failures and unsupported runtime errors.",
     "symptoms": "Deployment fails with 'Python version not supported'; functions fail to start; a too-new interpreter is silently downgraded or rejected by the host.",
     "fix_command": "pyenv install 3.12",
     "check_order": 1
