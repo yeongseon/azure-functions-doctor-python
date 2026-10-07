@@ -17,6 +17,7 @@ EXAMPLE_V2 = Path(__file__).resolve().parent.parent / "examples" / "v2" / "http-
 # A date well before every catalog end-of-support (all EOS are 2026-10 or later),
 # yet within the retiring-soon window of the earliest (Python 3.10, Oct 2026).
 BEFORE_ANY_EOS = date(2026, 9, 6)
+IN_310_EOS_MONTH = date(2026, 10, 7)
 # A date after Python 3.10's end-of-support (Oct 2026) but before 3.11's (Oct 2027).
 AFTER_310_EOS = date(2026, 11, 1)
 
@@ -36,7 +37,7 @@ class TestEvaluatePythonLifecycle:
             result["source_url"]
             == "https://learn.microsoft.com/azure/azure-functions/supported-languages"
         )
-        assert result["last_verified"] == "2026-09-06"
+        assert result["last_verified"] == "2026-09-17"
         assert result["catalog_version"] == "1.0.0"
 
     def test_retiring_soon_warns_without_gating(self) -> None:
@@ -50,7 +51,7 @@ class TestEvaluatePythonLifecycle:
         assert "days" not in result["detail"]
 
     def test_unsupported_version_fails_and_gates(self) -> None:
-        result = _evaluate_python_lifecycle("3.10", today=AFTER_310_EOS)
+        result = _evaluate_python_lifecycle("3.10", today=IN_310_EOS_MONTH)
         assert result["status"] == "fail"
         assert result["severity"] == "error"
         assert result["gate"] is True
@@ -113,7 +114,15 @@ class TestCatalogLifecycleFact:
         fact = load_catalog().python_lifecycle_fact("3.10")
         assert fact is not None
         assert fact.applies_to["python"] == "3.10"
+        assert fact.status == "unsupported"
         assert fact.support_end is not None
+
+    def test_python_314_is_ga_with_current_support_end(self) -> None:
+        fact = load_catalog().python_lifecycle_fact("3.14")
+        assert fact is not None
+        assert fact.status == "supported"
+        assert fact.support_end is not None
+        assert fact.support_end.render() == "April 2029"
 
     def test_python_lifecycle_fact_unknown_returns_none(self) -> None:
         assert load_catalog().python_lifecycle_fact("3.15") is None
@@ -141,7 +150,7 @@ class TestLifecycleHandlerIntegration:
         assert item["status"] == "warn"
         assert item["severity"] == "warning"
         assert item["analysis"] == {"type": "deterministic"}
-        assert item["last_verified"] == "2026-09-06"
+        assert item["last_verified"] == "2026-09-17"
         assert item["catalog_version"] == "1.0.0"
 
     def test_python_310_override_remains_analyzable(self) -> None:
@@ -170,7 +179,7 @@ class TestLifecycleHandlerIntegration:
     def test_unsupported_runtime_gates_the_section(self) -> None:
         doctor = Doctor(str(EXAMPLE_V2), target_python="3.10")
         with patch("azure_functions_doctor.handlers.runtime.date") as mock_date:
-            mock_date.today.return_value = AFTER_310_EOS
+            mock_date.today.return_value = IN_310_EOS_MONTH
             results = doctor.run_all_checks()
         section = next(s for s in results if s["category"] == "python_env")
         item = next(i for i in section["items"] if i["rule_id"] == "check_python_runtime_lifecycle")

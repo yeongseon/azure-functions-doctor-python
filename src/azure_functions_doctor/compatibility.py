@@ -145,6 +145,9 @@ class Fact:
         if eos is None:
             return self.status
         current = today if today is not None else date.today()
+        if self.status == "unsupported" and self.support_end.precision == "month":
+            if current >= eos.replace(day=1):
+                return "unsupported"
         if current > eos:
             return "unsupported"
         if self.status == "unsupported":
@@ -269,12 +272,13 @@ class Catalog:
         return facts[0] if facts else None
 
     def hosting_plan_matrix(self) -> dict[str, tuple[str, ...]]:
-        """Reconstruct the per-plan supported-Python matrix from the catalog.
+        """Reconstruct the per-plan recognized-Python matrix from the catalog.
 
-        Each plan's allow-list is the globally supported Python set filtered by that
-        plan's ``max_python`` cap (plans without a cap track the full set).
+        Each plan's allow-list is the known target set filtered by that plan's
+        ``max_python`` cap (plans without a cap track the full set). Lifecycle
+        support is evaluated separately so end-of-support targets remain analyzable.
         """
-        supported = self.supported_python_versions()
+        known = self.known_python_versions()
         matrix: dict[str, tuple[str, ...]] = {}
         for fact in self.facts_by_category("hosting_plan_python_cap"):
             plan = fact.applies_to.get("hosting_plan")
@@ -282,11 +286,9 @@ class Catalog:
                 continue
             cap = _parse_major_minor(fact.max_python) if fact.max_python else None
             if cap is None:
-                matrix[plan] = supported
+                matrix[plan] = known
             else:
-                matrix[plan] = tuple(
-                    v for v in supported if (_parse_major_minor(v) or (0, 0)) <= cap
-                )
+                matrix[plan] = tuple(v for v in known if (_parse_major_minor(v) or (0, 0)) <= cap)
         return matrix
 
     def freshness(self, today: date | None = None) -> Freshness:
