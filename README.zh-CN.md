@@ -139,9 +139,9 @@ azure-functions-doctor doctor --format json
 - 开发工作流所需的 Hatch
 - 建议安装 Azure Functions Core Tools v4+ 以进行本地运行
 
-Doctor 仍可分析以 Python 3.10 为目标的项目，但 Azure Functions 对 Python 3.10
-的支持已经结束。Python 3.14 已正式发布（GA），Linux Consumption 支持的最高版本
-仍为 Python 3.12。
+Doctor 仍可分析以 Python 3.10 为目标的项目；Azure Functions 对 Python 3.10
+的支持计划于 2026 年 10 月结束。Python 3.14 已正式发布（GA），Linux Consumption
+支持的最高版本仍为 Python 3.12。
 
 ## Documentation
 
