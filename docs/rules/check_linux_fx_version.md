@@ -22,7 +22,7 @@ Deployment fails; app stuck in a restart loop; "runtime not supported" errors in
 Unsupported Python linuxFxVersion runtime(s) in infra config:
 - main.bicep: Python|3.9
 
-Fix: target a supported Python runtime (3.10–3.14).
+Fix: target a supported Python runtime (3.11–3.14).
 ```
 
 ## How to fix

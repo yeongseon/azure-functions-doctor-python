@@ -8,7 +8,7 @@
 For a **Flex Consumption** app, the runtime declared under `functionAppConfig.runtime` (`name`/`version`):
 
 - A non-Python or undeclared runtime **skips**.
-- An unsupported Python version **fails** against the Flex hosting-plan matrix (Flex supports Python 3.10–3.14).
+- An unrecognized Python target **fails** against the Flex hosting-plan matrix (Doctor analyzes Python 3.10–3.14); lifecycle diagnostics separately report Python 3.10 as end-of-support.
 - A legacy `linuxFxVersion` declaration **warns** — Flex ignores it.
 
 Non-Flex apps skip.
@@ -26,8 +26,8 @@ A Flex app with only `linuxFxVersion` set has no effective runtime declaration; 
 Unsupported runtime version:
 
 ```text
-Flex Consumption runtime Python 3.9 is not supported; target a supported
-Python runtime (3.10–3.14).
+Flex Consumption runtime Python 3.9 is not recognized; target an analyzable
+Python runtime (3.10–3.14). The lifecycle check separately rejects Python 3.10.
 ```
 
 Legacy `linuxFxVersion` on a Flex app:
