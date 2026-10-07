@@ -140,6 +140,10 @@ v1.0.0 リリースでエイリアスが削除される前に、スクリプト�
 - 開発ワークフローのための Hatch
 - ローカル実行のために Azure Functions Core Tools v4+ を推奨
 
+Doctor は Python 3.10 を対象とするプロジェクトの解析を継続しますが、Azure
+Functions での Python 3.10 のサポートは終了しています。Python 3.14 は GA で、
+Linux Consumption がサポートする最後のバージョンは Python 3.12 です。
+
 ## Documentation
 
 - [docs/index.md](docs/index.md)
