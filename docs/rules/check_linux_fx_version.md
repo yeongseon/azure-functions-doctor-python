@@ -5,7 +5,7 @@
 
 ## What it checks
 
-Any Python `linuxFxVersion` declared in **infra config** (bicep/ARM, including nested `infra/` directories), so Flex Consumption / Linux plan apps target a supported Python runtime. Infra files are scanned for `linuxFxVersion` declarations such as `linuxFxVersion: 'Python|3.12'`; no declaration skips.
+Any Python `linuxFxVersion` declared in **infra config** (bicep/ARM, including nested `infra/` directories). Doctor recognizes Python 3.10–3.14 for analysis. Lifecycle support and hosting-plan compatibility are evaluated separately. Infra files are scanned for `linuxFxVersion` declarations such as `linuxFxVersion: 'Python|3.12'`; no declaration skips.
 
 ## Why it matters
 
@@ -18,16 +18,15 @@ Deployment fails; app stuck in a restart loop; "runtime not supported" errors in
 ## Example finding
 
 ```text
-```text
 Unsupported Python linuxFxVersion runtime(s) in infra config:
 - main.bicep: Python|3.9
 
-Fix: target a supported Python runtime (3.11–3.14).
+Fix: target a recognized Python runtime (3.10–3.14).
 ```
 
 ## How to fix
 
-Set `linuxFxVersion` to a supported Python runtime (e.g. `Python|3.12`) in your infrastructure templates.
+Set `linuxFxVersion` to a recognized Python runtime (e.g. `Python|3.12`) in your infrastructure templates. Review the lifecycle and hosting-plan findings separately to confirm that the selected target remains supported for deployment.
 
 ## Reference
 
