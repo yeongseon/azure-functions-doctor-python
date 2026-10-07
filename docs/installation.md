@@ -26,9 +26,11 @@ The package installs three console scripts, but only one is canonical:
 | `azure-functions` | Deprecated (removal targeted for v1.0.0); prints a warning to stderr. |
 | `fdoctor` | Deprecated (removal targeted for v1.0.0); prints a warning to stderr. |
 
-All three run the same diagnostics engine, and all three require the explicit
-`doctor` subcommand — there is no default command, so a bare
-`azure-functions-doctor` only prints help.
+All three run the same diagnostics engine. The canonical `azure-functions-doctor`
+inserts the `doctor` subcommand when it is omitted, so `azure-functions-doctor --path .`
+works. The deprecated `azure-functions` and `fdoctor` aliases, and
+`python -m azure_functions_doctor.cli`, require the explicit `doctor` subcommand.
+Examples use the explicit form, which works everywhere.
 
 See [Migrating off deprecated command aliases](deprecated-aliases.md).
 

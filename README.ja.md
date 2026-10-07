@@ -90,7 +90,7 @@ azure-functions-doctor doctor --format json
 
 ### CLI オプション
 
-すべてのエントリポイントで `doctor` サブコマンドの明示的な指定が必要です。省略するとヘルプのみが表示されます。
+`azure-functions-doctor` は `doctor` サブコマンドを省略すると自動的に補います。非推奨の `azure-functions` / `fdoctor` エイリアスと `python -m azure_functions_doctor.cli` では `doctor` サブコマンドを明示する必要があります。
 
 | オプション | 説明 |
 | --- | --- |

@@ -90,7 +90,7 @@ azure-functions-doctor doctor --format json
 
 ### CLI 选项
 
-所有入口点都要求显式指定 `doctor` 子命令；省略时仅会输出帮助信息。
+`azure-functions-doctor` 在省略 `doctor` 子命令时会自动补上。已弃用的 `azure-functions` / `fdoctor` 别名以及 `python -m azure_functions_doctor.cli` 需要显式指定 `doctor` 子命令。
 
 | 选项 | 说明 |
 | --- | --- |

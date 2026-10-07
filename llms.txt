@@ -23,8 +23,9 @@ Outputs to table, JSON, SARIF, or JUnit formats. Integrates with CI/CD pipelines
 
 ## CLI Commands
 
-Every entry point requires the explicit `doctor` subcommand; there is no default
-command, so a bare invocation only prints help.
+`azure-functions-doctor` inserts the `doctor` subcommand when it is omitted. The
+deprecated `azure-functions` / `fdoctor` aliases and `python -m azure_functions_doctor.cli`
+require the explicit `doctor` subcommand. Examples use the explicit form.
 
 - `azure-functions-doctor doctor` — Canonical. Run all diagnostics.
 - `azure-functions doctor` — Deprecated alias (removal targeted for v1.0.0); warns on stderr.

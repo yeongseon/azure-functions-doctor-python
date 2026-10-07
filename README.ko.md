@@ -90,7 +90,7 @@ azure-functions-doctor doctor --format json
 
 ### CLI 옵션
 
-모든 진입점은 명시적인 `doctor` 하위 명령을 요구합니다. 하위 명령 없이 실행하면 도움말만 출력됩니다.
+`azure-functions-doctor`는 `doctor` 하위 명령을 생략하면 자동으로 추가합니다. 더 이상 사용되지 않는 `azure-functions` / `fdoctor` 별칭과 `python -m azure_functions_doctor.cli`는 `doctor` 하위 명령을 명시해야 합니다.
 
 | 옵션 | 설명 |
 | --- | --- |
