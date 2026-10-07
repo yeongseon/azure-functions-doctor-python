@@ -9,11 +9,11 @@
 - Python: >=3.11, <3.15
 - License: MIT
 - Docs: https://yeongseon.dev/azure-functions-python/doctor/
-- Repository: https://github.com/yeongseon/azure-functions-doctor
+- Repository: https://github.com/yeongseon/azure-functions-doctor-python
 
 ## What It Does
 
-Runs 14+ diagnostic checks on Azure Functions Python v2 projects to detect:
+Runs 41 diagnostic checks on Azure Functions Python v2 projects to detect:
 - **Missing dependencies** — azure-functions not in requirements.txt, discovered only at cold start
 - **Invalid configuration** — host.json misconfigured, extensionBundle missing or outdated
 - **Runtime incompatibilities** — Python version mismatch with Azure Functions runtime
@@ -23,10 +23,13 @@ Outputs to table, JSON, SARIF, or JUnit formats. Integrates with CI/CD pipelines
 
 ## CLI Commands
 
-Main entry points (all aliases):
-- `azure-functions-doctor doctor  # the `doctor` subcommand is optional` — Run all diagnostics
-- `azure-functions-doctor doctor` — Same as above
-- `fdoctor doctor` — Short alias
+`azure-functions-doctor` inserts the `doctor` subcommand when it is omitted. The
+deprecated `azure-functions` / `fdoctor` aliases and `python -m azure_functions_doctor.cli`
+require the explicit `doctor` subcommand. Examples use the explicit form.
+
+- `azure-functions-doctor doctor` — Canonical. Run all diagnostics.
+- `azure-functions doctor` — Deprecated alias (removal targeted for v1.0.0); warns on stderr.
+- `fdoctor doctor` — Deprecated alias (removal targeted for v1.0.0); warns on stderr.
 
 ### Key Options
 
@@ -36,7 +39,10 @@ Main entry points (all aliases):
 - `--output <PATH>` — Save output to file
 - `--profile <PROFILE>` — Rule profile: minimal (required only), deploy (runtime/hosting/deployment correctness), development (dev-environment checks), or full (all rules; default when omitted)
 - `--rules <PATH>` — Custom rules file (JSON)
-- `--summary-json <PATH>` — Write JSON summary (passed/warned/failed counts)
+- `--summary-json <PATH>` — Write JSON summary (passed/warned/failed/skipped counts)
+- `--target-python <VERSION>` — Override the target Python runtime
+- `--deployment-mode <MODE>` — remote-build (default), local, local-prebuilt, or container
+- `--hosting-plan <PLAN>` — linux-consumption, flex-consumption, premium, or dedicated
 - `--verbose` — Show detailed hints for failed checks
 - `--debug` — Enable debug logging to stderr
 
@@ -44,40 +50,43 @@ Main entry points (all aliases):
 
 ```bash
 # Run diagnostics in current directory
-azure-functions-doctor
+azure-functions-doctor doctor
 
 # Run on specific project
-azure-functions-doctor --path ./my-app
+azure-functions-doctor doctor --path ./my-app
 
 # Show verbose hints for failures
-azure-functions-doctor --verbose
+azure-functions-doctor doctor --verbose
 
 # Output JSON for CI integration
-azure-functions-doctor --format json --output diagnostics.json
+azure-functions-doctor doctor --format json --output diagnostics.json
 
 # Use minimal profile (required checks only)
-azure-functions-doctor --profile minimal
+azure-functions-doctor doctor --profile minimal
 
 # Custom rules
-azure-functions-doctor --rules ./custom-rules.json
+azure-functions-doctor doctor --rules ./custom-rules.json
 
 # SARIF output for GitHub Security tab
-azure-functions-doctor --format sarif --output sarif.json
+azure-functions-doctor doctor --format sarif --output sarif.json
 
 # JUnit output for CI systems
-azure-functions-doctor --format junit --output test-results.xml
+azure-functions-doctor doctor --format junit --output test-results.xml
+
+# Target the Flex Consumption plan explicitly
+azure-functions-doctor doctor --hosting-plan flex-consumption
 ```
 
 ## Diagnostic Rules
 
-**14+ built-in checks** covering:
+**41 built-in checks** covering:
 - **Programming Model** — Confirms v2 decorator usage (@app.route, @bp.trigger)
 - **Python Environment** — Python version, virtual environment, executable path
 - **Dependencies** — requirements.txt, azure-functions package, no forbidden packages
 - **Project Structure** — host.json, function files, proper layout
 - **Host Configuration** — extensionBundle, functionTimeout, extensionBundleVersion
 - **Durable Functions** — durableFunctionsMonitor, dfmEndpoint setup
-- **Application Insights** — APPINSIGHTS_INSTRUMENTATION_KEY, logging.json config
+- **Application Insights** — APPLICATIONINSIGHTS_CONNECTION_STRING, logging.json config
 - **Triggers** — Proper HTTP/Timer/Storage trigger usage and configuration
 - **Core Tools** — Local Azure Functions Core Tools availability
 

@@ -184,7 +184,7 @@ Rules without a documentation anchor belong in the Experimental tier until a ref
 | Supported Python versions | https://learn.microsoft.com/azure/azure-functions/functions-reference-python#supported-python-versions |
 | Managing dependencies | https://learn.microsoft.com/azure/azure-functions/functions-reference-python#managing-dependencies |
 | Programming model v2 (decorators) | https://learn.microsoft.com/azure/azure-functions/functions-reference-python?pivots=python-mode-decorators |
-| Extension bundles | https://learn.microsoft.com/azure/azure-functions/functions-extension-bundles |
+| Extension bundles | https://learn.microsoft.com/azure/azure-functions/extension-bundles |
 | local.settings.json | https://learn.microsoft.com/azure/azure-functions/functions-develop-local#local-settings-file |
 | Application Insights | https://learn.microsoft.com/azure/azure-monitor/app/azure-functions |
 | Core Tools v4 | https://learn.microsoft.com/azure/azure-functions/functions-run-local#v4 |

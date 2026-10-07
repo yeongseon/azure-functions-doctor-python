@@ -103,10 +103,10 @@
     "tier": "core",
     "condition": {},
     "hint": "Linux Consumption is retiring; consider Flex Consumption for new Python workloads.",
-    "hint_url": "https://learn.microsoft.com/azure/azure-functions/migrate-plan-consumption-to-flex",
+    "hint_url": "https://learn.microsoft.com/azure/azure-functions/migration/migrate-plan-consumption-to-flex",
     "source_type": "ms_learn",
     "source_title": "Azure Functions \u2014 Migrate Consumption to Flex Consumption (hosting plan lifecycle)",
-    "source_url": "https://learn.microsoft.com/azure/azure-functions/migrate-plan-consumption-to-flex",
+    "source_url": "https://learn.microsoft.com/azure/azure-functions/migration/migrate-plan-consumption-to-flex",
     "why_it_matters": "Hosting plans retire on a published schedule; an app left on a retiring plan must eventually migrate or stop running.",
     "symptoms": "Apps on a retiring hosting plan keep running until the retirement date, then must migrate; migrations left too late force a rushed move.",
     "tags": ["hosting-plan", "lifecycle", "flex-consumption", "configuration"],
@@ -425,7 +425,7 @@
       "jsonpath": "$.extensionBundle"
     },
     "hint": "Use extensionBundle to ensure required extensions are available for bindings.",
-    "hint_url": "https://learn.microsoft.com/azure/azure-functions/functions-extension-bundles",
+    "hint_url": "https://learn.microsoft.com/azure/azure-functions/extension-bundles",
     "check_order": 25
   },
   {
@@ -498,7 +498,7 @@
     "required": false,
     "condition": {},
     "hint": "Update extensionBundle in host.json to use id 'Microsoft.Azure.Functions.ExtensionBundle' with version '[4.*, 5.0.0)'.",
-    "hint_url": "https://learn.microsoft.com/azure/azure-functions/functions-extension-bundles",
+    "hint_url": "https://learn.microsoft.com/azure/azure-functions/extension-bundles",
     "check_order": 33
   },
   {

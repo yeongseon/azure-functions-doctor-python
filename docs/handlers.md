@@ -198,8 +198,7 @@ The authoritative dispatch map is `_RULE_DISPATCH` in
     "condition": {
       "targets": [
         "APPLICATIONINSIGHTS_CONNECTION_STRING",
-        "APPINSIGHTS_INSTRUMENTATIONKEY",
-        "host.json:instrumentationKey"
+        "APPLICATIONINSIGHTS_AUTHENTICATION_STRING"
       ]
     }
   },
@@ -220,6 +219,11 @@ The authoritative dispatch map is `_RULE_DISPATCH` in
 
 - `source_code_contains` supports a simple string mode and an AST-based mode.
 - `conditional_exists` is used for checks that only matter when a related feature is detected.
+- The built-in Application Insights check uses the dedicated
+  `app_insights_connection` type, not `any_of_exists`: it requires
+  `APPLICATIONINSIGHTS_CONNECTION_STRING` and reports a legacy
+  `APPINSIGHTS_INSTRUMENTATIONKEY` or `host.json` instrumentation key as stale,
+  because instrumentation-key ingestion ended on 2025-03-31.
 - Handler implementations live in the `src/azure_functions_doctor/handlers/` package
   (domain modules listed above; dispatch in `registry.py`).
 

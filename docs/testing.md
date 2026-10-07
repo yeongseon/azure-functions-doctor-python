@@ -1,7 +1,7 @@
 # Testing
 
 ## Overview
-Azure Functions Doctor uses pytest as its primary testing framework. The suite spans 20+ test modules covering the CLI, diagnostic handlers, rule registration, configuration management, and error handling.
+Azure Functions Doctor uses pytest as its primary testing framework. The suite spans 40+ test modules covering the CLI, diagnostic handlers, rule registration, configuration management, and error handling.
 
 ## Running Tests
 You can execute the tests using the provided Makefile or by calling pytest directly.
@@ -56,7 +56,7 @@ Specific handlers tested include:
 - callable_detection
 
 ### CLI Tests (test_cli.py)
-CLI tests use Typer's CliRunner to invoke commands and verify output. They ensure the `doctor` subcommand behaves correctly with different flags such as `--format json`, `--profile minimal`, and `--path`. Exit codes are verified to be 0 for successful checks and 1 when failures occur.
+CLI tests use `CliRunner` from `typer.testing` to invoke commands and verify output. They ensure the `doctor` subcommand behaves correctly with different flags such as `--format json`, `--profile minimal`, and `--path`. Exit codes are verified to be 0 for successful checks and 1 when failures occur.
 
 ### Rules Tests
 - **test_rule_loading.py**: Validates the loading of the built-in `v2.json` ruleset (and custom rule files).
@@ -80,7 +80,7 @@ Coverage settings are defined in `pyproject.toml`.
 When contributing new features or bug fixes, follow these guidelines:
 
 1. Place handler tests in `test_handler.py` using the `tmp_path` fixture.
-2. Place CLI tests in `test_cli.py` using `CliRunner`.
+2. Place CLI tests in `test_cli.py` using `CliRunner` from `typer.testing`.
 3. Use descriptive test names following the pattern: `test_<handler>_returns_<status>_when_<condition>`.
 4. Ensure all result statuses (pass, warn, fail, skip) are covered.
 5. Mock external dependencies like the filesystem, executables, or network calls.
@@ -100,7 +100,8 @@ The project includes a real Azure end-to-end test workflow that deploys an actua
 
 - **File**: `.github/workflows/e2e-azure.yml`
 - **Trigger**: Manual (`workflow_dispatch`) or weekly schedule (Mondays 02:00 UTC)
-- **Infrastructure**: Azure Consumption plan, `koreacentral` region
+- **Infrastructure**: Linux Consumption plan (`Y1`/Dynamic) running Python 3.12, deployed by `infra/main.bicep` to the `koreacentral` region by default
+- **Note**: Linux Consumption is the legacy plan (retires 30 September 2028) and is used here only because it is the cheapest throwaway target for a weekly smoke run
 - **Cleanup**: Resource group deleted immediately after tests (`if: always()`)
 
 ### Running E2E Tests

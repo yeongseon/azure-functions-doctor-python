@@ -18,13 +18,21 @@ This page covers supported environments and installation methods for `azure-func
 python -m pip install azure-functions-doctor
 ```
 
-The package installs these equivalent entry points:
+The package installs three console scripts, but only one is canonical:
 
-- `azure-functions`
-- `azure-functions-doctor`
-- `fdoctor`
+| Command | Status |
+| --- | --- |
+| `azure-functions-doctor` | Canonical — use this. |
+| `azure-functions` | Deprecated (removal targeted for v1.0.0); prints a warning to stderr. |
+| `fdoctor` | Deprecated (removal targeted for v1.0.0); prints a warning to stderr. |
 
-All three run the same CLI (`azure_functions_doctor.cli:cli`).
+All three run the same diagnostics engine. The canonical `azure-functions-doctor`
+inserts the `doctor` subcommand when it is omitted, so `azure-functions-doctor --path .`
+works. The deprecated `azure-functions` and `fdoctor` aliases, and
+`python -m azure_functions_doctor.cli`, require the explicit `doctor` subcommand.
+Examples use the explicit form, which works everywhere.
+
+See [Migrating off deprecated command aliases](deprecated-aliases.md).
 
 ## Upgrade to latest version
 
@@ -37,8 +45,8 @@ python -m pip install --upgrade azure-functions-doctor
 Use source install when you want to test local changes or contribute.
 
 ```bash
-git clone https://github.com/yeongseon/azure-functions-doctor.git
-cd azure-functions-doctor
+git clone https://github.com/yeongseon/azure-functions-doctor-python.git
+cd azure-functions-doctor-python
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
@@ -67,7 +75,7 @@ python -m pip install -e ".[dev,docs]"
 Run help:
 
 ```bash
-azure-functions --help
+azure-functions-doctor --help
 ```
 
 Run a first diagnostic in current directory:
@@ -102,7 +110,7 @@ Recommended for local development workflows:
 
 ### Command not found
 
-If `azure-functions` is not found after install:
+If `azure-functions-doctor` is not found after install:
 
 1. Confirm you installed into the active interpreter:
 

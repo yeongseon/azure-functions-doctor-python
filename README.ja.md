@@ -30,6 +30,13 @@ Azure Functions Doctor は、**Azure Functions Python v2 プログラミング�
 
 Azure Functions Python プロジェクトのセットアップには、複数の設定ファイル、依存関係、ツールが必要です。いずれか一つでも欠けると、分かりにくいランタイムエラーが発生します。`azure-functions-doctor` は厳選されたルールセットに基づいてプロジェクトをチェックし、問題が本番環境に到達する前に報告します。
 
+## What it does
+
+- **41 個の診断チェック** — Python バージョン、依存関係、`host.json`、Core Tools、Durable Functions など
+- **複数の出力形式** — CI 連携向けの table、JSON、SARIF、JUnit
+- **プロファイル対応** — 用途に応じて `minimal`、`deploy`、`development`、`full` のルールセットを選択
+- **公式 GitHub Action** — CI ゲート用の `yeongseon/azure-functions-doctor@v1`
+
 ## Scope
 
 このリポジトリは、デコレータベースの Azure Functions Python v2 プログラミングモデルのみを対象としています。
@@ -49,7 +56,7 @@ pip install azure-functions-doctor
 
 ```bash
 git clone https://github.com/yeongseon/azure-functions-doctor-python.git
-cd azure-functions-doctor
+cd azure-functions-doctor-python
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
@@ -80,6 +87,27 @@ CI 用に JSON 形式で出力：
 ```bash
 azure-functions-doctor doctor --format json
 ```
+
+### CLI オプション
+
+`azure-functions-doctor` は `doctor` サブコマンドを省略すると自動的に補います。非推奨の `azure-functions` / `fdoctor` エイリアスと `python -m azure_functions_doctor.cli` では `doctor` サブコマンドを明示する必要があります。
+
+| オプション | 説明 |
+| --- | --- |
+| `--path <パス>` | 対象となる Azure Functions アプリのパス（既定値 `.`） |
+| `--profile <minimal\|deploy\|development\|full>` | 実行するルールセット |
+| `--format <table\|json\|sarif\|junit>` | 出力形式（既定値 `table`） |
+| `--output <ファイル>` | 結果をファイルに保存 |
+| `--summary-json <ファイル>` | 成功/警告/失敗/スキップ件数のサマリを JSON で保存 |
+| `--rules <ファイル>` | カスタムルールファイル |
+| `--target-python <バージョン>` | 対象 Python ランタイムの上書き |
+| `--deployment-mode <remote-build\|local\|local-prebuilt\|container>` | 依存関係が Azure に届く方法（既定値 `remote-build`） |
+| `--hosting-plan <linux-consumption\|flex-consumption\|premium\|dedicated>` | Python バージョン検証に使う Azure ホスティングプラン |
+| `-v`, `--verbose` | 失敗したチェックの詳細なヒントを表示 |
+| `--debug` | stderr へのデバッグログを有効化 |
+
+プロファイルは 4 種類です: `minimal`（必須のゲートチェック）、`deploy`（Azure ランタイム/ホスティング/デプロイ整合性）、
+`development`（ローカル開発環境チェック）、`full`（すべてのルール）。
 
 ### コマンド名と非推奨のエイリアス
 

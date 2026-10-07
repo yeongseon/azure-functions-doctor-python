@@ -438,9 +438,9 @@ If deletion has completed, the command returns a not-found error.
 ## See Also
 
 - [Choose an Azure Functions Hosting Plan](choose-a-plan.md) — Plan selection guide with decision tree
-- [README](https://github.com/yeongseon/azure-functions-doctor/blob/main/README.md)
-- [Examples: healthy HTTP trigger](https://github.com/yeongseon/azure-functions-doctor/tree/main/examples/v2/http-trigger)
-- [Examples: broken missing host.json](https://github.com/yeongseon/azure-functions-doctor/tree/main/examples/v2/broken-missing-host-json)
+- [README](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/README.md)
+- [Examples: healthy HTTP trigger](https://github.com/yeongseon/azure-functions-doctor-python/tree/main/examples/v2/http-trigger)
+- [Examples: broken missing host.json](https://github.com/yeongseon/azure-functions-doctor-python/tree/main/examples/v2/broken-missing-host-json)
 - [`azure-functions-scaffold`](https://github.com/yeongseon/azure-functions-scaffold)
 - [`azure-functions-validation`](https://github.com/yeongseon/azure-functions-validation)
 - [`azure-functions-openapi`](https://github.com/yeongseon/azure-functions-openapi)

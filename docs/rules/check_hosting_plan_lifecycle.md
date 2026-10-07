@@ -37,4 +37,4 @@ Linux Consumption is retiring; consider Flex Consumption for new Python workload
 
 ## Reference
 
-- [Azure Functions — Migrate Consumption to Flex Consumption](https://learn.microsoft.com/azure/azure-functions/migrate-plan-consumption-to-flex)
+- [Azure Functions — Migrate Consumption to Flex Consumption](https://learn.microsoft.com/azure/azure-functions/migration/migrate-plan-consumption-to-flex)
