@@ -67,7 +67,7 @@ azure-functions-doctor doctor --target-python 3.12
 | `--profile` | enum | `full` behavior | Rule profile: `minimal` (required gating checks), `deploy` (Azure runtime/hosting/deployment correctness), `development` (local dev-environment checks), or `full` (all rules). |
 | `--rules` | path | unset | Custom rules file path. |
 | `--summary-json` | path | unset | Write a JSON summary containing `passed`, `warned`, and `failed` counts to this path. |
-| `--target-python` | string | unset | Override the Azure Functions target Python runtime: `3.10`, `3.11`, `3.12`, `3.13`, `3.14` (Preview). On the Linux Consumption plan, the maximum supported version is `3.12`. |
+| `--target-python` | string | unset | Override the Azure Functions target Python runtime: `3.10`, `3.11`, `3.12`, `3.13`, `3.14`. Python 3.10 remains analyzable but is end-of-support; Python 3.14 is GA. On the Linux Consumption plan, the maximum supported version is `3.12`. |
 | `--deployment-mode` | enum | `remote-build` | Deployment mode for dependency checks: `remote-build` (Azure installs from `requirements.txt`), `local` or `local-prebuilt` (dependencies prebuilt/vendored locally, e.g. `.python_packages`), or `container` (dependencies baked into a custom container image). |
 | `--hosting-plan` | enum | unset | Target Azure hosting plan for Python-version validation: `linux-consumption` (caps at Python 3.12), `flex-consumption`, `premium`, or `dedicated`. |
 
@@ -166,13 +166,16 @@ Use explicit paths in CI to avoid accidental root-level checks.
 `--target-python` separates the deployed Function App runtime from the Python
 interpreter running the doctor locally or in CI.
 
-Supported values:
+Analyzable target values:
 
 - `3.10`
 - `3.11`
 - `3.12`
 - `3.13`
 - `3.14`
+
+Python 3.10 is retained so Doctor can diagnose projects that still target it;
+the lifecycle check reports it as end-of-support. Python 3.14 is GA.
 
 When set, the Python version rule compares the override value instead of the
 tool runtime and table output adds `Target Python: X.Y (override)` near the header.

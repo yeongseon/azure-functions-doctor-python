@@ -20,15 +20,16 @@ Deployments on a retiring runtime keep working until the end-of-support date, th
 ## Example finding
 
 ```text
-Python 3.10.12 support is expected to end in October 2026; plan an upgrade
-to a newer Python (3.12+) before then.
+Python 3.10.12 is past Azure Functions end-of-support (ended October 2026);
+upgrade to a newer supported Python (e.g. 3.14).
 ```
 
 The finding carries auditable evidence (Finding Contract v2): `expected`, `actual`, `source_url`, `last_verified`, and `catalog_version` from the version-controlled compatibility catalog.
 
 ## How to fix
 
-Target a Python version with a long support runway (3.12+). Upgrade a retiring runtime before its Azure Functions end-of-support date.
+Target a Python version with a long support runway (3.12+). Python 3.10 remains
+analyzable by Doctor but is end-of-support; Python 3.14 is GA.
 
 ## Reference
 
