@@ -138,6 +138,8 @@ azure-functions-doctor doctor --target-python 3.12
 
 Use `--target-python` when the Python running `azure-functions-doctor`
 is not the same as the Python version your Function App will run on Azure.
+Python 3.10 remains accepted for analysis and is scheduled to reach Azure Functions
+end of support in October 2026; Python 3.14 is GA. Linux Consumption supports up to Python 3.12.
 
 ### Project configuration (`pyproject.toml`)
 
@@ -195,7 +197,7 @@ Programming Model
 [✓] Programming model v2: Keyword '@app.|@bp.' found in source code (AST)
 
 Python Env
-[✓] Python version: Target Python: 3.10 (.python-version, >=3.10) — Tool runtime: 3.11.14
+[✓] Python version: Target Python: 3.12 (.python-version, >=3.10) — Tool runtime: 3.11.14
 [✓] requirements.txt: requirements.txt exists
 [✓] azure-functions package: Package 'azure-functions' declared in requirements.txt
 

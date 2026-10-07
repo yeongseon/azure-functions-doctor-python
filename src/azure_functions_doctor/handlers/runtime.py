@@ -70,7 +70,7 @@ def _evaluate_python_lifecycle(
     recommended = supported[-1] if supported else None
     target_hint = f" (e.g. {recommended})" if recommended else ""
 
-    if end is not None and today > end:
+    if fact.effective_status(today) == "unsupported":
         status, severity, gate = "fail", "error", True
         detail = (
             f"Python {version} is past Azure Functions end-of-support "

@@ -27,7 +27,7 @@ def test_load_catalog_is_cached() -> None:
     second = load_catalog()
     assert first is second
     assert first.catalog_version == "1.0.0"
-    assert first.last_verified == "2026-09-06"
+    assert first.last_verified == "2026-09-17"
     assert "supported_languages" in first.sources
 
 
@@ -116,7 +116,7 @@ def test_support_end_render_malformed_returns_raw() -> None:
 
 def test_freshness_fresh_catalog() -> None:
     catalog = load_catalog()
-    freshness = catalog.freshness(today=date(2026, 9, 6))
+    freshness = catalog.freshness(today=date(2026, 9, 17))
     assert freshness.age_days == 0
     assert freshness.is_stale is False
     assert freshness.threshold_days == CATALOG_STALENESS_THRESHOLD_DAYS

@@ -1,8 +1,9 @@
+from datetime import date
 import json
 from pathlib import Path
 import re
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -291,13 +292,51 @@ def test_cli_target_python_override_end_to_end() -> None:
 
 
 def test_cli_target_python_invalid_value() -> None:
-    """Test unsupported target_python values fail with supported versions listed."""
     result = runner.invoke(app, ["doctor", "--target-python", "3.99"])
     assert result.exit_code != 0
     assert "Invalid target Python: 3.99" in result.output
     assert "3.99" in result.output
     for version in ("3.10", "3.11", "3.12", "3.13", "3.14"):
         assert version in result.output
+
+
+@pytest.mark.parametrize(
+    ("today", "expected_exit", "expected_status"),
+    [
+        (date(2026, 10, 31), 0, "warn"),
+        (date(2026, 11, 1), 1, "fail"),
+    ],
+)
+def test_cli_target_python_310_follows_end_of_month_lifecycle(
+    today: date,
+    expected_exit: int,
+    expected_status: str,
+) -> None:
+    with patch("azure_functions_doctor.handlers.runtime.date") as mock_date:
+        mock_date.today.return_value = today
+        result = runner.invoke(
+            app,
+            [
+                "doctor",
+                "--path",
+                V2_FIXTURE_PATH,
+                "--format",
+                "json",
+                "--target-python",
+                "3.10",
+            ],
+        )
+
+    payload = json.loads(result.output)
+    lifecycle = next(
+        item
+        for section in payload["results"]
+        for item in section["items"]
+        if item["rule_id"] == "check_python_runtime_lifecycle"
+    )
+    assert result.exit_code == expected_exit
+    assert payload["metadata"]["target_python"] == "3.10"
+    assert lifecycle["status"] == expected_status
 
 
 def test_cli_invalid_deployment_mode() -> None:

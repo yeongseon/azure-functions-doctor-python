@@ -110,7 +110,7 @@ def test_compare_python_version_unsupported_target_fails() -> None:
     }
     result = generic_handler(rule, Path("."), {"target_python": "3.15"})
     assert result["status"] == "fail"
-    assert "unsupported target" in result["detail"]
+    assert "unrecognized target" in result["detail"]
     assert "3.10\u20133.14" in result["detail"]
 
 
@@ -126,7 +126,7 @@ def test_compare_python_version_too_old_target_fails() -> None:
     }
     result = generic_handler(rule, Path("."), {"target_python": "3.9"})
     assert result["status"] == "fail"
-    assert "unsupported target" in result["detail"]
+    assert "unrecognized target" in result["detail"]
 
 
 def test_compare_python_version_supported_target_passes() -> None:
@@ -141,7 +141,7 @@ def test_compare_python_version_supported_target_passes() -> None:
     }
     result = generic_handler(rule, Path("."), {"target_python": "3.12"})
     assert result["status"] == "pass"
-    assert "unsupported target" not in result["detail"]
+    assert "unrecognized target" not in result["detail"]
 
 
 def test_compare_python_version_from_python_version_file(tmp_path: Path) -> None:
@@ -158,7 +158,7 @@ def test_compare_python_version_from_python_version_file(tmp_path: Path) -> None
     result = generic_handler(rule, tmp_path)
     assert result["status"] == "pass"
     assert ".python-version" in result["detail"]
-    assert "unsupported target" not in result["detail"]
+    assert "unrecognized target" not in result["detail"]
 
 
 def test_compare_func_core_tools_version_pass(monkeypatch: MonkeyPatch) -> None:

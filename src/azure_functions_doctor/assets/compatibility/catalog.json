@@ -1,6 +1,6 @@
 {
   "catalog_version": "1.0.0",
-  "last_verified": "2026-09-06",
+  "last_verified": "2026-09-17",
   "sources": {
     "supported_languages": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
     "functions_versions": "https://learn.microsoft.com/azure/azure-functions/functions-versions",
@@ -15,7 +15,7 @@
       "status": "supported",
       "support_end": { "value": "2026-10", "precision": "month" },
       "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
-      "last_verified": "2026-09-06",
+      "last_verified": "2026-09-17",
       "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.10 GA end-of-support as 'October 2026' (month precision, no day published)."
     },
     {
@@ -25,7 +25,7 @@
       "status": "supported",
       "support_end": { "value": "2027-10", "precision": "month" },
       "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
-      "last_verified": "2026-09-06",
+      "last_verified": "2026-09-17",
       "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.11 GA end-of-support as 'October 2027' (month precision)."
     },
     {
@@ -35,7 +35,7 @@
       "status": "supported",
       "support_end": { "value": "2028-10", "precision": "month" },
       "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
-      "last_verified": "2026-09-06",
+      "last_verified": "2026-09-17",
       "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.12 GA end-of-support as 'October 2028' (month precision)."
     },
     {
@@ -45,7 +45,7 @@
       "status": "supported",
       "support_end": { "value": "2029-10", "precision": "month" },
       "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
-      "last_verified": "2026-09-06",
+      "last_verified": "2026-09-17",
       "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.13 GA end-of-support as 'October 2029' (month precision)."
     },
     {
@@ -53,10 +53,10 @@
       "category": "python_runtime_lifecycle",
       "applies_to": { "python": "3.14" },
       "status": "supported",
-      "support_end": { "value": "2030-10", "precision": "month" },
+      "support_end": { "value": "2029-04", "precision": "month" },
       "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
-      "last_verified": "2026-09-06",
-      "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.14 GA end-of-support as 'October 2030' (month precision)."
+      "last_verified": "2026-09-17",
+      "verification_notes": "Microsoft Learn 'Supported languages' lists Python 3.14 as GA with end-of-support in April 2029 (month precision)."
     },
     {
       "fact_id": "hosting-plan-python-cap-linux-consumption",
@@ -64,7 +64,7 @@
       "applies_to": { "hosting_plan": "linux-consumption" },
       "max_python": "3.12",
       "source_url": "https://learn.microsoft.com/azure/azure-functions/supported-languages",
-      "last_verified": "2026-09-06",
+      "last_verified": "2026-09-17",
       "verification_notes": "Microsoft Learn: 'Python 3.12 is the last Python version supported for Linux Consumption plan apps. Newer Python versions aren't added to Linux Consumption.'"
     },
     {

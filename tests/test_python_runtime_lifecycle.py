@@ -17,6 +17,8 @@ EXAMPLE_V2 = Path(__file__).resolve().parent.parent / "examples" / "v2" / "http-
 # A date well before every catalog end-of-support (all EOS are 2026-10 or later),
 # yet within the retiring-soon window of the earliest (Python 3.10, Oct 2026).
 BEFORE_ANY_EOS = date(2026, 9, 6)
+START_OF_310_EOS_MONTH = date(2026, 10, 1)
+END_OF_310_EOS_MONTH = date(2026, 10, 31)
 # A date after Python 3.10's end-of-support (Oct 2026) but before 3.11's (Oct 2027).
 AFTER_310_EOS = date(2026, 11, 1)
 
@@ -36,7 +38,7 @@ class TestEvaluatePythonLifecycle:
             result["source_url"]
             == "https://learn.microsoft.com/azure/azure-functions/supported-languages"
         )
-        assert result["last_verified"] == "2026-09-06"
+        assert result["last_verified"] == "2026-09-17"
         assert result["catalog_version"] == "1.0.0"
 
     def test_retiring_soon_warns_without_gating(self) -> None:
@@ -113,7 +115,15 @@ class TestCatalogLifecycleFact:
         fact = load_catalog().python_lifecycle_fact("3.10")
         assert fact is not None
         assert fact.applies_to["python"] == "3.10"
+        assert fact.status == "supported"
         assert fact.support_end is not None
+
+    def test_python_314_is_ga_with_current_support_end(self) -> None:
+        fact = load_catalog().python_lifecycle_fact("3.14")
+        assert fact is not None
+        assert fact.status == "supported"
+        assert fact.support_end is not None
+        assert fact.support_end.render() == "April 2029"
 
     def test_python_lifecycle_fact_unknown_returns_none(self) -> None:
         assert load_catalog().python_lifecycle_fact("3.15") is None
@@ -136,13 +146,19 @@ class TestLifecycleHandlerIntegration:
                     return dict(item)
         raise AssertionError("lifecycle finding not emitted")
 
-    def test_retiring_runtime_surfaces_as_warning(self) -> None:
-        item = self._lifecycle_item(BEFORE_ANY_EOS)
+    def test_retiring_runtime_surfaces_as_warning_on_first_day_of_end_month(self) -> None:
+        item = self._lifecycle_item(START_OF_310_EOS_MONTH)
         assert item["status"] == "warn"
         assert item["severity"] == "warning"
         assert item["analysis"] == {"type": "deterministic"}
-        assert item["last_verified"] == "2026-09-06"
+        assert item["last_verified"] == "2026-09-17"
         assert item["catalog_version"] == "1.0.0"
+
+    def test_retiring_runtime_surfaces_as_warning_on_last_day_of_end_month(self) -> None:
+        item = self._lifecycle_item(END_OF_310_EOS_MONTH)
+
+        assert item["status"] == "warn"
+        assert item["severity"] == "warning"
 
     def test_python_310_override_remains_analyzable(self) -> None:
         item = self._lifecycle_item(BEFORE_ANY_EOS)

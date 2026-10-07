@@ -140,6 +140,10 @@ v1.0.0 릴리스에서 별칭이 제거되기 전에 스크립트나 CI 파이�
 - 개발 워크플로우를 위한 Hatch
 - 로컬 실행을 위해 Azure Functions Core Tools v4+ 권장
 
+Doctor는 Python 3.10 대상 프로젝트를 계속 분석하며, Azure Functions에서
+Python 3.10은 2026년 10월에 지원이 종료될 예정입니다. Python 3.14는 GA이며,
+Linux Consumption은 Python 3.12까지만 지원합니다.
+
 ## Documentation
 
 - [docs/index.md](docs/index.md)
