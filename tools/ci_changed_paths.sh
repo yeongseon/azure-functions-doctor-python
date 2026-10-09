@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
+
+printf 'docs_only=false\ndocs_changed=true\nfull_required=true\n' > "$GITHUB_OUTPUT"
 
 fail_safe() {
-  printf 'docs_only=false\ndocs_changed=true\nfull_required=true\n' >> "$GITHUB_OUTPUT"
   exit 0
 }
 
@@ -28,4 +29,5 @@ else
   git diff --name-only --no-renames "$BEFORE_SHA" "$SHA" > "$paths" || fail_safe
 fi
 
-bash tools/ci_classify_changes.sh < "$paths" >> "$GITHUB_OUTPUT" || fail_safe
+classified=$(bash tools/ci_classify_changes.sh < "$paths") || fail_safe
+printf '%s\n' "$classified" > "$GITHUB_OUTPUT"
