@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && github.event.pull_request.base.sha || github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
       - name: Classify changed paths
         id: classify
@@ -33,30 +33,11 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
           BEFORE_SHA: ${{ github.event.before }}
           SHA: ${{ github.sha }}
-        run: |
-          set -uo pipefail
-          fail_safe() {
-            printf 'docs_only=false\ndocs_changed=true\nfull_required=true\n' >> "$GITHUB_OUTPUT"
-            exit 0
-          }
-          paths=$(mktemp)
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            git fetch --no-tags origin "$BASE_SHA" "$HEAD_SHA" || fail_safe
-            git merge-base "$BASE_SHA" "$HEAD_SHA" >/dev/null || fail_safe
-            git diff --name-only --no-renames "$BASE_SHA...$HEAD_SHA" > "$paths" || fail_safe
-          else
-            case "$BEFORE_SHA" in
-              "" | 0000000000000000000000000000000000000000) fail_safe ;;
-            esac
-            git cat-file -e "$BEFORE_SHA^{commit}" || fail_safe
-            git merge-base --is-ancestor "$BEFORE_SHA" "$SHA" || fail_safe
-            git diff --name-only --no-renames "$BEFORE_SHA" "$SHA" > "$paths" || fail_safe
-          fi
-          bash tools/ci_classify_changes.sh < "$paths" >> "$GITHUB_OUTPUT" || fail_safe
+        run: bash tools/ci_changed_paths.sh
 
   # Lint, type-check, docs-consistency and security run once on a single
   # pinned interpreter (Python 3.11, matching the mypy/ruff target-version in
@@ -245,20 +226,33 @@ jobs:
           results = json.loads(os.environ["RESULTS"])
           for job, data in sorted(results.items()):
               print(f"{job}: {data['result']}")
+          full_required = os.environ["FULL_REQUIRED"]
+          docs_changed = os.environ["DOCS_CHANGED"]
+          valid_booleans = {"true", "false"}
+          if full_required not in valid_booleans or docs_changed not in valid_booleans:
+              sys.exit("::error::Classifier outputs must be exactly true or false")
+          if full_required == "false" and docs_changed == "false":
+              sys.exit("::error::Classifier cannot skip both matrix and documentation checks")
+
           expected = {
               "changes": "success",
-              "docs-check": "success" if os.environ["DOCS_CHANGED"] == "true" else "skipped",
+              "docs-check": "success" if docs_changed == "true" else "skipped",
           }
-          matrix_result = "success" if os.environ["FULL_REQUIRED"] == "true" else "skipped"
-          expected.update(
-              {
-                  job: matrix_result
-                  for job in results
-                  if job not in {"changes", "docs-check"}
-              }
-          )
+          matrix_jobs = {
+              "quality",
+              "test",
+              "minimum-dependencies",
+              "artifact-build",
+              "artifact-python310-negative",
+              "artifact-python311",
+              "host-smoke",
+          }
+          matrix_result = "success" if full_required == "true" else "skipped"
+          expected.update({job: matrix_result for job in matrix_jobs})
           failed = sorted(
-              job for job, data in results.items() if data["result"] != expected[job]
+              job
+              for job, data in results.items()
+              if data["result"] != expected.get(job, "success")
           )
           if failed:
               sys.exit(f"::error::Required checks had unexpected results: {failed}")
