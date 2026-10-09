@@ -3,8 +3,26 @@ name: Action Integration Test
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - action.yml
+      - .github/actions/**
+      - .github/workflows/action-integration.yml
+      - src/**
+      - tests/**
+      - examples/v2/http-trigger/**
+      - pyproject.toml
+      - '*.lock'
   push:
     branches: [main]
+    paths:
+      - action.yml
+      - .github/actions/**
+      - .github/workflows/action-integration.yml
+      - src/**
+      - tests/**
+      - examples/v2/http-trigger/**
+      - pyproject.toml
+      - '*.lock'
   workflow_dispatch:
 
 permissions:
