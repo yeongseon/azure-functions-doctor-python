@@ -1,6 +1,6 @@
 # Azure Functions Doctor
 
-<!-- CI scenario: documentation-only change -->
+<!-- CI scenario: documentation-only change, second push -->
 
 > Part of the **Azure Functions Python DX Toolkit** — dogfood-tested by [azure-functions-cookbook-python](https://github.com/yeongseon/azure-functions-cookbook-python).
 
