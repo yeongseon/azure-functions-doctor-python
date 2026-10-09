@@ -37,7 +37,7 @@ Deploying a broken Azure Functions app is expensive — the worker starts, the h
 
 ## What it does
 
-- **41 diagnostic checks** — Python version, dependencies, host.json, Core Tools, Durable Functions, and more
+- **42 diagnostic checks** — Python version, dependencies, host.json, Core Tools, Durable Functions, and more
 - **Multiple output formats** — table, JSON, SARIF, JUnit for CI integration
 - **Profile support** — `minimal`, `deploy`, `development`, or `full` rulesets depending on your needs
 - **Official GitHub Action** — `yeongseon/azure-functions-doctor@v1` for CI gates
