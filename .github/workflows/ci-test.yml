@@ -196,7 +196,7 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Install docs and test dependencies
-        run: pip install -e ".[docs]" pytest
+        run: pip install -e ".[docs]" pytest pytest-cov
 
       - name: Run documentation lints and consistency checks
         run: |
