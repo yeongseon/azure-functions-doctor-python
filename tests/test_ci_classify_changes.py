@@ -75,6 +75,12 @@ def test_anything_that_may_affect_code_runs_the_full_matrix(files: list[str]) ->
         ["docs/hooks.py"],
         ["docs/extra.css"],
         ["src/azure_functions_doctor/cli.py"],
+        ["src/azure_functions_doctor/assets/rules/v2.json"],
+        ["scripts/check_docs_consistency.py"],
+        ["scripts/gen_rule_inventory.py"],
+        ["scripts/lint_mermaid.py"],
+        ["tests/test_docs_consistency.py"],
+        [".github/workflows/ci-test.yml"],
     ],
 )
 def test_docs_build_inputs_run_the_matrix_and_docs_build(files: list[str]) -> None:

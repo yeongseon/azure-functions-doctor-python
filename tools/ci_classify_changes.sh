@@ -14,8 +14,10 @@ while IFS= read -r f || [ -n "$f" ]; do
   [ -z "$f" ] && continue
   count=$((count + 1))
   case "$f" in
-    mkdocs.yml | pyproject.toml | src/azure_functions_doctor/*.py | \
-    src/azure_functions_doctor/handlers/* | src/azure_functions_doctor/schemas/* | \
+    mkdocs.yml | pyproject.toml | src/* | \
+    scripts/check_docs_consistency.py | scripts/gen_rule_inventory.py | \
+    scripts/lint_mermaid.py | tests/test_docs_consistency.py | \
+    .github/workflows/ci-test.yml | \
     docs/*.py | docs/*.yml | docs/*.yaml | \
     docs/*.json | docs/*.toml | docs/*.js | docs/*.css | docs/*.html | docs/*.txt)
       docs_only=false
