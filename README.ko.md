@@ -1,5 +1,8 @@
 # Azure Functions Doctor
 
+> [!NOTE]
+> 이 문서는 [영어 원본](README.md)의 번역본으로, 커뮤니티가 유지 관리합니다. 영어 원본이 업데이트된 뒤에는 내용이 다소 늦어질 수 있습니다.
+
 [![PyPI](https://img.shields.io/pypi/v/azure-functions-doctor.svg)](https://pypi.org/project/azure-functions-doctor/)
 [![Downloads](https://static.pepy.tech/badge/azure-functions-doctor/month)](https://pepy.tech/project/azure-functions-doctor)
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://pypi.org/project/azure-functions-doctor/)
