@@ -6,9 +6,9 @@ app = func.FunctionApp()
 
 
 @app.route(route="inverted")
-@validate_http
+@validate_http()
 @with_context
-def inverted(req: func.HttpRequest) -> func.HttpResponse:
+def inverted(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
     return func.HttpResponse("inverted")
 
 
