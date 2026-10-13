@@ -1,0 +1,8 @@
+{
+  "appSettings": [
+    {
+      "name": "AzureWebJobsStorage",
+      "value": "fixture-production-storage"
+    }
+  ]
+}

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from azure_functions_doctor.doctor import Doctor
+from azure_functions_doctor.doctor import CheckResult, Doctor
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples" / "v2"
 
@@ -29,6 +29,11 @@ def _run_example(example_name: str) -> tuple[Doctor, dict[str, str]]:
     results = doctor.run_all_checks()
     item_map = {item["label"]: item["status"] for section in results for item in section["items"]}
     return doctor, item_map
+
+
+def _items_for_example(example_name: str) -> dict[str, CheckResult]:
+    doctor = Doctor(str(EXAMPLES_DIR / example_name))
+    return {item["label"]: item for section in doctor.run_all_checks() for item in section["items"]}
 
 
 # ---------------------------------------------------------------------------
@@ -174,6 +179,83 @@ class TestDeployScenarioExamples:
         assert item_map.get("Functions extension version") == "warn"
         assert item_map.get("Functions runtime lifecycle") == "fail"
         assert item_map.get("requirements.txt") == "pass"
+
+
+class TestLocatedFindingExamples:
+    def test_validation_integration_locates_both_findings(self) -> None:
+        items = _items_for_example("validation-integration")
+        assert items["Decorator order"]["status"] == "warn"
+        assert items["Decorator order"]["locations"] == [
+            {
+                "file": "function_app.py",
+                "line": 8,
+                "message": "Inverted decorator order on function_app.py:inverted",
+            }
+        ]
+        assert items["Endpoint metadata coverage"]["status"] == "warn"
+        assert items["Endpoint metadata coverage"]["locations"] == [
+            {
+                "file": "function_app.py",
+                "line": 16,
+                "end_line": 17,
+                "column": 1,
+                "message": (
+                    "Route handler missing @validate_http (no endpoint metadata): "
+                    "function_app.py:uncovered"
+                ),
+            }
+        ]
+
+    def test_unbound_requirements_locates_unpinned_declaration(self) -> None:
+        items = _items_for_example("warn-unbound-requirements")
+        assert items["Pinned requirements"]["status"] == "warn"
+        assert items["Pinned requirements"]["locations"] == [
+            {
+                "file": "requirements.txt",
+                "line": 2,
+                "message": "numpy (>=2.0; no upper bound)",
+            }
+        ]
+        assert items["Native dependency risk"]["status"] == "warn"
+
+    def test_linux_fx_example_reports_infrastructure_source(self) -> None:
+        items = _items_for_example("broken-linux-fx-version")
+        assert items["Linux runtime (linuxFxVersion)"]["status"] == "warn"
+        assert items["Linux runtime (linuxFxVersion)"]["locations"] == [
+            {"file": "main.bicep", "message": "linuxFxVersion Python|3.9 is unsupported"}
+        ]
+
+    def test_unresolved_connection_locates_trigger(self) -> None:
+        items = _items_for_example("broken-unresolved-connection")
+        assert items["Binding connection resolution"]["status"] == "warn"
+        assert items["Binding connection resolution"]["locations"] == [
+            {
+                "file": "function_app.py",
+                "line": 6,
+                "message": (
+                    "Binding connection 'MyStorage' (function_app.py:process) has no matching "
+                    "app setting"
+                ),
+            }
+        ]
+
+    def test_nondeterministic_orchestrator_locates_random_call(self) -> None:
+        items = _items_for_example("warn-nondeterministic-orchestrator")
+        assert items["Orchestrator determinism"]["status"] == "fail"
+        assert items["Orchestrator determinism"]["locations"] == [
+            {
+                "file": "function_app.py",
+                "line": 11,
+                "message": (
+                    "Nondeterministic orchestrator call: "
+                    "function_app.py:orchestrator -> random.randint"
+                ),
+            }
+        ]
+
+    def test_multi_trigger_binding_is_intentionally_resolved(self) -> None:
+        items = _items_for_example("multi-trigger")
+        assert items["Binding connection resolution"]["status"] == "pass"
 
 
 class TestMonorepoExample:

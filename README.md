@@ -359,6 +359,11 @@ The default ruleset includes checks for:
 | Missing storage auth | [broken-flex-deployment-storage](examples/v2/broken-flex-deployment-storage/README.md) | Deployment-storage shape warnings |
 | Emulator leak in infra | [broken-dev-storage-leak](examples/v2/broken-dev-storage-leak/README.md) | `UseDevelopmentStorage=true` shipped in bicep |
 | Legacy `~3` pin | [broken-legacy-extension-version](examples/v2/broken-legacy-extension-version/README.md) | Extension-version warn + v3 lifecycle failure |
+| Validation integration findings | [validation-integration](examples/v2/validation-integration/README.md) | Per-line decorator order + endpoint metadata warnings |
+| Unbounded native requirements | [warn-unbound-requirements](examples/v2/warn-unbound-requirements/README.md) | Per-line requirement pinning + native dependency warnings |
+| Unsupported Linux runtime | [broken-linux-fx-version](examples/v2/broken-linux-fx-version/README.md) | Unsupported `linuxFxVersion` in infrastructure |
+| Unresolved binding | [broken-unresolved-connection](examples/v2/broken-unresolved-connection/README.md) | Per-line missing binding connection setting |
+| Nondeterministic orchestrator | [warn-nondeterministic-orchestrator](examples/v2/warn-nondeterministic-orchestrator/README.md) | Per-line Durable replay failure |
 | Monorepo subdirectory | [monorepo](examples/monorepo/README.md) | SARIF repo-root rebasing (`services/api`) |
 
 ## Requirements

@@ -29,6 +29,11 @@ Intentionally misconfigured projects that demonstrate specific rule failures.
 | Missing requirements.txt | `examples/v2/broken-missing-requirements` | `check_requirements_txt` |
 | Missing azure-functions | `examples/v2/broken-missing-azure-functions` | `check_azure_functions_library` |
 | No v2 decorators | `examples/v2/broken-no-v2-decorators` | `programming_model` fail-fast detection |
+| Validation integration | `examples/v2/validation-integration` | Located decorator-order and endpoint-metadata warnings |
+| Unbounded native requirements | `examples/v2/warn-unbound-requirements` | Located unpinned requirement and native dependency warnings |
+| Unsupported Linux runtime | `examples/v2/broken-linux-fx-version` | `check_linux_fx_version` in Bicep |
+| Unresolved binding connection | `examples/v2/broken-unresolved-connection` | Located `check_binding_connection_resolution` warning |
+| Nondeterministic orchestrator | `examples/v2/warn-nondeterministic-orchestrator` | Located `check_durable_nondeterminism` failure |
 
 ## Run Diagnostics
 
