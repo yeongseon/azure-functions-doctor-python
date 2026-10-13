@@ -62,6 +62,13 @@ jobs:
             echo "uploading. Nothing reaches PyPI until every tier passes."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Check out the released Action commit
+        if: steps.release.outputs.release_created == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.release.outputs.sha }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
       - name: Advance the v1 Action ref
         if: steps.release.outputs.release_created == 'true'
         env:
