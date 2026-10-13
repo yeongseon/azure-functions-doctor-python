@@ -62,6 +62,12 @@ jobs:
             echo "uploading. Nothing reaches PyPI until every tier passes."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Advance the v1 Action ref
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+        run: git push origin "${RELEASE_SHA}:refs/heads/v1"
+
       # README.md, llms.txt, llms-full.txt and docs/deployment.md carry hard-coded
       # version strings that scripts/check_docs_consistency.py enforces in CI.
       # Release Please only bumps __version__, so re-run the canonical sync script
