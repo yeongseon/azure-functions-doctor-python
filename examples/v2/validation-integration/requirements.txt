@@ -1,0 +1,3 @@
+azure-functions>=1.21,<2
+azure-functions-logging>=0.16,<1
+azure-functions-validation>=0.10,<1
