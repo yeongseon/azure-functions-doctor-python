@@ -35,6 +35,20 @@ def test_repo_release_workflows_are_clean() -> None:
     assert lint_mod.lint() == []
 
 
+def test_cookbook_dispatch_token_is_scoped_to_dispatch_step() -> None:
+    workflow = (_REPO_ROOT / ".github" / "workflows" / "publish-pypi.yml").read_text(
+        encoding="utf-8"
+    )
+    notify_job = workflow.split("  notify-cookbook:\n", maxsplit=1)[1]
+    dispatch_step = notify_job.split(
+        "      - name: Dispatch sibling-release to cookbook\n", maxsplit=1
+    )[1]
+
+    assert "    env:\n" not in notify_job.split("    steps:\n", maxsplit=1)[0]
+    assert "DISPATCH_TOKEN: ${{ secrets.COOKBOOK_DISPATCH_TOKEN }}" in dispatch_step
+    assert 'if [ -z "${DISPATCH_TOKEN}" ]; then' in dispatch_step
+
+
 def test_detects_non_canonical_pin() -> None:
     text = "      - uses: actions/checkout@" + "0" * 40 + " # v7.0.1\n"
     errors = lint_mod.check_pins(text, "fake.yml")
