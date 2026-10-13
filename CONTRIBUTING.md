@@ -34,9 +34,11 @@ Recommended branch prefixes:
 
 ## Local development quickstart
 
-Local development requires Python 3.11, 3.12, 3.13, or 3.14, plus GNU Make.
-No Azure subscription, Azure Functions Core Tools, Azurite, or Docker is required
-for the standard local verification commands.
+Local development requires Python 3.11 and GNU Make because Hatch creates its
+default development environment with Python 3.11. The published package
+supports Python 3.11, 3.12, 3.13, and 3.14. No Azure subscription, Azure
+Functions Core Tools, Azurite, or Docker is required for the standard local
+verification commands.
 
 From a fresh clone, bootstrap the repository-managed virtual environment and
 install the Hatch environments:
