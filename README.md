@@ -261,6 +261,17 @@ full set: Azure DevOps, pre-commit, VS Code, and a minimal SARIF recipe):
 
 ### Official GitHub Action
 
+#### GitHub Marketplace
+
+The Action is ready for publication as **Azure Functions Doctor**. Until its
+Marketplace listing is published, use the repository reference directly. The
+moving `v1` ref follows each GitHub release, while a full release tag provides
+an immutable pin for stricter supply-chain policies.
+
+- Recommended major ref: `yeongseon/azure-functions-doctor@v1`
+- Immutable release ref: `yeongseon/azure-functions-doctor@v0.22.1`
+- Source and support: [azure-functions-doctor-python](https://github.com/yeongseon/azure-functions-doctor-python)
+
 ```yaml
 - uses: yeongseon/azure-functions-doctor@v1
   with:

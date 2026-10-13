@@ -1,8 +1,5 @@
 name: Azure Functions Doctor
-description: >
-  Run azure-functions-doctor diagnostics on an Azure Functions Python v2 project.
-  Checks project health, outputs structured reports, and optionally uploads SARIF
-  to GitHub Code Scanning.
+description: Diagnose Azure Functions Python v2 projects and upload actionable SARIF findings to GitHub Code Scanning.
 
 branding:
   icon: activity

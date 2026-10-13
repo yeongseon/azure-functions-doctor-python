@@ -64,6 +64,10 @@ def _substitutions(version: str) -> dict[str, list[tuple[str, str]]]:
         ],
         "README.md": [
             (rf"package version \({_SEMVER}\)", f"package version ({version})"),
+            (
+                rf"yeongseon/azure-functions-doctor@v{_SEMVER}",
+                f"yeongseon/azure-functions-doctor@v{version}",
+            ),
         ],
     }
 
