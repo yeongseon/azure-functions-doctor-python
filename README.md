@@ -303,6 +303,7 @@ Assign an `id` to the Action step to consume its outputs in later steps:
 ```yaml
 - name: Run azure-functions-doctor
   id: doctor
+  continue-on-error: true
   uses: yeongseon/azure-functions-doctor@v1
   with:
     path: .
