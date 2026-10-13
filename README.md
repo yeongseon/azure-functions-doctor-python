@@ -271,6 +271,48 @@ full set: Azure DevOps, pre-commit, VS Code, and a minimal SARIF recipe):
     upload-sarif: "true"
 ```
 
+#### Inputs
+
+| Input | Description | Default |
+| --- | --- | --- |
+| `path` | Path to the Azure Functions project directory | `.` |
+| `profile` | Rule profile: `minimal` (required checks only), `deploy` (runtime/hosting/deployment correctness), `development` (dev-environment checks), or `full` (all checks) | `deploy` |
+| `format` | Output format: `json`, `sarif`, `junit`, or `table` | `json` |
+| `output` | Path to save the report file | `doctor-report.json` |
+| `python-version` | Python version to use for running the doctor | `3.11` |
+| `install-project-deps` | Install project requirements.txt before running checks | `false` |
+| `upload-artifact` | Upload the report as a GitHub Actions artifact | `true` |
+| `artifact-name` | Name of the uploaded artifact | `doctor-report` |
+| `upload-sarif` | Upload SARIF report to GitHub Code Scanning (requires `format=sarif` and `security-events: write` permission) | `false` |
+| `sarif-category` | Category label for the SARIF upload | `azure-functions-doctor` |
+| `fail-on-warn` | Exit with code 1 if any warnings are found (in addition to failures) | `false` |
+| `version` | Version of azure-functions-doctor to install: `latest` (floor-pinned to the current minor, e.g. `>=0.19,<1`), `local` (editable install from the repo checkout), or an exact pin (e.g. `0.19.2`) | `latest` |
+
+#### Outputs
+
+| Output | Description |
+| --- | --- |
+| `exit-code` | Exit code from the doctor run (0 = pass, 1 = failures found) |
+| `report-path` | Absolute path to the generated report file |
+| `failed-count` | Number of failed checks |
+| `warned-count` | Number of warned checks |
+| `passed-count` | Number of passed checks |
+
+Assign an `id` to the Action step to consume its outputs in later steps:
+
+```yaml
+- name: Run azure-functions-doctor
+  id: doctor
+  uses: yeongseon/azure-functions-doctor@v1
+  with:
+    path: .
+    profile: deploy
+
+- name: Stop when diagnostics failed
+  if: steps.doctor.outputs.failed-count != '0'
+  run: exit 1
+```
+
 See [docs/examples/ci_integration.md](docs/examples/ci_integration.md) for Azure DevOps, pre-commit, VS Code, and SARIF upload examples — including a [minimal copy-paste SARIF → GitHub code scanning recipe](docs/examples/ci_integration.md#minimal-copy-paste-recipe-official-action).
 
 ## Demo
