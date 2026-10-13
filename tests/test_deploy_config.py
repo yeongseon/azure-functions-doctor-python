@@ -398,6 +398,41 @@ def test_iac_beats_local_for_shared_field(tmp_path: Path) -> None:
     assert cfg.extension_version.source == "main.json"
 
 
+def test_iac_storage_beats_local_emulator_setting(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        "main.json",
+        json.dumps(
+            {"appSettings": [{"name": "AzureWebJobsStorage", "value": "fixture-prod-storage"}]}
+        ),
+    )
+    _write(
+        tmp_path,
+        "local.settings.json",
+        json.dumps({"Values": {"AzureWebJobsStorage": "UseDevelopmentStorage=true"}}),
+    )
+
+    cfg = resolve_target_config(tmp_path)
+
+    assert cfg.deployment_storage.value == "fixture-prod-storage"
+    assert cfg.deployment_storage.source == "main.json"
+    assert cfg.app_settings["AzureWebJobsStorage"] == "fixture-prod-storage"
+
+
+def test_local_emulator_storage_is_fallback_when_iac_is_silent(tmp_path: Path) -> None:
+    _write(tmp_path, "main.json", json.dumps({"appSettings": []}))
+    _write(
+        tmp_path,
+        "local.settings.json",
+        json.dumps({"Values": {"AzureWebJobsStorage": "UseDevelopmentStorage=true"}}),
+    )
+
+    cfg = resolve_target_config(tmp_path)
+
+    assert cfg.deployment_storage.value == "UseDevelopmentStorage=true"
+    assert cfg.deployment_storage.source == "local:local.settings.json"
+
+
 def test_override_none_values_are_ignored(tmp_path: Path) -> None:
     _write(tmp_path, "plan.json", _arm_with_sku("EP1", "ElasticPremium"))
     cfg = resolve_target_config(tmp_path, {"hosting_plan": None, "runtime_version": None})
