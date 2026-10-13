@@ -242,6 +242,51 @@ def test_cli_json_output_includes_programming_model_for_unknown_fixture() -> Non
     assert data["results"][0]["category"] == "programming_model"
 
 
+@pytest.mark.parametrize("failure_point", ["mkdir", "write_text"])
+@pytest.mark.parametrize(("finding_status", "expected_exit_code"), [("pass", 0), ("fail", 1)])
+def test_summary_sidecar_write_failure_preserves_json_report_and_exit_status(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure_point: str,
+    finding_status: str,
+    expected_exit_code: int,
+) -> None:
+    results = [
+        {
+            "title": "Controlled",
+            "items": [
+                {"status": finding_status, "label": "Controlled finding", "value": "fixture"}
+            ],
+        }
+    ]
+    summary_path = tmp_path / "sidecar" / "summary.json"
+    warning = Mock()
+    monkeypatch.setattr(Doctor, "run_all_checks", lambda self, rules=None: results)
+    monkeypatch.setattr(cli_module.logger, "warning", warning)
+
+    with patch.object(Path, failure_point, side_effect=PermissionError("fixture denied")):
+        result = runner.invoke(
+            app,
+            [
+                "doctor",
+                "--path",
+                str(tmp_path),
+                "--format",
+                "json",
+                "--summary-json",
+                str(summary_path),
+            ],
+        )
+
+    payload = json.loads(result.stdout)
+    assert result.exit_code == expected_exit_code
+    assert payload["results"] == results
+    warning.assert_called_once_with(
+        f"Failed to write summary JSON to {summary_path}: fixture denied"
+    )
+    assert summary_path.exists() is False
+
+
 def test_cli_sarif_output_includes_programming_model_for_unknown_fixture() -> None:
     """Test SARIF output exposes programming model metadata for short-circuit runs."""
     result = runner.invoke(
