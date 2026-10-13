@@ -99,7 +99,7 @@ azure-functions-doctor doctor --path examples/v2/broken-dev-storage-leak
 
 # 3) Fix it: point AzureWebJobsStorage at a real storage account in main.bicep,
 #    keep UseDevelopmentStorage=true only in local.settings.json. Re-run:
-#    the warning is gone and the exit code returns to 0.
+#    the warning is gone; the exit code remains 0 because this check is optional.
 ```
 
 Exit codes make it a CI gate: `0` when required checks pass, `1` on any
