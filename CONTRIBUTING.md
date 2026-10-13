@@ -32,6 +32,32 @@ Recommended branch prefixes:
    git push origin feat/your-feature-name
    ```
 
+## Local development quickstart
+
+Local development requires Python 3.11, 3.12, 3.13, or 3.14, plus GNU Make.
+No Azure subscription, Azure Functions Core Tools, Azurite, or Docker is required
+for the standard local verification commands.
+
+From a fresh clone, bootstrap the repository-managed virtual environment and
+install the Hatch environments:
+
+```bash
+make bootstrap
+make install
+```
+
+Then run the standard verification commands:
+
+```bash
+make test
+make lint
+make typecheck
+make build
+```
+
+`make bootstrap` creates `.venv` and installs Hatch there; the remaining
+targets use that local Hatch installation automatically.
+
 ## Project Commands
 
 ```bash
