@@ -1,4 +1,11 @@
 # Changelog
+## [0.23.0](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.22.1...v0.23.0) (2026-10-16)
+
+
+### Features
+
+* **agent:** add deterministic findings adapter ([#571](https://github.com/yeongseon/azure-functions-doctor-python/issues/571)) ([81fd23c](https://github.com/yeongseon/azure-functions-doctor-python/commit/81fd23cf2d10be17310dddb977102ab5e2a1bc1e))
+
 ## [0.22.1](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.22.0...v0.22.1) (2026-10-07)
 
 
