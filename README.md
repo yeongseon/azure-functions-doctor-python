@@ -296,7 +296,7 @@ moving `v1` ref follows each GitHub release, while a full release tag provides
 an immutable pin for stricter supply-chain policies.
 
 - Recommended major ref: `yeongseon/azure-functions-doctor@v1`
-- Immutable release ref: `yeongseon/azure-functions-doctor@v0.23.0`
+- Immutable release ref: `yeongseon/azure-functions-doctor@v0.23.1`
 - Source and support: [azure-functions-doctor-python](https://github.com/yeongseon/azure-functions-doctor-python)
 
 ```yaml
@@ -472,7 +472,7 @@ This repository includes `llms.txt` and `llms-full.txt` for LLM-friendly documen
 
 When working with this codebase, LLM assistants should:
 
-1. **Use `llms.txt` for quick reference** — the canonical package version (0.23.0), Python requirements (>=3.11,<3.15), CLI entry points
+1. **Use `llms.txt` for quick reference** — the canonical package version (0.23.1), Python requirements (>=3.11,<3.15), CLI entry points
 2. **Refer to `llms-full.txt` for implementation details** — output contracts, rule structure, custom rule patterns, handler types
 3. **Check `src/azure_functions_doctor/cli.py`** — authoritative source for CLI options and validation
 4. **Review `src/azure_functions_doctor/assets/rules/v2.json`** — complete ruleset with check definitions
