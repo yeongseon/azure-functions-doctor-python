@@ -130,6 +130,33 @@ Output JSON for CI:
 azure-functions-doctor doctor --format json
 ```
 
+### Agent-friendly findings
+
+Agents can consume the same deterministic Finding Contract v2 JSON emitted by
+the CLI; the adapter adds no compatibility analysis or LLM judgment:
+
+```python
+from pathlib import Path
+
+from azure_functions_doctor.agent import explain_failures, load_agent_report
+
+report = load_agent_report(Path("doctor.json"), sarif_path=Path("doctor.sarif"))
+for finding in explain_failures(report):
+    print(finding.rule_id, finding.evidence, finding.expected, finding.actual)
+    print(finding.source_url, finding.last_verified)
+```
+
+Generate the existing artifacts before loading them:
+
+```bash
+azure-functions-doctor doctor --format json --output doctor.json
+azure-functions-doctor doctor --format sarif --output doctor.sarif
+```
+
+The adapter rejects pre-v2 reports and findings whose `analysis.type` is not
+`deterministic`. It deliberately does not add rules, rank remediation, or infer
+compatibility.
+
 Pin the Azure Functions target runtime explicitly:
 
 ```bash
