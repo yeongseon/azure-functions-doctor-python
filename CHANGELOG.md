@@ -1,4 +1,11 @@
 # Changelog
+## [0.23.1](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.23.0...v0.23.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* **release:** fetch full history before advancing the v1 Action ref ([#574](https://github.com/yeongseon/azure-functions-doctor-python/issues/574)) ([df6ef85](https://github.com/yeongseon/azure-functions-doctor-python/commit/df6ef854ccbfd8e6a836e194e439cc6ec086f5d3))
+
 ## [0.23.0](https://github.com/yeongseon/azure-functions-doctor-python/compare/v0.22.1...v0.23.0) (2026-10-16)
 
 
