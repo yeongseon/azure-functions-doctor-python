@@ -68,6 +68,7 @@ jobs:
         with:
           ref: ${{ steps.release.outputs.sha }}
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          fetch-depth: 0
 
       - name: Advance the v1 Action ref
         if: steps.release.outputs.release_created == 'true'
