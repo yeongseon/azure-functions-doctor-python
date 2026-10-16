@@ -5,6 +5,8 @@ from pathlib import Path
 import re
 from types import ModuleType
 
+from azure_functions_doctor import __version__
+
 ROOT = Path(__file__).resolve().parents[1]
 SYNC_SCRIPT = ROOT / "scripts" / "sync_docs_version.py"
 
@@ -24,7 +26,7 @@ def test_readme_has_marketplace_usage() -> None:
     )[0]
 
     assert "yeongseon/azure-functions-doctor@v1" in marketplace
-    assert "yeongseon/azure-functions-doctor@v0.22.1" in marketplace
+    assert f"yeongseon/azure-functions-doctor@v{__version__}" in marketplace
 
 
 def test_readme_immutable_action_ref_is_version_synced() -> None:
