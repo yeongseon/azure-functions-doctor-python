@@ -91,6 +91,15 @@ Each item has one of:
 
 Section status is `fail` if any required check in the section failed.
 
+## Agent-friendly findings
+
+`azure_functions_doctor.agent.load_agent_report()` parses an existing Finding
+Contract v2 JSON report and can attach the separately generated SARIF object.
+`explain_failures()` returns only `warn` and `fail` findings, preserving the
+doctor's `evidence`, `expected`, `actual`, `source_url`, and `last_verified`
+fields for deterministic explanations. The adapter rejects inferred findings
+and does not run rules or make compatibility judgments.
+
 ## Output formats in detail
 
 ### Table (default)
