@@ -56,7 +56,27 @@ relevant root document in the same pull request or commit series.
 
 ## Issue Conventions
 
-Follow these conventions when opening issues so the backlog stays consistent with sibling DX Toolkit repositories.
+Follow these conventions when opening or editing issues in this repository.
+
+### Repository scope
+
+- Explain the problem, proposed work, acceptance criteria, and priority using
+  verified evidence and user impact in this repository.
+- Apply reusable ideas to this repository's actual code, configuration, and
+  conventions. Another project's policy or implementation is not evidence that
+  the same requirement applies here.
+- Remove copied project names, issue links, process labels, and release
+  assumptions that are unrelated to the requested work.
+- Keep relevant technical evidence and source attribution, including actual
+  dependencies, integrations, upstream defects, and official documentation.
+  Explain the relationship and the work owned by this repository. Apply the
+  same local-evidence requirement to explicitly requested comparisons.
+- Before creating or editing an issue, search for duplicates and review every
+  project name and repository link in the title and body. The issue must be
+  understandable without following an unrelated project's issue or policy.
+- After saving, fetch the issue again and verify the saved title, body, and
+  labels before reporting completion. Apply these checks to issues created
+  through the API or CLI as well as through the issue forms.
 
 ### Title
 
@@ -77,7 +97,7 @@ What problem this issue addresses and why now. Note the target release (e.g. vX.
 - Items intentionally excluded, with links to the issues that track them.
 
 ## References
-- PRs, ADRs, sibling issues, external docs.
+- Relevant issues, PRs, ADRs, official documentation, and documented dependencies or integrations.
 ```
 
 ### Labels
@@ -221,7 +241,7 @@ When using AI-assisted development:
 
 - Prefer small, reviewable changes.
 - Do not guess about behavior that can be verified.
-- Keep repository structure aligned with sibling repositories.
+- Follow this repository's established structure, scope, and contribution rules.
 - Update docs, examples, and tests together when behavior changes.
 
 ## Final Rule
