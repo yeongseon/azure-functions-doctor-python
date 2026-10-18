@@ -1,6 +1,7 @@
 # Agent Playbook
 
 ## Source Of Truth
+- [AGENTS.md](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/AGENTS.md) for repository scope, issue conventions, and automation rules.
 - `README.md` for architecture, usage, and exit-code expectations.
 - `CONTRIBUTING.md` for diagnostic rule guidelines and contribution workflow.
 - `pyproject.toml` and `Makefile` for supported commands and environments.

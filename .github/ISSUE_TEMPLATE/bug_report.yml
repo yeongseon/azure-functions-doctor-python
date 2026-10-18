@@ -10,6 +10,11 @@ body:
       value: |
         Thank you for reporting a bug! Please fill out the information below to help us understand and reproduce the issue.
 
+        Describe the problem or requested change in this repository. Explain
+        the relevance of any external project link, and remove unrelated
+        project names or policies copied from another issue.
+        See [Issue Conventions](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/AGENTS.md#issue-conventions).
+
   - type: textarea
     id: description
     attributes:
