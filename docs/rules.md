@@ -255,8 +255,11 @@ Required host.json property '$.extensions.durableTask' not found
   (`APPINSIGHTS_INSTRUMENTATIONKEY` or `host.json:instrumentationKey`) is
   treated as stale, and `APPLICATIONINSIGHTS_AUTHENTICATION_STRING` is
   recognised for Entra (AAD) authentication.
-- **Why it matters:** Instrumentation-key ingestion ended 2025-03-31, so a
-  connection string is required for telemetry to reach Application Insights.
+- **Why it matters:** Technical support for instrumentation-key-based global
+  ingestion ended 2025-03-31 (Microsoft continues to accept data sent that
+  way, but without further updates or customer support for that path), so a
+  connection string is recommended for telemetry to reach Application
+  Insights on a supported path.
 - **How to fix:** Set `APPLICATIONINSIGHTS_CONNECTION_STRING` and remove any
   legacy instrumentation key.
 

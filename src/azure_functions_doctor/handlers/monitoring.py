@@ -33,10 +33,12 @@ class MonitoringHandlers:
     ) -> HandlerResult:
         """Validate Application Insights connection configuration.
 
-        Instrumentation-key ingestion ended 2025-03-31, so a connection string
-        (``APPLICATIONINSIGHTS_CONNECTION_STRING``) is now required. A legacy
-        instrumentation key (``APPINSIGHTS_INSTRUMENTATIONKEY`` or
-        ``host.json:instrumentationKey``) is treated as stale, and
+        Technical support for instrumentation-key-based global ingestion
+        ended 2025-03-31 (Microsoft continues to accept data sent to that
+        path without further updates or customer support for it), so a
+        connection string (``APPLICATIONINSIGHTS_CONNECTION_STRING``) is now
+        recommended. A legacy instrumentation key (``APPINSIGHTS_INSTRUMENTATIONKEY``
+        or ``host.json:instrumentationKey``) is treated as stale, and
         ``APPLICATIONINSIGHTS_AUTHENTICATION_STRING`` is recognised for Entra
         (AAD) authentication.
         """
@@ -76,8 +78,8 @@ class MonitoringHandlers:
                 return _create_result(
                     "fail",
                     "Connection string is set, but a legacy instrumentation key is "
-                    "also configured; remove it (instrumentation-key ingestion ended "
-                    "2025-03-31)." + auth_note,
+                    "also configured; remove it (support for instrumentation-key-based "
+                    "global ingestion ended 2025-03-31)." + auth_note,
                     file="local.settings.json",
                 )
             return _create_result(
@@ -89,8 +91,8 @@ class MonitoringHandlers:
             return _create_result(
                 "fail",
                 "Only a legacy Application Insights instrumentation key is configured; "
-                "instrumentation-key ingestion ended 2025-03-31. Set "
-                "APPLICATIONINSIGHTS_CONNECTION_STRING instead." + auth_note,
+                "support for instrumentation-key-based global ingestion ended "
+                "2025-03-31. Set APPLICATIONINSIGHTS_CONNECTION_STRING instead." + auth_note,
                 file="local.settings.json",
             )
 

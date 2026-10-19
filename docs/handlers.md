@@ -223,7 +223,8 @@ The authoritative dispatch map is `_RULE_DISPATCH` in
   `app_insights_connection` type, not `any_of_exists`: it requires
   `APPLICATIONINSIGHTS_CONNECTION_STRING` and reports a legacy
   `APPINSIGHTS_INSTRUMENTATIONKEY` or `host.json` instrumentation key as stale,
-  because instrumentation-key ingestion ended on 2025-03-31.
+  because technical support for instrumentation-key-based global ingestion
+  ended on 2025-03-31.
 - Handler implementations live in the `src/azure_functions_doctor/handlers/` package
   (domain modules listed above; dispatch in `registry.py`).
 
