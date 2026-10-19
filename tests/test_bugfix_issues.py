@@ -50,7 +50,7 @@ def test_summary_json_writes_counts_file(tmp_path: Path) -> None:
     assert result.exit_code in (0, 1)
     assert summary_path.exists()
     payload = json.loads(summary_path.read_text(encoding="utf-8"))
-    assert set(payload.keys()) == {"passed", "warned", "failed", "skipped"}
+    assert set(payload.keys()) == {"passed", "warned", "failed", "skipped", "gate_failed"}
 
 
 def test_summary_json_sidecar_created_with_json_format(tmp_path: Path) -> None:

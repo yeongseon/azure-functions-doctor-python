@@ -180,6 +180,7 @@ def test_cli_junit_round_trips_xml_sensitive_diagnostics(
     results = [
         {
             "title": section_title,
+            "status": "fail",
             "items": [
                 {"status": "pass", "label": "Passed & <safe>", "value": "ok"},
                 {
@@ -254,6 +255,7 @@ def test_summary_sidecar_write_failure_preserves_json_report_and_exit_status(
     results = [
         {
             "title": "Controlled",
+            "status": "fail" if finding_status == "fail" else "pass",
             "items": [
                 {"status": finding_status, "label": "Controlled finding", "value": "fixture"}
             ],
@@ -450,6 +452,7 @@ def test_cli_sarif_output_includes_target_python_override() -> None:
         "target_python": "3.11",
         "deployment_mode": "remote-build",
         "hosting_plan": None,
+        "gate_failed": False,
     }
 
 

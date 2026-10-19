@@ -306,6 +306,15 @@ def doctor(
             else:
                 warning_count += 1  # unknown treated as warning
 
+    # The process exit code is decided by each section's gate outcome
+    # (Doctor.run_all_checks only sets a section to "fail" when a failing
+    # rule's resolved ``gate`` is True), never by display severity. A
+    # non-gating rule can display as "fail" (error severity, gate=False)
+    # without blocking the run; a gating rule can display as "warn" (warning
+    # severity, gate=True) and still block it. ``fail_count``/``warning_count``
+    # above remain display-only aggregates for summaries and output bodies.
+    gate_failed = any(section.get("status") == "fail" for section in results)
+
     # Write summary JSON sidecar when --summary-json is specified (format-independent)
     if summary_json is not None:
         summary_data = {
@@ -313,6 +322,7 @@ def doctor(
             "warned": warning_count,
             "failed": fail_count,
             "skipped": skipped_count,
+            "gate_failed": gate_failed,
         }
         try:
             summary_json.parent.mkdir(parents=True, exist_ok=True)
@@ -326,6 +336,7 @@ def doctor(
             "tool_version": __version__,
             "generated_at": generated_at,
             "target_path": str(Path(path).resolve()),
+            "gate_failed": gate_failed,
             **report_properties,
         }
         json_output = {
@@ -334,7 +345,7 @@ def doctor(
             "results": results,
         }
         _write_output(json.dumps(json_output, indent=2), output, "JSON")
-        raise typer.Exit(1 if fail_count > 0 else 0)
+        raise typer.Exit(1 if gate_failed else 0)
 
     if format == "sarif":
         # rule_id is emitted on every result, so SARIF uses it directly
@@ -491,7 +502,7 @@ def doctor(
             "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
             "runs": [
                 {
-                    "properties": report_properties,
+                    "properties": {**report_properties, "gate_failed": gate_failed},
                     "tool": {
                         "driver": {
                             "name": "azure-functions-doctor",
@@ -505,7 +516,7 @@ def doctor(
             ],
         }
         _write_output(json.dumps(sarif_output, indent=2), output, "SARIF")
-        raise typer.Exit(1 if fail_count > 0 else 0)
+        raise typer.Exit(1 if gate_failed else 0)
 
     if format == "junit":
         import xml.etree.ElementTree as ET  # nosec B405
@@ -521,6 +532,14 @@ def doctor(
             skipped="0",
             time=f"{duration_ms / 1000:.3f}",
         )
+        # Carry the gate-based process result separately from per-item
+        # pass/fail/skip counts above: JUnit has no native run-level
+        # pass/fail field beyond aggregated testcase counts, so a consumer
+        # reading only `failures` could otherwise miss a gate failure that
+        # displayed as "warn", or wrongly treat a non-gating "fail" display
+        # as blocking.
+        properties = ET.SubElement(suite, "properties")
+        ET.SubElement(properties, "property", name="gate_failed", value=str(gate_failed).lower())
 
         for section in results:
             for item in section["items"]:
@@ -543,7 +562,7 @@ def doctor(
         suite.set("skipped", str(skipped))
         junit_output = ET.tostring(suite, encoding="utf-8", xml_declaration=True).decode("utf-8")
         _write_output(junit_output, output, "JUnit")
-        raise typer.Exit(1 if fail_count > 0 else 0)
+        raise typer.Exit(1 if gate_failed else 0)
 
     # Note: Top header removed per UI change; programming model header intentionally omitted
 
@@ -616,7 +635,7 @@ def doctor(
     )
     if skipped_count:
         table_console.print(f"  {skipped_count} skipped")
-    exit_code = 1 if fail_count > 0 else 0
+    exit_code = 1 if gate_failed else 0
     table_console.print(f"Exit code: {exit_code}")
     if table_buffer is not None:
         _write_output(table_buffer.getvalue(), output, "Table")
