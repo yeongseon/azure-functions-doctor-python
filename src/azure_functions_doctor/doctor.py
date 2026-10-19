@@ -179,7 +179,21 @@ class Doctor:
         doctor_config = load_doctor_config(self.project_path)
         self.ignore_rules: set[str] = set(doctor_config["ignore"])
         self.exclude_globs: list[str] = list(doctor_config["exclude"])
-        self.programming_model: ProgrammingModel = self._detect_programming_model()
+        # Programming-model detection (#517) walks project files through the
+        # same iter_project_files/_is_excluded_path machinery that rule
+        # execution uses, so it must see the selected project root and
+        # configured exclusions too -- otherwise an ancestor directory
+        # merely named like a default exclusion (e.g. "build") makes every
+        # relative-path fallback treat the whole project as excluded, and a
+        # configured ``exclude`` entry is silently ignored while detecting
+        # legacy v1 signals. Scoped with try/finally so a later
+        # run_all_checks() call (or another Doctor instance) always starts
+        # from a clean context, regardless of how detection here concludes.
+        exclude_token = set_extra_excludes(self.project_path, self.exclude_globs)
+        try:
+            self.programming_model: ProgrammingModel = self._detect_programming_model()
+        finally:
+            reset_extra_excludes(exclude_token)
 
     def get_report_properties(self) -> dict[str, str | None]:
         """Return top-level report properties shared across output formats."""
