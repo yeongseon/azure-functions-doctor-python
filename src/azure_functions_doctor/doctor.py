@@ -16,6 +16,7 @@ from azure_functions_doctor.handlers import (
     RuleContext,
     _discover_functionapp_aliases,
     _iter_project_py_contents,
+    _resolve_import_aliases,
     _source_contains_ast,
     generic_handler,
     iter_project_files,
@@ -238,13 +239,17 @@ class Doctor:
             return True
 
         target_names = FUNCTION_APP_CONTAINERS | {"Blueprint"}
+        import_aliases = _resolve_import_aliases(tree, target_names)
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
             func_node = node.func
             if isinstance(func_node, ast.Attribute) and func_node.attr in target_names:
                 return True
-            if isinstance(func_node, ast.Name) and func_node.id in target_names:
+            if (
+                isinstance(func_node, ast.Name)
+                and import_aliases.get(func_node.id, func_node.id) in target_names
+            ):
                 return True
         return False
 

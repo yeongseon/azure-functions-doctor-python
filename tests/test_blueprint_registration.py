@@ -75,8 +75,15 @@ def test_collect_unregistered_blueprint_aliases_tracks_project_level_registratio
         "    return req\n",
         encoding="utf-8",
     )
+    # loader.py imports bp from function_app.py (#446): registration is
+    # tracked by following this real import back to bp's defining module,
+    # not by a bare cross-file name match that a same-named blueprint in a
+    # third file could otherwise falsely satisfy.
     (tmp_path / "loader.py").write_text(
-        "import azure.functions as func\napp = func.FunctionApp()\napp.register_functions(bp)\n",
+        "import azure.functions as func\n"
+        "from function_app import bp\n"
+        "app = func.FunctionApp()\n"
+        "app.register_functions(bp)\n",
         encoding="utf-8",
     )
 
@@ -159,3 +166,102 @@ def test_cli_table_output_shows_blueprint_registration_warning() -> None:
     assert "- bp = func.Blueprint()" in result.output
     assert "Missing:" in result.output
     assert "- app.register_functions(bp)" in result.output
+
+
+# ---------------------------------------------------------------------------
+# Module-qualified identity across files (#446)
+# ---------------------------------------------------------------------------
+
+
+def test_same_named_blueprint_in_unregistered_module_still_warns(tmp_path: Path) -> None:
+    """first.py and second.py each define 'bp'; only first.bp is registered.
+    The bare-name union previously hid second.bp entirely -- this must warn."""
+    handlers = import_module("azure_functions_doctor.handlers")
+    bp_module = (
+        "import azure.functions as func\n"
+        "bp = func.Blueprint()\n"
+        "@bp.route(route='{route}')\n"
+        "def {route}(req):\n"
+        "    return req\n"
+    )
+    (tmp_path / "first.py").write_text(bp_module.format(route="first"), encoding="utf-8")
+    (tmp_path / "second.py").write_text(bp_module.format(route="second"), encoding="utf-8")
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n"
+        "from first import bp\n"
+        "import second\n"
+        "app = func.FunctionApp()\n"
+        "app.register_functions(bp)\n",
+        encoding="utf-8",
+    )
+
+    assert handlers._collect_unregistered_blueprint_aliases(tmp_path) == {"bp"}
+
+
+def test_distinct_same_named_blueprints_both_registered_pass(tmp_path: Path) -> None:
+    """Both same-named Blueprints (first.bp, second.bp) registered via
+    distinct imports must pass -- module-qualified identity must not
+    conflate them, but a real registration of each must still be honored."""
+    handlers = import_module("azure_functions_doctor.handlers")
+    bp_module = (
+        "import azure.functions as func\n"
+        "bp = func.Blueprint()\n"
+        "@bp.route(route='{route}')\n"
+        "def {route}(req):\n"
+        "    return req\n"
+    )
+    (tmp_path / "first.py").write_text(bp_module.format(route="first"), encoding="utf-8")
+    (tmp_path / "second.py").write_text(bp_module.format(route="second"), encoding="utf-8")
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n"
+        "from first import bp\n"
+        "from second import bp as second_bp\n"
+        "app = func.FunctionApp()\n"
+        "app.register_functions(bp)\n"
+        "app.register_functions(second_bp)\n",
+        encoding="utf-8",
+    )
+
+    assert handlers._collect_unregistered_blueprint_aliases(tmp_path) == set()
+
+
+def test_registered_import_alias_resolves_to_origin_pass(tmp_path: Path) -> None:
+    """`from first import bp as registered_bp`, then registering that alias,
+    must resolve back to first.bp's real identity and pass."""
+    handlers = import_module("azure_functions_doctor.handlers")
+    (tmp_path / "first.py").write_text(
+        "import azure.functions as func\n"
+        "bp = func.Blueprint()\n"
+        "@bp.route(route='first')\n"
+        "def first(req):\n"
+        "    return req\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n"
+        "from first import bp as registered_bp\n"
+        "app = func.FunctionApp()\n"
+        "app.register_functions(registered_bp)\n",
+        encoding="utf-8",
+    )
+
+    assert handlers._collect_unregistered_blueprint_aliases(tmp_path) == set()
+
+
+def test_dfapp_register_blueprint_receiver_recognized_pass(tmp_path: Path) -> None:
+    """A standard func.Blueprint() registered through a DFApp receiver's
+    register_blueprint(...) must be recognized, not just FunctionApp (#446)."""
+    handlers = import_module("azure_functions_doctor.handlers")
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n"
+        "import azure.durable_functions as df\n"
+        "app = df.DFApp()\n"
+        "bp = func.Blueprint()\n"
+        "@bp.route(route='health')\n"
+        "def health(req):\n"
+        "    return req\n"
+        "app.register_blueprint(bp)\n",
+        encoding="utf-8",
+    )
+
+    assert handlers._collect_unregistered_blueprint_aliases(tmp_path) == set()
