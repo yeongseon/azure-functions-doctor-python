@@ -202,6 +202,37 @@ FUNCTION_APP_CONTAINERS = {
     "WsgiFunctionApp",
 }
 
+# Modules that may export Blueprint/FunctionApp-family constructors directly
+# (``from azure.functions import FunctionApp as FA``), as opposed to the
+# attribute-access form (``func.FunctionApp()``) which needs no alias
+# resolution since the trailing attribute name is unaffected by how the
+# module itself was imported.
+_CONSTRUCTOR_SOURCE_MODULES = {"azure.functions", "azure.durable_functions"}
+
+
+def _resolve_import_aliases(
+    tree: ast.Module, target_names: set[str], modules: set[str] = _CONSTRUCTOR_SOURCE_MODULES
+) -> dict[str, str]:
+    """Map a local import alias back to the real name it refers to.
+
+    Seeded with an identity mapping for every name in *target_names* (so a
+    bare, un-aliased constructor name still matches even without an explicit
+    import -- the pre-existing, intentionally permissive behavior), then
+    resolves ``from <module> import <name> [as <alias>]`` where ``<module>``
+    is one of *modules* and ``<name>`` is in *target_names*, so a bare
+    ``ast.Name`` call site (e.g. ``FA()`` after
+    ``from azure.functions import FunctionApp as FA``) can be recognized the
+    same way an attribute call (``func.FunctionApp()``) already is,
+    regardless of the import alias chosen (#446).
+    """
+    aliases: dict[str, str] = {name: name for name in target_names}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module in modules:
+            for alias in node.names:
+                if alias.name in target_names:
+                    aliases[alias.asname or alias.name] = alias.name
+    return aliases
+
 
 def _discover_functionapp_aliases(source: str) -> set[str]:
     """Extract variable names assigned a supported app container or ``Blueprint()`` call.
@@ -215,8 +246,10 @@ def _discover_functionapp_aliases(source: str) -> set[str]:
     except SyntaxError:
         return {"app"}
 
-    names: set[str] = set()
     target_attrs = FUNCTION_APP_CONTAINERS | {"Blueprint"}
+    import_aliases = _resolve_import_aliases(tree, target_attrs)
+
+    names: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
             func_node = node.value.func
@@ -224,7 +257,7 @@ def _discover_functionapp_aliases(source: str) -> set[str]:
             if isinstance(func_node, ast.Attribute):
                 attr_name = func_node.attr
             elif isinstance(func_node, ast.Name):
-                attr_name = func_node.id
+                attr_name = import_aliases.get(func_node.id, func_node.id)
             if attr_name in target_attrs:
                 for target in node.targets:
                     if isinstance(target, ast.Name):
@@ -239,14 +272,10 @@ def _collect_blueprint_aliases(source: str) -> set[str]:
     except SyntaxError:
         return set()
 
-    constructor_names = {"Blueprint"}
+    import_aliases = _resolve_import_aliases(tree, {"Blueprint"})
     module_names: set[str] = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "azure.functions":
-            constructor_names.update(
-                alias.asname or alias.name for alias in node.names if alias.name == "Blueprint"
-            )
-        elif isinstance(node, ast.Import):
+        if isinstance(node, ast.Import):
             module_names.update(
                 alias.asname
                 for alias in node.names
@@ -258,7 +287,7 @@ def _collect_blueprint_aliases(source: str) -> set[str]:
         if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
             func_node = node.value.func
             is_constructor = (
-                isinstance(func_node, ast.Name) and func_node.id in constructor_names
+                isinstance(func_node, ast.Name) and func_node.id in import_aliases
             ) or (
                 isinstance(func_node, ast.Attribute)
                 and func_node.attr == "Blueprint"
@@ -276,25 +305,23 @@ def _collect_blueprint_aliases(source: str) -> set[str]:
 def _collect_register_functions_args(source: str) -> set[str]:
     """Collect Blueprint aliases passed to ``register_functions(...)`` calls.
 
-    Only calls on a discovered FunctionApp-family instance are recognized.
+    Only calls on a discovered FunctionApp-family instance are recognized
+    (any of ``FUNCTION_APP_CONTAINERS``, including ``DFApp`` -- #446 --, not
+    only ``FunctionApp``).
     """
     try:
         tree = ast.parse(source)
     except SyntaxError:
         return set()
 
-    constructor_names = {"FunctionApp"}
+    import_aliases = _resolve_import_aliases(tree, FUNCTION_APP_CONTAINERS)
     module_names: set[str] = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "azure.functions":
-            constructor_names.update(
-                alias.asname or alias.name for alias in node.names if alias.name == "FunctionApp"
-            )
-        elif isinstance(node, ast.Import):
+        if isinstance(node, ast.Import):
             module_names.update(
                 alias.asname
                 for alias in node.names
-                if alias.name == "azure.functions" and alias.asname is not None
+                if alias.name in _CONSTRUCTOR_SOURCE_MODULES and alias.asname is not None
             )
 
     app_names: set[str] = set()
@@ -302,11 +329,9 @@ def _collect_register_functions_args(source: str) -> set[str]:
         if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Call):
             continue
         func_node = node.value.func
-        is_constructor = (
-            isinstance(func_node, ast.Name) and func_node.id in constructor_names
-        ) or (
+        is_constructor = (isinstance(func_node, ast.Name) and func_node.id in import_aliases) or (
             isinstance(func_node, ast.Attribute)
-            and func_node.attr == "FunctionApp"
+            and func_node.attr in FUNCTION_APP_CONTAINERS
             and isinstance(func_node.value, ast.Name)
             and func_node.value.id in module_names
         )
@@ -361,24 +386,169 @@ def _source_contains_blueprint_decorator(source: str, blueprint_aliases: set[str
     return matched_aliases
 
 
+def _resolve_project_module_path(
+    importer_file: Path, project_root: Path, module: str, level: int
+) -> Path | None:
+    """Resolve an import's module name to a project-local ``.py`` file path.
+
+    Bounded: handles absolute dotted module imports (``import first``,
+    ``from first import bp``) resolved from *project_root*, and relative
+    imports (``from .first import bp``) resolved from *importer_file*'s
+    directory. Returns ``None`` when the module isn't a local project file
+    (e.g. a third-party package) -- only statically resolvable project-local
+    modules participate in cross-file Blueprint identity resolution (#446);
+    dynamic imports are out of scope, matching this handler's existing
+    static-analysis-only design.
+    """
+    if level == 0:
+        if not module:
+            return None
+        parts = module.split(".")
+        base = project_root
+    else:
+        base = importer_file.parent
+        for _ in range(level - 1):
+            base = base.parent
+        parts = module.split(".") if module else []
+
+    if not parts:
+        return None
+    candidate = base.joinpath(*parts).with_suffix(".py")
+    if candidate.is_file():
+        return candidate
+    candidate_pkg = base.joinpath(*parts, "__init__.py")
+    if candidate_pkg.is_file():
+        return candidate_pkg
+    return None
+
+
 def _collect_unregistered_blueprint_aliases(path: Path) -> set[str]:
-    """Collect Blueprint aliases that are decorated but never registered."""
+    """Collect Blueprint aliases that are decorated but never registered.
+
+    Tracks module-qualified identity -- (source file, local name) -- through
+    discovery, import resolution, and registration matching, so two distinct
+    ``Blueprint()`` instances that happen to share a bare local name across
+    files (e.g. ``bp`` in both ``first.py`` and ``second.py``) are never
+    conflated: registering one must never be treated as registering the
+    other (#446). A registration argument is resolved back to its defining
+    file by following project-local ``from <module> import <name> [as
+    <alias>]`` re-exports; a name with no statically resolvable origin is
+    treated as not registered, matching this handler's existing
+    static-analysis-only scope (no dynamic imports or wildcard resolution).
+    """
     project_contents = list(_iter_project_py_contents(path))
-    blueprint_aliases: set[str] = set()
+    contents_by_file: dict[Path, str] = dict(project_contents)
 
-    for _py_file, content in project_contents:
-        blueprint_aliases |= _collect_blueprint_aliases(content)
+    parsed: dict[Path, ast.Module] = {}
+    for py_file, content in project_contents:
+        try:
+            parsed[py_file] = ast.parse(content)
+        except SyntaxError:
+            continue
 
-    decorated_blueprint_aliases: set[str] = set()
-    registered_blueprint_aliases: set[str] = set()
+    file_blueprints: dict[Path, set[str]] = {}
+    file_receivers: dict[Path, set[str]] = {}
+    file_imports: dict[Path, dict[str, tuple[Path, str]]] = {}
 
-    for _py_file, content in project_contents:
-        decorated_blueprint_aliases |= _source_contains_blueprint_decorator(
-            content, blueprint_aliases
+    for py_file, tree in parsed.items():
+        bp_import_aliases = _resolve_import_aliases(tree, {"Blueprint"})
+        app_import_aliases = _resolve_import_aliases(tree, FUNCTION_APP_CONTAINERS)
+        module_names: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                module_names.update(
+                    alias.asname
+                    for alias in node.names
+                    if alias.name in _CONSTRUCTOR_SOURCE_MODULES and alias.asname is not None
+                )
+
+        local_blueprints: set[str] = set()
+        local_receivers: set[str] = set()
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Assign) and isinstance(node.value, ast.Call)):
+                continue
+            func_node = node.value.func
+            is_blueprint = (
+                isinstance(func_node, ast.Name) and func_node.id in bp_import_aliases
+            ) or (
+                isinstance(func_node, ast.Attribute)
+                and func_node.attr == "Blueprint"
+                and isinstance(func_node.value, ast.Name)
+                and func_node.value.id in module_names
+            )
+            is_receiver = (
+                isinstance(func_node, ast.Name) and func_node.id in app_import_aliases
+            ) or (
+                isinstance(func_node, ast.Attribute)
+                and func_node.attr in FUNCTION_APP_CONTAINERS
+                and isinstance(func_node.value, ast.Name)
+                and func_node.value.id in module_names
+            )
+            if is_blueprint:
+                local_blueprints.update(t.id for t in node.targets if isinstance(t, ast.Name))
+            elif is_receiver:
+                local_receivers.update(t.id for t in node.targets if isinstance(t, ast.Name))
+
+        file_blueprints[py_file] = local_blueprints
+        file_receivers[py_file] = local_receivers
+
+        imports: dict[str, tuple[Path, str]] = {}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                origin = _resolve_project_module_path(py_file, path, node.module or "", node.level)
+                if origin is None or origin not in parsed:
+                    continue
+                for alias in node.names:
+                    imports[alias.asname or alias.name] = (origin, alias.name)
+        file_imports[py_file] = imports
+
+    def _resolve_to_blueprint_identity(
+        file: Path, name: str, _seen: frozenset[tuple[Path, str]] = frozenset()
+    ) -> tuple[Path, str] | None:
+        key = (file, name)
+        if key in _seen:
+            return None
+        if name in file_blueprints.get(file, set()):
+            return key
+        origin = file_imports.get(file, {}).get(name)
+        if origin is None:
+            return None
+        origin_file, origin_name = origin
+        return _resolve_to_blueprint_identity(origin_file, origin_name, _seen | {key})
+
+    decorated: set[tuple[Path, str]] = set()
+    registered: set[tuple[Path, str]] = set()
+
+    for py_file, tree in parsed.items():
+        local_blueprints = file_blueprints[py_file]
+        decorated_names = _source_contains_blueprint_decorator(
+            contents_by_file[py_file], local_blueprints
         )
-        registered_blueprint_aliases |= _collect_register_functions_args(content)
+        for name in decorated_names:
+            decorated.add((py_file, name))
 
-    return decorated_blueprint_aliases - registered_blueprint_aliases
+        local_receivers = file_receivers[py_file]
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func_node = node.func
+            if not isinstance(func_node, ast.Attribute):
+                continue
+            if func_node.attr not in {"register_blueprint", "register_functions"}:
+                continue
+            if (
+                not isinstance(func_node.value, ast.Name)
+                or func_node.value.id not in local_receivers
+            ):
+                continue
+            for arg in node.args:
+                if isinstance(arg, ast.Name):
+                    identity = _resolve_to_blueprint_identity(py_file, arg.id)
+                    if identity is not None:
+                        registered.add(identity)
+
+    unregistered = decorated - registered
+    return {name for _file, name in unregistered}
 
 
 def _decorator_simple_name(dec: ast.expr) -> str | None:

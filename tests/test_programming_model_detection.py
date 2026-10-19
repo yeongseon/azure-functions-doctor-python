@@ -45,6 +45,29 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             doctor = Doctor(str(temp_path))
             assert doctor.programming_model == "v2"
 
+    def test_detect_v2_with_aliased_functionapp_constructor(self) -> None:
+        """An aliased direct-name constructor import (#446) is still recognized:
+        ``from azure.functions import FunctionApp as FA`` then ``FA()`` must
+        resolve the same as ``func.FunctionApp()`` does via attribute access."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            python_file = temp_path / "function_app.py"
+            python_file.write_text("""
+import azure.functions as func
+from azure.functions import FunctionApp as FA
+
+custom_app = FA()
+
+@custom_app.route(route="health", auth_level=func.AuthLevel.FUNCTION)
+def health(req: func.HttpRequest) -> func.HttpResponse:
+    return func.HttpResponse("ok")
+
+app = custom_app
+""")
+
+            doctor = Doctor(str(temp_path))
+            assert doctor.programming_model == "v2"
+
     def test_detect_unknown_when_no_signals(self) -> None:
         """Test unknown detection when no v1 or v2 signals are found."""
         doctor = Doctor(str(FIXTURES_DIR / "unknown"))
