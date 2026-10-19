@@ -107,3 +107,90 @@ def test_load_agent_report_rejects_inferred_analysis(tmp_path: Path) -> None:
 
     with pytest.raises(AgentReportError, match="deterministic"):
         load_agent_report(json_path)
+
+
+# ---------------------------------------------------------------------------
+# Config-suppressed findings stay adapter-compatible (#578)
+# ---------------------------------------------------------------------------
+
+
+def _write_single_rule_project(project: Path) -> None:
+    project.mkdir()
+    (project / "function_app.py").write_text(
+        "import azure.functions as func\n"
+        "app = func.FunctionApp()\n"
+        "@app.route(route='hello')\n"
+        "def hello(req): return func.HttpResponse('ok')\n",
+        encoding="utf-8",
+    )
+    (project / "host.json").write_text('{"version":"2.0"}', encoding="utf-8")
+    (project / "requirements.txt").write_text("azure-functions>=1.20,<2\n", encoding="utf-8")
+
+
+def _write_single_rule_file(rules_path: Path) -> None:
+    rules_path.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "check_missing_file",
+                    "category": "structure",
+                    "section": "project",
+                    "label": "Required marker",
+                    "description": "Check a local marker file",
+                    "type": "file_exists",
+                    "required": True,
+                    "condition": {"target": "missing.marker"},
+                    "check_order": 1,
+                    "severity": "error",
+                    "gate": True,
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_cli_generated_report_with_suppressed_finding_loads_through_adapter(
+    tmp_path: Path,
+) -> None:
+    """A real CLI-generated JSON report containing a config-suppressed
+    (status=skip) item alongside it still loads through load_agent_report,
+    instead of the whole report being rejected over one missing marker."""
+    from typer.testing import CliRunner
+
+    from azure_functions_doctor.cli import cli
+
+    project = tmp_path / "project"
+    _write_single_rule_project(project)
+    rules_path = tmp_path / "rules.json"
+    _write_single_rule_file(rules_path)
+    (project / "pyproject.toml").write_text(
+        '[tool.azure-functions-doctor]\nignore=["check_missing_file"]\n', encoding="utf-8"
+    )
+    output_path = tmp_path / "report.json"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "doctor",
+            "--path",
+            str(project),
+            "--rules",
+            str(rules_path),
+            "--format",
+            "json",
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    report = load_agent_report(output_path)
+    assert len(report.findings) == 1
+    suppressed_finding = report.findings[0]
+    assert suppressed_finding.rule_id == "check_missing_file"
+    assert suppressed_finding.status == "skip"
+    # Suppressed findings carry no failure evidence to explain and must not
+    # appear in explain_failures (only warn/fail do).
+    assert explain_failures(report) == ()

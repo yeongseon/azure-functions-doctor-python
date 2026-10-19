@@ -431,6 +431,13 @@ class Doctor:
                         "severity": _resolve_severity(rule),
                         "tier": _resolve_tier(rule),
                     }
+                    # The deterministic analysis marker (#578) is required by
+                    # the Agent adapter's load_agent_report() for *every*
+                    # item, not only executed findings -- without it here, a
+                    # single config-suppressed item makes the adapter reject
+                    # the whole report, even though every other finding is
+                    # ordinary deterministic output.
+                    skip_item["analysis"] = {"type": "deterministic"}
                     section_result["items"].append(skip_item)
                     continue
                 # Time rule execution for logging
