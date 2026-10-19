@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import time
 from typing import Annotated, cast
+from urllib.parse import quote
 
 from rich.console import Console
 from rich.text import Text
@@ -386,6 +387,19 @@ def doctor(
         if not scan_root_is_absolute and scan_root_norm not in ("", "."):
             scan_prefix = scan_root_norm + "/"
 
+        def _encode_artifact_uri(repo_relative_path: str) -> str:
+            """Percent-encode a repo-relative path for a SARIF artifactLocation.uri.
+
+            SARIF 2.1.0 sections 3.10.1/3.10.4 require a valid URI reference,
+            converting any non-ASCII (IRI) characters via percent-encoding.
+            Preserves '/' path separators; encodes everything else -- spaces,
+            '#', '?', literal '%' signs, and Unicode filename characters --
+            so the URI's path component is never misparsed as a fragment or
+            query, and decoding it recovers exactly the original artifact
+            path, case and separators intact (#579).
+            """
+            return quote(repo_relative_path, safe="/")
+
         def _physical_location_for(
             entry: Mapping[str, object],
         ) -> tuple[dict[str, object], str, object]:
@@ -393,7 +407,10 @@ def doctor(
 
             Returns ``(physical_location, artifact_uri, loc_line)``. URIs are
             repo-root-relative per issue #392; entries may carry an absolute
-            path defensively, which is rebased onto the scan root.
+            path defensively, which is rebased onto the scan root. The
+            returned ``artifact_uri`` is the raw (unencoded) repo-relative
+            path, used for fingerprinting below; the SARIF ``uri`` field
+            itself is percent-encoded via ``_encode_artifact_uri`` (#579).
             """
             loc_file = entry.get("file")
             artifact_uri = ""
@@ -412,7 +429,7 @@ def doctor(
                 artifact_uri = scan_prefix + artifact_uri
                 physical: dict[str, object] = {
                     "artifactLocation": {
-                        "uri": artifact_uri,
+                        "uri": _encode_artifact_uri(artifact_uri),
                         "uriBaseId": "%SRCROOT%",
                     }
                 }
@@ -430,14 +447,15 @@ def doctor(
                 return physical, artifact_uri, loc_line
             # Rules without a file location point at the scan root in its
             # repo-root-relative form; absolute roots collapse to "." (#392).
+            fallback_uri = scan_prefix if scan_prefix else "."
             return (
                 {
                     "artifactLocation": {
-                        "uri": scan_prefix if scan_prefix else ".",
+                        "uri": _encode_artifact_uri(fallback_uri),
                         "uriBaseId": "%SRCROOT%",
                     }
                 },
-                scan_prefix if scan_prefix else ".",
+                fallback_uri,
                 None,
             )
 

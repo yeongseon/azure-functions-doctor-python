@@ -643,6 +643,71 @@ def test_cli_sarif_rebases_relative_scan_root_in_both_branches(
     assert "function_app.py" not in uris
 
 
+@pytest.mark.parametrize(
+    ("dir_name", "expected_uri"),
+    [
+        ("api", "api/missing.marker"),
+        ("api #1", "api%20%231/missing.marker"),
+        ("api\ud300", "api%ED%8C%80/missing.marker"),
+    ],
+)
+def test_cli_sarif_artifact_uri_percent_encodes_special_characters(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, dir_name: str, expected_uri: str
+) -> None:
+    """A directory name containing a space+hash or non-ASCII characters must
+    produce a valid percent-encoded SARIF artifactLocation.uri (#579): a
+    standard URI parser must never treat part of the path as a fragment or
+    query, and decoding the URI must recover the original artifact exactly."""
+    from urllib.parse import unquote, urlsplit
+
+    project = tmp_path / dir_name
+    project.mkdir()
+    (project / "function_app.py").write_text(
+        "import azure.functions as func\napp = func.FunctionApp()\n"
+        "@app.route(route='hello')\ndef hello(req): return func.HttpResponse('ok')\n",
+        encoding="utf-8",
+    )
+    (project / "host.json").write_text('{"version":"2.0"}', encoding="utf-8")
+    (project / "requirements.txt").write_text("azure-functions>=1.20,<2\n", encoding="utf-8")
+    rules_path = tmp_path / "rules.json"
+    rules_path.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "check_missing_file",
+                    "category": "structure",
+                    "section": "project",
+                    "label": "Required marker",
+                    "description": "Check a local marker file",
+                    "type": "file_exists",
+                    "required": True,
+                    "condition": {"target": "missing.marker"},
+                    "check_order": 1,
+                    "severity": "error",
+                    "gate": True,
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(
+        app, ["doctor", "--path", dir_name, "--rules", str(rules_path), "--format", "sarif"]
+    )
+
+    assert result.exit_code == 1
+    report = json.loads(result.output)
+    uri = report["runs"][0]["results"][0]["locations"][0]["physicalLocation"]["artifactLocation"][
+        "uri"
+    ]
+    assert uri == expected_uri
+    parsed = urlsplit(uri)
+    assert parsed.fragment == ""
+    assert parsed.query == ""
+    assert unquote(parsed.path) == f"{dir_name}/missing.marker"
+
+
 def test_create_result_populates_optional_location_fields() -> None:
     """_create_result threads optional file/line/end_line/column when provided."""
     from azure_functions_doctor.handlers._helpers import _create_result
