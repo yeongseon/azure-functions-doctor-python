@@ -1058,12 +1058,72 @@ def _first_call_arg_is_true(node: ast.Call) -> bool:
     return not node.keywords
 
 
+_KNOWN_OTEL_EXTRA_PACKAGES = {"azure-functions-logging"}
+
+
+def _pyproject_dependency_specs(path: Path) -> list[str]:
+    """Return raw dependency specifier strings from pyproject.toml, with
+    extras markers intact (unlike :func:`pyproject_dependency_names`, which
+    discards them after canonicalizing the bare name)."""
+    data = _load_pyproject(path)
+    if not data:
+        return []
+    project = data.get("project")
+    if not isinstance(project, dict):
+        return []
+    specs: list[str] = []
+    deps = project.get("dependencies")
+    if isinstance(deps, list):
+        specs.extend(str(item) for item in deps)
+    optional = project.get("optional-dependencies")
+    if isinstance(optional, dict):
+        for group in optional.values():
+            if isinstance(group, list):
+                specs.extend(str(item) for item in group)
+    return specs
+
+
+def _declares_known_otel_extra(path: Path) -> bool:
+    """Return True when the project declares a known package's ``otel`` extra
+    (currently ``azure-functions-logging[otel]``) in requirements.txt or
+    pyproject.toml.
+
+    This is a hardcoded, known declared-extra relationship -- installed
+    ``azure-functions-logging`` metadata declares
+    ``opentelemetry-api>=1.24; extra == 'otel'`` -- recognized offline from
+    the parsed specifier alone, not a resolution of arbitrary transitive
+    dependencies or an inspection of installed packages (#586).
+    """
+    specs: list[str] = list(_pyproject_dependency_specs(path))
+    req_path = path / "requirements.txt"
+    if req_path.exists():
+        content = _read_project_python_file(req_path)
+        if content is not None:
+            specs.extend(
+                line
+                for line in _iter_requirements_txt_lines(content, req_path)
+                if not (line.startswith("-e ") or line.startswith("--editable"))
+            )
+    for spec in specs:
+        try:
+            req = Requirement(spec)
+        except InvalidRequirement:
+            continue
+        if canonicalize_name(req.name) in _KNOWN_OTEL_EXTRA_PACKAGES and "otel" in {
+            extra.lower() for extra in req.extras
+        }:
+            return True
+    return False
+
+
 def _project_declares_opentelemetry(path: Path) -> bool:
     """Return True when the project declares any ``opentelemetry`` distribution in
-    ``requirements.txt`` or ``pyproject.toml`` (runtime or optional dependencies).
+    ``requirements.txt`` or ``pyproject.toml`` (runtime or optional dependencies),
+    or a known package's declared ``otel`` extra that pulls one in transitively.
 
     The ``azure-functions-logging[otel]`` extra pulls in ``opentelemetry-api``, so
-    any declared ``opentelemetry-*`` package satisfies the activation requirement.
+    any declared ``opentelemetry-*`` package -- or the ``azure-functions-logging``
+    ``otel`` extra itself (#586) -- satisfies the activation requirement.
     """
     declared: set[str] = set(pyproject_dependency_names(path))
     req_path = path / "requirements.txt"
@@ -1071,7 +1131,9 @@ def _project_declares_opentelemetry(path: Path) -> bool:
         content = _read_project_python_file(req_path)
         if content is not None:
             declared |= _parse_requirements_names(content, req_path)
-    return any(name.startswith("opentelemetry") for name in declared)
+    if any(name.startswith("opentelemetry") for name in declared):
+        return True
+    return _declares_known_otel_extra(path)
 
 
 def _collect_orchestrator_nondeterminism(
@@ -1220,11 +1282,17 @@ def _read_project_python_file(py_file: Path) -> str | None:
         return None
 
 
-def _parse_requirements_names(content: str, source_path: Path | None = None) -> set[str]:
-    """Extract normalized package names from requirements.txt content.
+def _iter_requirements_txt_lines(content: str, source_path: Path | None = None) -> list[str]:
+    """Yield cleaned requirement-spec lines from requirements.txt content,
+    including editable-install lines unmodified.
 
-    Handles extras (``requests[security]``), environment markers (``;``),
-    URL installs (``@``), pip directives (``-r``, ``-e``), and inline comments.
+    Shared by :func:`_parse_requirements_names` and the OpenTelemetry-extra
+    check (#586): follows ``-r``/``--requirement`` includes recursively (same
+    depth/cycle guards), skips other pip flags and comments, but -- unlike
+    ``_parse_requirements_names``'s final name set -- preserves each line's
+    extras marker (``pkg[extra]``) instead of discarding it, since
+    recognizing a known package's declared extra requires the extras, not
+    just its name.
     """
     contents = [content.removeprefix("\ufeff")]
     if source_path is not None:
@@ -1253,36 +1321,46 @@ def _parse_requirements_names(content: str, source_path: Path | None = None) -> 
 
         collect_includes(content, source_path, 0)
 
-    names: set[str] = set()
+    lines: list[str] = []
     for requirements_content in contents:
         for raw_line in requirements_content.splitlines():
             line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
-            # Skip -r / -c / --requirement / --constraint includes
             if line.startswith(("-r ", "-c ", "--requirement", "--constraint")):
                 continue
-            # Handle editable installs: -e git+...#egg=name
-            if line.startswith(("-e ", "--editable")):
-                egg_match = re.search(r"#egg=([^&\s]+)", line)
-                if egg_match:
-                    names.add(canonicalize_name(egg_match.group(1)))
+            if line.startswith("-e ") or line.startswith("--editable"):
+                lines.append(line)
                 continue
-            # Skip other pip flags (--find-links, --index-url, etc.)
             if line.startswith("-"):
                 continue
-            # Strip inline comments
             line = line.split("#")[0].strip()
-            if not line:
-                continue
-            try:
-                req = Requirement(line)
-                names.add(canonicalize_name(req.name))
-            except InvalidRequirement:
-                # Fall back to a simple split for unparseable lines
-                name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
-                if name:
-                    names.add(canonicalize_name(name))
+            if line:
+                lines.append(line)
+    return lines
+
+
+def _parse_requirements_names(content: str, source_path: Path | None = None) -> set[str]:
+    """Extract normalized package names from requirements.txt content.
+
+    Handles extras (``requests[security]``), environment markers (``;``),
+    URL installs (``@``), pip directives (``-r``, ``-e``), and inline comments.
+    """
+    names: set[str] = set()
+    for line in _iter_requirements_txt_lines(content, source_path):
+        if line.startswith("-e ") or line.startswith("--editable"):
+            egg_match = re.search(r"#egg=([^&\s]+)", line)
+            if egg_match:
+                names.add(canonicalize_name(egg_match.group(1)))
+            continue
+        try:
+            req = Requirement(line)
+            names.add(canonicalize_name(req.name))
+        except InvalidRequirement:
+            # Fall back to a simple split for unparseable lines
+            name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
+            if name:
+                names.add(canonicalize_name(name))
     return names
 
 
