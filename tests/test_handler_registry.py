@@ -213,9 +213,12 @@ def test_handler_registry_optional_rules() -> None:
 
         result = registry.handle(rule, tmp_path)
 
-    # Optional marking now happens during aggregation, so handlers still return fail here.
+    # Optional marking happens only during doctor.py's central aggregation
+    # (where the resolved `gate` flag is known), not in the handler itself --
+    # a handler-level "(optional)" append would otherwise be duplicated by
+    # that central aggregation step (#597).
     assert result["status"] == "fail"
-    assert "optional" in result["detail"]
+    assert "optional" not in result["detail"]
 
 
 """Extended tests for the handler registry pattern - covering missing code branches."""
@@ -327,25 +330,7 @@ def test_path_exists_non_sys_executable_target() -> None:
         }
         result = registry.handle(rule, tmp_path)
         assert result["status"] == "fail"
-        assert "missing" in result["detail"]
-
-
-def test_path_exists_optional() -> None:
-    """Test _handle_path_exists with optional flag (line 291)."""
-    registry = HandlerRegistry()
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_path = Path(tmpdir)
-        rule: Rule = {
-            "id": "test_path_exists_optional",
-            "type": "path_exists",
-            "required": False,
-            "condition": {
-                "target": "nonexistent",
-            },
-        }
-        result = registry.handle(rule, tmp_path)
-        assert result["status"] == "fail"
-        assert "optional" in result["detail"]
+        assert "optional" not in result["detail"]
 
 
 def test_file_exists_missing_target() -> None:
@@ -376,7 +361,7 @@ def test_file_exists_not_found_optional() -> None:
         }
         result = registry.handle(rule, tmp_path)
         assert result["status"] == "fail"
-        assert "optional" in result["detail"]
+        assert "optional" not in result["detail"]
 
 
 def test_package_installed_missing_target() -> None:

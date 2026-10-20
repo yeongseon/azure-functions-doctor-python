@@ -37,6 +37,34 @@ def test_doctor_checks_pass() -> None:
     assert item_map.get("local.settings.json") == "warn"
 
 
+def test_optional_rule_failure_does_not_duplicate_optional_marker() -> None:
+    """A failing rule with ``required: false`` must get the ``(optional)``
+    annotation exactly once in its emitted value (#597) -- not once from a
+    handler-level append and again from doctor.py's central aggregation,
+    which is the only place that has access to the resolved ``gate`` flag."""
+    with tempfile.TemporaryDirectory() as tmp:
+        with open(os.path.join(tmp, "function_app.py"), "w") as f:
+            f.write("import azure.functions as func\napp = func.FunctionApp()\n")
+        with open(os.path.join(tmp, "host.json"), "w") as f:
+            json.dump({"version": "2.0"}, f)
+        with open(os.path.join(tmp, "requirements.txt"), "w") as f:
+            f.write("azure-functions==1.13.0")
+
+        doctor = Doctor(tmp)
+        results = doctor.run_all_checks()
+
+    item_map = {
+        str(item.get("label", "")): str(item.get("value", ""))
+        for section in results
+        for item in section["items"]
+    }
+
+    # local.settings.json is required: false and missing in this fixture,
+    # so it fails and must carry the annotation -- exactly once.
+    value = item_map["local.settings.json"]
+    assert value.count("(optional)") == 1
+
+
 def test_missing_files() -> None:
     """Tests that empty projects fail fast as unknown programming models."""
     with tempfile.TemporaryDirectory() as tmp:
