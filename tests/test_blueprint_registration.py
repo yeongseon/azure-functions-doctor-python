@@ -116,6 +116,45 @@ def test_collect_unregistered_blueprint_aliases_skips_excluded_directories(tmp_p
     assert handlers._collect_unregistered_blueprint_aliases(tmp_path) == set()
 
 
+def test_collect_unregistered_blueprint_aliases_detects_async_decorated_route(
+    tmp_path: Path,
+) -> None:
+    """An unregistered Blueprint route decorated with `async def` must warn
+    exactly as the identical synchronous route does -- the SDK never
+    registers this route either way, so the same missing-registration
+    warning applies regardless of sync/async (#585)."""
+    handlers = import_module("azure_functions_doctor.handlers")
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n"
+        "app = func.FunctionApp()\n"
+        "bp = func.Blueprint()\n\n"
+        "@bp.route(route='work')\n"
+        "async def work(req):\n"
+        "    return req\n",
+        encoding="utf-8",
+    )
+
+    assert handlers._collect_unregistered_blueprint_aliases(tmp_path) == {"bp"}
+
+
+def test_collect_unregistered_blueprint_aliases_passes_when_async_route_registered(
+    tmp_path: Path,
+) -> None:
+    handlers = import_module("azure_functions_doctor.handlers")
+    (tmp_path / "function_app.py").write_text(
+        "import azure.functions as func\n"
+        "app = func.FunctionApp()\n"
+        "bp = func.Blueprint()\n\n"
+        "@bp.route(route='work')\n"
+        "async def work(req):\n"
+        "    return req\n\n"
+        "app.register_functions(bp)\n",
+        encoding="utf-8",
+    )
+
+    assert handlers._collect_unregistered_blueprint_aliases(tmp_path) == set()
+
+
 def test_blueprint_registration_fixture_passes_when_registered() -> None:
     item_map = _item_status_by_label(FIXTURES_DIR / "blueprint_registered")
     assert item_map["Blueprint registration"] == "pass"
