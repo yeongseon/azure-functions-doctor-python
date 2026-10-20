@@ -135,6 +135,106 @@ class TestEvaluateFlexDeploymentStorage:
         assert "storageAccountConnectionStringName" in result["detail"]
         assert result["actual"]
 
+    def test_unknown_literal_authentication_type_warns(self) -> None:
+        """A concrete, unrecognized authentication 'type' literal (not an
+        ARM expression) must warn rather than silently pass (#583)."""
+        result = _evaluate_flex_deployment_storage(
+            FLEX_CONSUMPTION_PLAN,
+            {
+                "value": "https://acct.blob.core.windows.net/app",
+                "authentication": {"type": "BogusAuthentication"},
+            },
+        )
+        assert result["status"] == "fail"
+        assert result["severity"] == "warning"
+        assert result["gate"] is False
+        assert "BogusAuthentication" in result["detail"]
+        assert "not recognized" in result["detail"]
+
+    def test_user_assigned_identity_missing_resource_id_warns(self) -> None:
+        """UserAssignedIdentity without userAssignedIdentityResourceId must
+        warn, analogous to the existing connection-string-name check (#583)."""
+        result = _evaluate_flex_deployment_storage(
+            FLEX_CONSUMPTION_PLAN,
+            {
+                "value": "https://acct.blob.core.windows.net/app",
+                "authentication": {"type": "UserAssignedIdentity"},
+            },
+        )
+        assert result["status"] == "fail"
+        assert "userAssignedIdentityResourceId" in result["detail"]
+
+    def test_user_assigned_identity_empty_resource_id_warns(self) -> None:
+        result = _evaluate_flex_deployment_storage(
+            FLEX_CONSUMPTION_PLAN,
+            {
+                "value": "https://acct.blob.core.windows.net/app",
+                "authentication": {
+                    "type": "UserAssignedIdentity",
+                    "userAssignedIdentityResourceId": "   ",
+                },
+            },
+        )
+        assert result["status"] == "fail"
+        assert "userAssignedIdentityResourceId" in result["detail"]
+
+    def test_user_assigned_identity_with_resource_id_passes(self) -> None:
+        result = _evaluate_flex_deployment_storage(
+            FLEX_CONSUMPTION_PLAN,
+            {
+                "value": "https://acct.blob.core.windows.net/app",
+                "authentication": {
+                    "type": "UserAssignedIdentity",
+                    "userAssignedIdentityResourceId": (
+                        "/subscriptions/00000000-0000-0000-0000-000000000000/"
+                        "resourceGroups/review/providers/Microsoft.ManagedIdentity/"
+                        "userAssignedIdentities/review"
+                    ),
+                },
+            },
+        )
+        assert result["status"] == "pass"
+
+    def test_system_assigned_identity_requires_no_additional_fields_passes(self) -> None:
+        result = _evaluate_flex_deployment_storage(
+            FLEX_CONSUMPTION_PLAN,
+            {
+                "value": "https://acct.blob.core.windows.net/app",
+                "authentication": {"type": "SystemAssignedIdentity"},
+            },
+        )
+        assert result["status"] == "pass"
+
+    def test_unresolved_arm_expression_authentication_type_passes(self) -> None:
+        """An ARM template expression for 'type' cannot be evaluated
+        statically; it must not be flagged as an invalid literal, and must
+        not be claimed as a verified configuration either -- it simply
+        passes the static shape check unflagged (#583)."""
+        result = _evaluate_flex_deployment_storage(
+            FLEX_CONSUMPTION_PLAN,
+            {
+                "value": "https://acct.blob.core.windows.net/app",
+                "authentication": {"type": "[parameters('authType')]"},
+            },
+        )
+        assert result["status"] == "pass"
+
+    def test_unresolved_arm_expression_resource_id_passes(self) -> None:
+        result = _evaluate_flex_deployment_storage(
+            FLEX_CONSUMPTION_PLAN,
+            {
+                "value": "https://acct.blob.core.windows.net/app",
+                "authentication": {
+                    "type": "UserAssignedIdentity",
+                    "userAssignedIdentityResourceId": (
+                        "[reference(resourceId('Microsoft.ManagedIdentity/"
+                        "userAssignedIdentities', 'id')).id]"
+                    ),
+                },
+            },
+        )
+        assert result["status"] == "pass"
+
     def test_multiple_problems_reported(self) -> None:
         result = _evaluate_flex_deployment_storage(
             FLEX_CONSUMPTION_PLAN,
