@@ -378,7 +378,10 @@ def _source_contains_blueprint_decorator(source: str, blueprint_aliases: set[str
         return None
 
     for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.decorator_list:
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and node.decorator_list
+        ):
             for dec in node.decorator_list:
                 alias = decorator_alias(dec)
                 if alias is not None:
@@ -1180,7 +1183,10 @@ def _source_contains_ast(source: str, identifier: str) -> bool:
         return False
 
     for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.decorator_list:
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and node.decorator_list
+        ):
             for dec in node.decorator_list:
                 if decorator_matches(dec):
                     return True

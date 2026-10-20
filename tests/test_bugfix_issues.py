@@ -369,3 +369,11 @@ def test_source_contains_ast_returns_false_without_decorators() -> None:
     """Issue #96: AST source detection returns False without decorators."""
     source = "x = 1\n"
     assert _source_contains_ast(source, "app") is False
+
+
+def test_source_contains_ast_detects_async_app_decorator() -> None:
+    """An async handler with the same @app.route decorator must be
+    recognized identically to a synchronous one -- changing only `def` to
+    `async def` must not change the diagnosis (#585)."""
+    source = "@app.route()\nasync def main(req):\n    return 'ok'\n"
+    assert _source_contains_ast(source, "app") is True
