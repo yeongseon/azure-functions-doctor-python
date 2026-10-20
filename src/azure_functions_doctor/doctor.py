@@ -18,6 +18,7 @@ from azure_functions_doctor.handlers import (
     _iter_project_py_contents,
     _resolve_import_aliases,
     _source_contains_ast,
+    _source_contains_langgraph_functionapp_export,
     generic_handler,
     iter_project_files,
     load_doctor_config,
@@ -265,7 +266,14 @@ class Doctor:
                 and import_aliases.get(func_node.id, func_node.id) in target_names
             ):
                 return True
-        return False
+        # The documented LangGraph adapter composition constructs
+        # LangGraphApp and exports its real FunctionApp through a property
+        # (e.g. app = adapter.function_app), never a direct constructor
+        # call on the exported name -- the loops above find neither a
+        # Blueprint/FunctionApp-family call nor (since there are no
+        # decorators either) a v2 decorator signal, so it is recognized
+        # directly as the last fallback (#590).
+        return _source_contains_langgraph_functionapp_export(source)
 
     def _has_v2_decorators(self) -> bool:
         """Check if the project uses v2 decorators using AST-based detection.

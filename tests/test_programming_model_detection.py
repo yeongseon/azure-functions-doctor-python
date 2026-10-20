@@ -68,6 +68,46 @@ app = custom_app
             doctor = Doctor(str(temp_path))
             assert doctor.programming_model == "v2"
 
+    def test_detect_v2_with_langgraph_adapter_functionapp_export(self) -> None:
+        """A project that composes the documented LangGraph toolkit
+        adapter (#590) -- constructing ``LangGraphApp`` and exporting its
+        real ``FunctionApp`` via ``adapter.function_app`` -- must be
+        recognized as v2 even though it defines no decorator of its own."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            python_file = temp_path / "function_app.py"
+            python_file.write_text("""
+import azure.functions as func
+from azure_functions_langgraph import LangGraphApp
+
+adapter = LangGraphApp(auth_level=func.AuthLevel.FUNCTION)
+adapter.register(graph=None, name="echo", stream=False)
+app = adapter.function_app
+""")
+
+            doctor = Doctor(str(temp_path))
+            assert doctor.programming_model == "v2"
+
+    def test_detect_unknown_for_unimported_langgraphapp_lookalike(self) -> None:
+        """A local class merely *named* ``LangGraphApp`` (never imported
+        from ``azure_functions_langgraph``) must not be misrecognized as
+        the toolkit adapter -- this guards the strict, import-qualified
+        resolution #590 deliberately requires."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            python_file = temp_path / "function_app.py"
+            python_file.write_text("""
+class LangGraphApp:
+    def __init__(self):
+        self.function_app = object()
+
+adapter = LangGraphApp()
+app = adapter.function_app
+""")
+
+            doctor = Doctor(str(temp_path))
+            assert doctor.programming_model == "unknown"
+
     def test_detect_unknown_when_no_signals(self) -> None:
         """Test unknown detection when no v1 or v2 signals are found."""
         doctor = Doctor(str(FIXTURES_DIR / "unknown"))

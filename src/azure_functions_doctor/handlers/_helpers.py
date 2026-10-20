@@ -234,6 +234,62 @@ def _resolve_import_aliases(
     return aliases
 
 
+_LANGGRAPH_ADAPTER_MODULE = "azure_functions_langgraph"
+_LANGGRAPH_ADAPTER_CLASS = "LangGraphApp"
+
+
+def _source_contains_langgraph_functionapp_export(source: str) -> bool:
+    """Return True for the documented toolkit composition pattern: import
+    ``LangGraphApp`` from ``azure_functions_langgraph``, construct an
+    instance, and export its real ``azure.functions.FunctionApp`` via the
+    documented ``.function_app`` property (e.g. ``app = adapter.function_app``)
+    (#590).
+
+    Bounded static recognition only, deliberately stricter than
+    :func:`_resolve_import_aliases` (which seeds an identity mapping for
+    every target name so a bare SDK constructor name still matches without
+    an import): ``LangGraphApp`` must actually be imported from
+    ``azure_functions_langgraph`` here, or an unrelated local class/function
+    of the same name would be misrecognized. The adapter instance must be
+    locally constructed in this file, and the exported attribute access
+    must be exactly ``.function_app`` on that instance -- never an
+    arbitrary object's same-named attribute or a factory call.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return False
+
+    imported_names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == _LANGGRAPH_ADAPTER_MODULE:
+            for alias in node.names:
+                if alias.name == _LANGGRAPH_ADAPTER_CLASS:
+                    imported_names.add(alias.asname or alias.name)
+    if not imported_names:
+        return False
+
+    adapter_names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
+            func_node = node.value.func
+            if isinstance(func_node, ast.Name) and func_node.id in imported_names:
+                adapter_names.update(t.id for t in node.targets if isinstance(t, ast.Name))
+    if not adapter_names:
+        return False
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Attribute):
+            exported = node.value
+            if (
+                exported.attr == "function_app"
+                and isinstance(exported.value, ast.Name)
+                and exported.value.id in adapter_names
+            ):
+                return True
+    return False
+
+
 def _discover_functionapp_aliases(source: str) -> set[str]:
     """Extract variable names assigned a supported app container or ``Blueprint()`` call.
 
@@ -1252,7 +1308,12 @@ def _source_contains_ast(source: str, identifier: str) -> bool:
             for dec in node.decorator_list:
                 if decorator_matches(dec):
                     return True
-    return False
+    # The documented LangGraph adapter composition exports a real
+    # FunctionApp through a property, never a decorator on a locally
+    # defined handler, so a project using only that pattern has no
+    # decorator for the loop above to find; it is recognized directly
+    # instead of being misreported as missing v2 signals (#590).
+    return _source_contains_langgraph_functionapp_export(source)
 
 
 def _iter_project_py_contents(path: Path) -> Iterator[tuple[Path, str]]:

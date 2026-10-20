@@ -41,6 +41,7 @@ from azure_functions_doctor.handlers._helpers import (
     _rule_handler,
     _source_contains_ast,
     _source_contains_blueprint_decorator,
+    _source_contains_langgraph_functionapp_export,
     iter_project_files,
     load_doctor_config,
     reset_extra_excludes,
@@ -92,4 +93,5 @@ __all__ = [
     "_rule_handler",
     "_source_contains_ast",
     "_source_contains_blueprint_decorator",
+    "_source_contains_langgraph_functionapp_export",
 ]
