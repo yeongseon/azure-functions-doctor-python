@@ -53,10 +53,11 @@ These rules detect **unambiguous misconfiguration** — a project missing any of
 will fail to deploy or run regardless of environment.
 
 > Note: `check_durable_nondeterminism` is also shipped as required (`"required": true`)
-> because nondeterministic calls in orchestrator/entity functions reliably break Durable
+> because nondeterministic calls in orchestrator functions reliably break Durable
 > Functions replay. Unlike the other Core rules it relies on a specialized source detector
 > (`durable_nondeterminism`) rather than a purely static file/version check, and it only
-> evaluates projects that contain Durable orchestration or entity triggers.
+> evaluates projects that contain Durable orchestration triggers -- entity triggers have
+> no orchestrator-specific replay constraint and are not in its default scope (#588).
 
 ---
 

@@ -381,7 +381,7 @@ Found unwanted files: ['tests/', '.venv']
 
 ## 28) `check_durable_nondeterminism`
 
-- **What it checks:** Orchestration or entity trigger functions do not call nondeterministic APIs (`datetime.now`, `random`, `uuid`, `requests`, `open`, `os.getenv`).
+- **What it checks:** Orchestration trigger functions do not call nondeterministic APIs (`datetime.now`, `random`, `uuid`, `requests`, `open`, `os.getenv`). Entity triggers have no orchestrator-specific replay constraint and are not in default scope (#588).
 - **Why it matters:** Nondeterministic calls break Durable Functions replay.
 - **How to fix:** Move nondeterministic work into activity functions.
 - **Severity:** Required (`required: true`).

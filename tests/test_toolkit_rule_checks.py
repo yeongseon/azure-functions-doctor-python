@@ -357,6 +357,59 @@ def test_durable_nondeterminism_skips_syntax_error(tmp_path: Path) -> None:
     assert _collect_orchestrator_nondeterminism(tmp_path, _BLOCK, _DECOS) == []
 
 
+def test_durable_nondeterminism_default_scope_excludes_entity_trigger(tmp_path: Path) -> None:
+    """Durable entities have no orchestrator-specific replay constraint
+    (Microsoft's Durable entities documentation), so an entity calling
+    time.time() must not be flagged by the default (unscoped) rule
+    condition -- only orchestration_trigger is in default scope (#588)."""
+    _write(
+        tmp_path,
+        "function_app.py",
+        "@app.entity_trigger(context_name='context')\n"
+        "def work(context):\n"
+        "    context.set_state(time.time())\n",
+    )
+    assert _status("durable_nondeterminism", tmp_path) == "pass"
+
+
+def test_durable_nondeterminism_default_scope_still_flags_orchestrator(
+    tmp_path: Path,
+) -> None:
+    """The actual unsafe orchestrator call must still fail with the
+    default (unscoped) rule condition -- this fix narrows scope, it does
+    not weaken orchestrator detection (#588)."""
+    _write(
+        tmp_path,
+        "function_app.py",
+        "@app.orchestration_trigger(context_name='context')\n"
+        "def work(context):\n"
+        "    return time.time()\n",
+    )
+    assert _status("durable_nondeterminism", tmp_path) == "fail"
+
+
+def test_durable_nondeterminism_entity_scope_still_available_via_condition(
+    tmp_path: Path,
+) -> None:
+    """A caller may still widen decorator_names via the rule condition to
+    include entity_trigger for other analysis needs (#588)."""
+    _write(
+        tmp_path,
+        "function_app.py",
+        "@app.entity_trigger(context_name='context')\n"
+        "def work(context):\n"
+        "    context.set_state(time.time())\n",
+    )
+    assert (
+        _status(
+            "durable_nondeterminism",
+            tmp_path,
+            {"decorator_names": ["orchestration_trigger", "entity_trigger"]},
+        )
+        == "fail"
+    )
+
+
 # ---------------------------------------------------------------------------
 # unsupported_metadata_version
 # ---------------------------------------------------------------------------

@@ -614,7 +614,7 @@
     "category": "framework",
     "section": "durable",
     "label": "Orchestrator determinism",
-    "description": "Fails when orchestration or entity trigger functions call nondeterministic APIs (datetime.now, random, uuid, requests, open, os.getenv), which breaks Durable Functions replay.",
+    "description": "Fails when orchestration trigger functions call nondeterministic APIs (datetime.now, random, uuid, requests, open, os.getenv), which breaks Durable Functions replay.",
     "type": "durable_nondeterminism",
     "required": true,
     "condition": {},
