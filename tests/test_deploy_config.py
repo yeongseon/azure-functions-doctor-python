@@ -191,6 +191,87 @@ def test_linux_consumption_plan_from_bicep_sku(tmp_path: Path) -> None:
     assert cfg.hosting_plan.value == PLAN_LINUX_CONSUMPTION
 
 
+def test_bicep_sku_name_not_shadowed_by_resource_name(tmp_path: Path) -> None:
+    """A named Microsoft.Web/serverfarms resource whose SKU declares only
+    ``name: 'Y1'`` (no redundant ``tier``) must still resolve to Linux
+    Consumption -- the resource's own ``name:`` property, which commonly
+    precedes the nested ``sku`` object, must never shadow the SKU's name
+    (#521)."""
+    _write(
+        tmp_path,
+        "main.bicep",
+        "resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {\n"
+        "  name: 'review-plan'\n"
+        "  location: 'westus'\n"
+        "  sku: {\n"
+        "    name: 'Y1'\n"
+        "  }\n"
+        "  properties: { reserved: true }\n"
+        "}\n"
+        "resource app 'Microsoft.Web/sites@2023-12-01' = {\n"
+        "  name: 'review-app'\n"
+        "  location: 'westus'\n"
+        "  kind: 'functionapp,linux'\n"
+        "  properties: {\n"
+        "    serverFarmId: plan.id\n"
+        "    siteConfig: { linuxFxVersion: 'Python|3.13' }\n"
+        "  }\n"
+        "}\n",
+    )
+
+    cfg = resolve_target_config(tmp_path)
+
+    assert cfg.hosting_plan.value == PLAN_LINUX_CONSUMPTION
+
+
+def test_bicep_sku_tier_before_name_still_resolves(tmp_path: Path) -> None:
+    """Property order within the SKU object (tier before name) must not
+    affect resolution (#521)."""
+    _write(
+        tmp_path,
+        "main.bicep",
+        "resource plan 'Microsoft.Web/serverfarms@2023-01-01' = {\n"
+        "  name: 'my-plan'\n"
+        "  sku: { tier: 'Dynamic', name: 'Y1' }\n}",
+    )
+
+    cfg = resolve_target_config(tmp_path)
+
+    assert cfg.hosting_plan.value == PLAN_LINUX_CONSUMPTION
+
+
+def test_bicep_premium_sku_not_shadowed_by_resource_name(tmp_path: Path) -> None:
+    """A named resource with a Premium SKU (no redundant tier) still
+    resolves correctly, not shadowed by the resource's own name (#521)."""
+    _write(
+        tmp_path,
+        "main.bicep",
+        "resource plan 'Microsoft.Web/serverfarms@2023-01-01' = {\n"
+        "  name: 'premium-plan'\n"
+        "  sku: { name: 'EP1' }\n}",
+    )
+
+    cfg = resolve_target_config(tmp_path)
+
+    assert cfg.hosting_plan.value == PLAN_PREMIUM
+
+
+def test_bicep_dedicated_sku_not_shadowed_by_resource_name(tmp_path: Path) -> None:
+    """A named resource with a Dedicated (App Service plan) SKU still
+    resolves correctly, not shadowed by the resource's own name (#521)."""
+    _write(
+        tmp_path,
+        "main.bicep",
+        "resource plan 'Microsoft.Web/serverfarms@2023-01-01' = {\n"
+        "  name: 'dedicated-plan'\n"
+        "  sku: { name: 'P1v3' }\n}",
+    )
+
+    cfg = resolve_target_config(tmp_path)
+
+    assert cfg.hosting_plan.value == PLAN_DEDICATED
+
+
 def test_runtime_from_linux_fx_version_arm_json(tmp_path: Path) -> None:
     _write(
         tmp_path,
