@@ -79,7 +79,19 @@ class IntegrationHandlers:
     def _handle_openapi_version_mixing(
         self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
-        """Detect when two or more OpenAPI versions (3.0/3.1/3.2) appear together."""
+        """Detect when two or more OpenAPI versions (3.0/3.1/3.2) appear together.
+
+        Scoped to projects that declare ``azure-functions-openapi`` (#589,
+        same convention as ``_handle_scan_before_spec``): generic string
+        constants matching a version-like pattern (e.g. an unrelated
+        ``APP_VERSION = '3.0.0'``) are not OpenAPI signals without a
+        declared OpenAPI integration to apply the advice to.
+        """
+        if not _project_declares_openapi_dep(path):
+            return _create_result(
+                "skip",
+                "azure-functions-openapi not declared; version-mixing check skipped",
+            )
         signals = _collect_openapi_version_mixing(path)
         present = {version: sigs for version, sigs in signals.items() if sigs}
         if len(present) < 2:
