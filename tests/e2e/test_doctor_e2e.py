@@ -38,6 +38,7 @@ def warmup() -> None:
     pytest.fail("Warmup failed: /api/HttpExample did not respond within 300 s")
 
 
+@pytest.mark.e2e
 @pytest.mark.skipif(not BASE_URL, reason=SKIP_REASON)
 def test_deployed_http_trigger_responds() -> None:
     """The doctor-clean example project actually serves HTTP traffic."""
@@ -46,6 +47,7 @@ def test_deployed_http_trigger_responds() -> None:
     assert "e2e" in r.text
 
 
+@pytest.mark.e2e
 @pytest.mark.skipif(not BASE_URL, reason=SKIP_REASON)
 def test_doctor_passes_on_example_project() -> None:
     """Running azure-functions-doctor on the example project returns exit code 0."""
