@@ -536,10 +536,10 @@ class DeploymentHandlers:
         return _create_result(
             "fail",
             detail,
-            file=findings[0][0] if findings else None,
+            file=unsupported[0][0],
             locations=[
                 {"file": loc, "message": f"linuxFxVersion Python|{ver} is unsupported"}
-                for loc, ver in findings[:10]
+                for loc, ver in unsupported[:10]
             ],
         )
 

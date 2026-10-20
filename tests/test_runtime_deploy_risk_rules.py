@@ -147,6 +147,62 @@ def test_linux_fx_version_enforces_resolved_consumption_limit(tmp_path: Path) ->
     assert "Python|3.13" in result["detail"]
 
 
+def test_linux_fx_version_file_and_locations_reflect_only_unsupported_entries(
+    tmp_path: Path,
+) -> None:
+    """A mixed scan (one supported, one unsupported linuxFxVersion) must
+    report 'file' and 'locations' from the unsupported entry only -- not
+    the first-scanned file, which may be a healthy one (#581)."""
+    _write(
+        tmp_path,
+        "a-healthy.json",
+        json.dumps({"properties": {"siteConfig": {"linuxFxVersion": "Python|3.12"}}}),
+    )
+    _write(
+        tmp_path,
+        "z-broken.json",
+        json.dumps({"properties": {"siteConfig": {"linuxFxVersion": "Python|3.9"}}}),
+    )
+
+    result = _result("linux_fx_version", tmp_path)
+
+    assert result["status"] == "fail"
+    assert result["file"] == "z-broken.json"
+    assert result["locations"] == [
+        {"file": "z-broken.json", "message": "linuxFxVersion Python|3.9 is unsupported"}
+    ]
+    # Removing the unsupported file leaves the healthy one passing alone.
+    (tmp_path / "z-broken.json").unlink()
+    assert _result("linux_fx_version", tmp_path)["status"] == "pass"
+
+
+def test_linux_fx_version_unsupported_entry_past_ten_supported_still_located(
+    tmp_path: Path,
+) -> None:
+    """The ten-entry result limit must apply after filtering to unsupported
+    entries, not before -- an unsupported declaration must still receive a
+    location even when preceded by ten or more supported ones (#581)."""
+    for i in range(12):
+        _write(
+            tmp_path,
+            f"supported-{i:02d}.json",
+            json.dumps({"properties": {"siteConfig": {"linuxFxVersion": "Python|3.12"}}}),
+        )
+    _write(
+        tmp_path,
+        "zz-unsupported.json",
+        json.dumps({"properties": {"siteConfig": {"linuxFxVersion": "Python|3.9"}}}),
+    )
+
+    result = _result("linux_fx_version", tmp_path)
+
+    assert result["status"] == "fail"
+    assert result["file"] == "zz-unsupported.json"
+    assert result["locations"] == [
+        {"file": "zz-unsupported.json", "message": "linuxFxVersion Python|3.9 is unsupported"}
+    ]
+
+
 # ---------------------------------------------------------------------------
 # host_json_log_level_conflict
 # ---------------------------------------------------------------------------
