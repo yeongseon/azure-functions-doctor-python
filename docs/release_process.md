@@ -14,7 +14,7 @@ gated step.
 |---|---|
 | `release-please.yml` | version calculation, `CHANGELOG.md`, the Release PR, the tag, the GitHub Release |
 | `e2e-azure.yml` | real-Azure certification of one exact commit |
-| `publish-pypi.yml` | the only path that uploads to PyPI (`workflow_dispatch` only) |
+| `publish-pypi.yml` | the only path that uploads to PyPI (triggered by `v*` tag pushes; `workflow_dispatch` is the manual recovery entrypoint) |
 
 **Do not hand-edit** `src/azure_functions_doctor/__init__.py` version strings, `CHANGELOG.md`, or
 `.release-please-manifest.json`. Release Please maintains all three.
@@ -91,11 +91,20 @@ step to dispatch and no freshness window to expire.
 
 Publication uses PyPI Trusted Publishing (OIDC); there is no API token to manage.
 
-To re-run after a failed gate (nothing was uploaded, so the version is still free):
+`publish-pypi.yml` runs automatically on every `v*` tag push. `workflow_dispatch` is its manual
+recovery entrypoint — it takes **no inputs**; the workflow reads the version to verify from
+`github.ref_name`, so the dispatch **ref** must be the existing tag itself:
+
+To re-run the same, unchanged candidate after an external or transient gate failure (a flaky
+Azure deploy, a PyPI outage, a runner hiccup), nothing was uploaded, so the version is still free:
 
 ```bash
-gh workflow run publish-pypi.yml --ref main -f tag=v0.21.0
+gh workflow run publish-pypi.yml --ref v0.21.0
 ```
+
+If the failure instead requires a code or workflow correction, fix forward on `main` and let the
+next Release PR cut a new version — never move or reuse a tag to make a changed commit appear to
+be the same release candidate.
 
 ---
 
