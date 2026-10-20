@@ -604,6 +604,23 @@ def test_app_insights_legacy_key_only_fails(tmp_path: Path, monkeypatch: MonkeyP
     assert "ingestion ended" in res["detail"]
 
 
+def test_app_insights_wording_describes_support_retirement_not_shutdown(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    """2025-03-31 is the end of technical support for instrumentation-key-based
+    global ingestion, not an ingestion shutdown date -- Microsoft continues to
+    accept data sent that way without further updates or support for it
+    (#580). The message must describe support retirement, never claim
+    ingestion itself ended."""
+    _clear_app_insights_env(monkeypatch)
+    monkeypatch.setenv("APPINSIGHTS_INSTRUMENTATIONKEY", "legacy-dummy-key")
+    rule = _make_rule("app_insights_connection", {})
+    res = generic_handler(rule, tmp_path)
+    assert res["status"] == "fail"
+    assert "support for instrumentation-key-based global ingestion ended" in res["detail"]
+    assert "2025-03-31" in res["detail"]
+
+
 def test_app_insights_host_json_key_only_fails(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
     _clear_app_insights_env(monkeypatch)
     (tmp_path / "host.json").write_text(json.dumps({"instrumentationKey": "host-key"}))
