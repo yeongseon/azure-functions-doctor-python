@@ -352,12 +352,23 @@ def _scan_json_file(text: str, rel: str, scan: _IaCScan) -> None:
 def _scan_bicep_file(text: str, rel: str, scan: _IaCScan) -> None:
     if scan.hosting_plan is None and "functionAppConfig" in text:
         scan.hosting_plan = ResolvedField(PLAN_FLEX_CONSUMPTION, rel)
-    sku_name = re.search(r"\bname\s*:\s*'([^']+)'", text)
-    sku_tier = re.search(r"\btier\s*:\s*'([^']+)'", text)
-    plan = _plan_from_sku(
-        sku_name.group(1) if sku_name is not None else None,
-        sku_tier.group(1) if sku_tier is not None else None,
-    )
+    # Scope name/tier extraction to each ``sku: { ... }`` block rather than
+    # searching the whole file for the first bare ``name:`` literal -- a
+    # resource's own name (``name: 'my-plan'``) commonly precedes its nested
+    # ``sku`` object, so an unscoped search can shadow the SKU's actual name
+    # (e.g. 'Y1') with the resource name and silently fail to infer the plan
+    # (#521). Mirrors _plan_from_json's per-object loop with
+    # _more_specific_plan, since a file may declare more than one resource.
+    plan: str | None = None
+    for sku_block in re.findall(r"\bsku\s*:\s*\{([^}]*)\}", text, re.DOTALL):
+        sku_name = re.search(r"\bname\s*:\s*'([^']+)'", sku_block)
+        sku_tier = re.search(r"\btier\s*:\s*'([^']+)'", sku_block)
+        candidate = _plan_from_sku(
+            sku_name.group(1) if sku_name is not None else None,
+            sku_tier.group(1) if sku_tier is not None else None,
+        )
+        if candidate is not None:
+            plan = _more_specific_plan(plan, candidate)
     if scan.hosting_plan is None and plan is not None:
         scan.hosting_plan = ResolvedField(plan, rel)
     match = _LINUX_FX_PYTHON_RE.search(text)
