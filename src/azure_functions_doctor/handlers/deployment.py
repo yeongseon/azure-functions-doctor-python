@@ -69,6 +69,14 @@ def _evaluate_flex_runtime_config(
     a Flex app is a misconfiguration (WARN) because Flex ignores it. Otherwise the
     declared Python runtime version is validated against the Flex hosting-plan
     matrix (Flex supports through 3.14); an undeclared or non-Python runtime SKIPs.
+
+    The effective ``functionAppConfig.runtime`` is evaluated independently of
+    ``linux_fx_present`` (#582): an unsupported runtime version must remain a
+    gating error even when a legacy ``linuxFxVersion`` is also present. The
+    legacy-property warning is only returned standalone when the effective
+    runtime is otherwise valid or not evaluable; when the runtime is invalid,
+    its gating error is returned with the legacy-property remediation appended,
+    rather than being replaced or downgraded by it.
     """
     if hosting_plan != FLEX_CONSUMPTION_PLAN:
         return _create_result(
@@ -76,13 +84,14 @@ def _evaluate_flex_runtime_config(
             "Not a Flex Consumption app; functionAppConfig.runtime check skipped.",
         )
 
-    if linux_fx_present:
-        detail = (
-            "linuxFxVersion is declared on a Flex Consumption app, which ignores "
-            "it; declare the runtime under functionAppConfig.runtime (name/version) "
-            "instead."
-        )
-        result = _create_result("fail", detail)
+    legacy_detail = (
+        "linuxFxVersion is declared on a Flex Consumption app, which ignores "
+        "it; declare the runtime under functionAppConfig.runtime (name/version) "
+        "instead."
+    )
+
+    def _legacy_only_warning() -> HandlerResult:
+        result = _create_result("fail", legacy_detail)
         result["severity"] = "warning"
         result["gate"] = False
         result["expected"] = "Runtime declared under functionAppConfig.runtime"
@@ -90,6 +99,8 @@ def _evaluate_flex_runtime_config(
         return result
 
     if runtime_name is None or runtime_version is None:
+        if linux_fx_present:
+            return _legacy_only_warning()
         return _create_result(
             "skip",
             "Flex Consumption app declares no functionAppConfig.runtime "
@@ -97,6 +108,8 @@ def _evaluate_flex_runtime_config(
         )
 
     if runtime_name != "python":
+        if linux_fx_present:
+            return _legacy_only_warning()
         return _create_result(
             "skip",
             f"Flex Consumption runtime is '{runtime_name}', not Python; "
@@ -104,6 +117,8 @@ def _evaluate_flex_runtime_config(
         )
 
     if is_supported_python_for_plan(runtime_version, FLEX_CONSUMPTION_PLAN):
+        if linux_fx_present:
+            return _legacy_only_warning()
         return _create_result(
             "pass",
             f"Flex Consumption runtime Python {runtime_version} is recognized for analysis.",
@@ -115,6 +130,8 @@ def _evaluate_flex_runtime_config(
         f"Flex Consumption runtime Python {runtime_version} is not recognized; "
         f"target an analyzable Python runtime ({target_range})."
     )
+    if linux_fx_present:
+        detail += f"\n\nAdditionally: {legacy_detail}"
     result = _create_result("fail", detail)
     result["severity"] = "error"
     result["gate"] = True
