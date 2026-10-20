@@ -65,6 +65,7 @@ def test_dotted_call_name_variants() -> None:
 
 
 def test_openapi_version_mixing_both_signals_fails(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(
         tmp_path,
         "app.py",
@@ -79,6 +80,7 @@ def test_openapi_version_mixing_both_signals_fails(tmp_path: Path) -> None:
 
 
 def test_openapi_version_mixing_nullable_counts_as_v30(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(
         tmp_path,
         "app.py",
@@ -91,24 +93,52 @@ def test_openapi_version_mixing_nullable_counts_as_v30(tmp_path: Path) -> None:
 
 
 def test_openapi_version_mixing_single_version_passes(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "app.py", "V = '3.1.0'\n")
     assert _status("openapi_version_mixing", tmp_path) == "pass"
 
 
 def test_openapi_version_mixing_32_only_passes(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "app.py", "V = '3.2.0'\n")
     assert _collect_openapi_version_mixing(tmp_path)["3.2"] == {"3.2.0"}
     assert _status("openapi_version_mixing", tmp_path) == "pass"
 
 
 def test_openapi_version_mixing_31_and_32_fails(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "app.py", "V31 = '3.1.0'\nV32 = '3.2.0'\n")
     assert _status("openapi_version_mixing", tmp_path) == "fail"
 
 
 def test_openapi_version_mixing_skips_syntax_error(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "broken.py", "def f(:\n")
     assert _collect_openapi_version_mixing(tmp_path) == {"3.0": set(), "3.1": set(), "3.2": set()}
+
+
+def test_openapi_version_mixing_skipped_without_openapi_dependency(tmp_path: Path) -> None:
+    """The check must skip entirely for a project with no declared OpenAPI
+    integration, regardless of what version-like strings it contains (#589)."""
+    _write(tmp_path, "requirements.txt", "azure-functions==1.25.0\n")
+    _write(tmp_path, "app.py", "V30 = '3.0.3'\nV31 = '3.1.0'\n")
+    result = _status("openapi_version_mixing", tmp_path)
+    assert result == "skip"
+
+
+def test_openapi_version_mixing_ignores_unrelated_constants_without_dependency(
+    tmp_path: Path,
+) -> None:
+    """Ordinary application/upstream version constants matching a
+    version-like pattern must not be interpreted as OpenAPI signals when no
+    OpenAPI integration is declared (#589)."""
+    _write(tmp_path, "requirements.txt", "azure-functions==1.25.0\n")
+    _write(
+        tmp_path,
+        "app.py",
+        "APP_VERSION = '3.0.0'\nUPSTREAM_VERSION = '3.1.0'\n",
+    )
+    assert _status("openapi_version_mixing", tmp_path) == "skip"
 
 
 # ---------------------------------------------------------------------------
