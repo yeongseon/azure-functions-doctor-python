@@ -7,6 +7,7 @@ from typing import cast
 
 from pytest import MonkeyPatch
 
+from azure_functions_doctor.deploy_config import resolve_target_config
 from azure_functions_doctor.handlers import (
     Condition,
     Rule,
@@ -619,6 +620,128 @@ def test_app_insights_wording_describes_support_retirement_not_shutdown(
     assert res["status"] == "fail"
     assert "support for instrumentation-key-based global ingestion ended" in res["detail"]
     assert "2025-03-31" in res["detail"]
+
+
+def test_app_insights_uses_resolved_iac_connection_string(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    """A connection string already ingested from a supported ARM/Bicep
+    siteConfig.appSettings declaration must be used instead of reporting
+    Application Insights as unconfigured and blaming a nonexistent
+    local.settings.json (#584)."""
+    _clear_app_insights_env(monkeypatch)
+    connection = (
+        "InstrumentationKey=00000000-0000-0000-0000-000000000000;"
+        "IngestionEndpoint=https://review.invalid/"
+    )
+    (tmp_path / "main.json").write_text(
+        json.dumps(
+            {
+                "resources": [
+                    {
+                        "type": "Microsoft.Web/sites",
+                        "properties": {
+                            "siteConfig": {
+                                "appSettings": [
+                                    {
+                                        "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                                        "value": connection,
+                                    }
+                                ]
+                            }
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    rule = _make_rule("app_insights_connection", {})
+
+    target_config = resolve_target_config(tmp_path)
+    assert target_config.app_settings["APPLICATIONINSIGHTS_CONNECTION_STRING"] == connection
+
+    result = generic_handler(rule, tmp_path, {"target_config": target_config})
+
+    assert result["status"] == "pass"
+
+
+def test_app_insights_resolved_iac_legacy_key_reports_its_own_file(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    """When the resolved IaC-only legacy instrumentation key is the sole
+    signal, the finding's 'file' must reference its real IaC provenance,
+    never a nonexistent local.settings.json (#584)."""
+    _clear_app_insights_env(monkeypatch)
+    (tmp_path / "main.json").write_text(
+        json.dumps(
+            {
+                "resources": [
+                    {
+                        "type": "Microsoft.Web/sites",
+                        "properties": {
+                            "siteConfig": {
+                                "appSettings": [
+                                    {
+                                        "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                                        "value": "iac-legacy-dummy-key",
+                                    }
+                                ]
+                            }
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    rule = _make_rule("app_insights_connection", {})
+
+    target_config = resolve_target_config(tmp_path)
+    result = generic_handler(rule, tmp_path, {"target_config": target_config})
+
+    assert result["status"] == "fail"
+    assert result["file"] == "main.json"
+
+
+def test_app_insights_env_still_takes_precedence_over_resolved_iac(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    """The existing environment/local precedence (#519) is unaffected: a
+    live env var still wins over a resolved IaC value for the same
+    setting (#584)."""
+    _clear_app_insights_env(monkeypatch)
+    monkeypatch.setenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "InstrumentationKey=env-value")
+    (tmp_path / "main.json").write_text(
+        json.dumps(
+            {
+                "resources": [
+                    {
+                        "type": "Microsoft.Web/sites",
+                        "properties": {
+                            "siteConfig": {
+                                "appSettings": [
+                                    {
+                                        "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                                        "value": "iac-legacy-dummy-key",
+                                    }
+                                ]
+                            }
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    rule = _make_rule("app_insights_connection", {})
+
+    target_config = resolve_target_config(tmp_path)
+    result = generic_handler(rule, tmp_path, {"target_config": target_config})
+
+    # env connection string + IaC legacy key: still the known conflict case.
+    assert result["status"] == "fail"
+    assert "legacy instrumentation key" in result["detail"]
 
 
 def test_app_insights_host_json_key_only_fails(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
