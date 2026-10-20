@@ -264,6 +264,18 @@ def _evaluate_flex_deprecated_settings(
     return result
 
 
+def _is_unresolved_arm_expression(value: object) -> bool:
+    """True when ``value`` is an ARM template expression string.
+
+    ARM expressions are wrapped in square brackets, e.g.
+    ``"[parameters('authType')]"`` or ``"[reference(...).resourceId]"``. This
+    static check has no template-evaluation context, so such a value is
+    neither a concrete invalid literal nor a verified one -- it must be
+    skipped rather than misclassified either way (#583).
+    """
+    return isinstance(value, str) and value.strip().startswith("[") and value.strip().endswith("]")
+
+
 def _evaluate_flex_deployment_storage(
     hosting_plan: str | None,
     storage: dict[str, object] | None,
@@ -307,6 +319,11 @@ def _evaluate_flex_deployment_storage(
         auth_type = authentication.get("type")
         if not isinstance(auth_type, str) or not auth_type.strip():
             problems.append("deployment storage authentication is missing a 'type'")
+        elif _is_unresolved_arm_expression(auth_type):
+            # A string like "[parameters('authType')]" is an ARM template
+            # expression this static check cannot evaluate; it must be
+            # neither flagged as an invalid literal nor claimed as verified.
+            pass
         elif auth_type == "StorageAccountConnectionString":
             name = authentication.get("storageAccountConnectionStringName")
             if not isinstance(name, str) or not name.strip():
@@ -314,6 +331,23 @@ def _evaluate_flex_deployment_storage(
                     "connection-string authentication is missing "
                     "'storageAccountConnectionStringName'"
                 )
+        elif auth_type == "UserAssignedIdentity":
+            resource_id = authentication.get("userAssignedIdentityResourceId")
+            if not _is_unresolved_arm_expression(resource_id) and (
+                not isinstance(resource_id, str) or not resource_id.strip()
+            ):
+                problems.append(
+                    "user-assigned identity authentication is missing "
+                    "'userAssignedIdentityResourceId'"
+                )
+        elif auth_type == "SystemAssignedIdentity":
+            pass
+        else:
+            problems.append(
+                f"deployment storage authentication type {auth_type!r} is not "
+                "recognized (expected SystemAssignedIdentity, UserAssignedIdentity, "
+                "or StorageAccountConnectionString)"
+            )
 
     if not problems:
         return _create_result(
