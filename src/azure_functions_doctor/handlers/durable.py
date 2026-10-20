@@ -16,13 +16,22 @@ from azure_functions_doctor.handlers._helpers import (
 
 
 class DurableHandlers:
-    """Durable Functions handlers: orchestrator/entity determinism."""
+    """Durable Functions handlers: orchestrator determinism."""
 
     @_rule_handler
     def _handle_durable_nondeterminism(
         self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
-        """Fail when orchestrator functions call nondeterministic APIs."""
+        """Fail when orchestrator functions call nondeterministic APIs.
+
+        Scoped to ``orchestration_trigger`` only by default. Durable entities
+        have no orchestrator-specific replay constraint (Microsoft's Durable
+        entities documentation states entity functions do not have the
+        orchestrator code constraints), so an entity calling e.g.
+        ``time.time()`` is not a replay-determinism violation and is not
+        flagged here (#588). A caller may still widen ``decorator_names`` via
+        the rule condition for other analysis needs.
+        """
         condition = rule.get("condition", {}) or {}
         blocklist = set(
             condition.get("blocklist")
@@ -52,9 +61,7 @@ class DurableHandlers:
                 "os.environ.get",
             ]
         )
-        decorator_names = set(
-            condition.get("decorator_names") or ["orchestration_trigger", "entity_trigger"]
-        )
+        decorator_names = set(condition.get("decorator_names") or ["orchestration_trigger"])
         flagged = _collect_orchestrator_nondeterminism(path, blocklist, decorator_names)
         if not flagged:
             return _create_result("pass", "No nondeterministic calls detected in orchestrators")
