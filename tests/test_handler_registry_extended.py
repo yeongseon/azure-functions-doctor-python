@@ -132,7 +132,7 @@ def test_path_exists_optional() -> None:
         }
         result = registry.handle(rule, tmp_path)
         assert result["status"] == "fail"
-        assert "optional" in result["detail"]
+        assert "optional" not in result["detail"]
 
 
 def test_file_exists_missing_target() -> None:
@@ -163,7 +163,7 @@ def test_file_exists_not_found_optional() -> None:
         }
         result = registry.handle(rule, tmp_path)
         assert result["status"] == "fail"
-        assert "optional" in result["detail"]
+        assert "optional" not in result["detail"]
 
 
 def test_package_installed_missing_target() -> None:

@@ -63,16 +63,12 @@ class DependencyHandlers:
                 "so generate one (e.g. 'pip freeze > requirements.txt') or deploy "
                 "with a local/prebuilt build (--deployment-mode local)."
             )
-            if not rule.get("required", True):
-                detail += " (optional)"
             return _create_result(
                 "fail",
                 detail,
                 file="requirements.txt",
             )
         detail = f"{req_path} not found and pyproject.toml declares no dependencies"
-        if not rule.get("required", True):
-            detail += " (optional)"
         return _create_result("fail", detail)
 
     @_rule_handler

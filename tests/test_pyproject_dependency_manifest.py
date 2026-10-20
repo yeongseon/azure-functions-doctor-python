@@ -152,7 +152,10 @@ def test_dependency_manifest_optional_marks_detail(tmp_path: Path) -> None:
     )
     result = registry.handle(rule, tmp_path)
     assert result["status"] == "fail"
-    assert "(optional)" in result["detail"]
+    # Optional marking happens only during doctor.py's central aggregation
+    # (where the resolved `gate` flag is known), not in the handler itself,
+    # otherwise the central step duplicates the annotation (#597).
+    assert "(optional)" not in result["detail"]
 
 
 # ---------------------------------------------------------------------------
