@@ -1472,6 +1472,87 @@ def is_local_prebuilt_deployment(path: Path, context: Optional["RuleContext"] = 
     return (path / ".python_packages").is_dir()
 
 
+def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, str]]:
+    """Walk ``req_path`` and every local ``-r``/``--requirement`` include it
+    reaches, yielding ``(declaring_file, line_no, cleaned_line)`` for each
+    actual requirement line.
+
+    Bounded depth and a visited-file guard make this safe against cycles and
+    deep include chains. Unlike :func:`_iter_requirements_txt_lines` (which
+    flattens every included file's lines into one list), this preserves each
+    line's declaring file and original line number, so a consumer can
+    attribute a finding to where it is *actually* declared -- the included
+    file and line -- rather than to the root file's include directive
+    (#587). Remote (``://``) includes and ``-c``/``--constraint`` files are
+    not followed, matching this project's existing offline-only scope.
+    """
+    seen: set[Path] = set()
+
+    def walk(file_path: Path, depth: int) -> list[tuple[Path, int, str]]:
+        if depth >= 10 or file_path in seen or not file_path.is_file():
+            return []
+        seen.add(file_path)
+        content = _read_project_python_file(file_path)
+        if content is None:
+            return []
+        results: list[tuple[Path, int, str]] = []
+        for line_no, raw_line in enumerate(content.removeprefix("\ufeff").splitlines(), start=1):
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            include_match = re.match(r"^(?:-r\s+|--requirement(?:\s+|=))(.+)$", line)
+            if include_match is not None:
+                include_value = include_match.group(1).split(" #", 1)[0].strip().strip("'\"")
+                if "://" not in include_value:
+                    include_path = (file_path.parent / include_value).resolve()
+                    results.extend(walk(include_path, depth + 1))
+                continue
+            if line.startswith(("-c ", "--constraint")):
+                continue
+            if line.startswith(("-e ", "--editable")):
+                results.append((file_path, line_no, line))
+                continue
+            if line.startswith("-"):
+                continue
+            cleaned = line.split("#")[0].strip()
+            if cleaned:
+                results.append((file_path, line_no, cleaned))
+        return results
+
+    return walk(req_path.resolve(), 0)
+
+
+def _match_native_dependency_line(line: str, seen: set[str]) -> tuple[str, str] | None:
+    """Return ``(package, hint)`` when a single cleaned requirement line
+    names a package in ``NATIVE_DEPENDENCY_PACKAGES`` not already in
+    ``seen``, handling both the ``-e ...#egg=name`` editable form and an
+    ordinary (possibly unparseable) requirement specifier. ``seen`` is
+    mutated in place so repeated calls across root + included files never
+    double-report the same package (#587).
+    """
+    if line.startswith(("-e ", "--editable")):
+        egg_match = re.search(r"#egg=([^&\s]+)", line)
+        if not egg_match:
+            return None
+        normalized_name = canonicalize_name(egg_match.group(1))
+    else:
+        normalized_name = None
+        try:
+            req = Requirement(line)
+            normalized_name = canonicalize_name(req.name)
+        except InvalidRequirement:
+            fallback_name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
+            if fallback_name:
+                normalized_name = canonicalize_name(fallback_name)
+
+    if normalized_name is None or normalized_name in seen:
+        return None
+    if normalized_name in NATIVE_DEPENDENCY_PACKAGES:
+        seen.add(normalized_name)
+        return normalized_name, NATIVE_DEPENDENCY_PACKAGES[normalized_name]
+    return None
+
+
 def _detect_native_dependency_risks(content: str) -> list[tuple[str, str]]:
     """Return matching native-dependency packages in requirements order."""
     matches: list[tuple[str, str]] = []
@@ -1483,34 +1564,35 @@ def _detect_native_dependency_risks(content: str) -> list[tuple[str, str]]:
         if line.startswith(("-r ", "-c ", "--requirement", "--constraint")):
             continue
         if line.startswith(("-e ", "--editable")):
-            egg_match = re.search(r"#egg=([^&\s]+)", line)
-            if egg_match:
-                normalized_egg = canonicalize_name(egg_match.group(1))
-                if normalized_egg in NATIVE_DEPENDENCY_PACKAGES and normalized_egg not in seen:
-                    matches.append((normalized_egg, NATIVE_DEPENDENCY_PACKAGES[normalized_egg]))
-                    seen.add(normalized_egg)
+            match = _match_native_dependency_line(line, seen)
+            if match is not None:
+                matches.append(match)
             continue
         if line.startswith("-"):
             continue
         line = line.split("#")[0].strip()
         if not line:
             continue
+        match = _match_native_dependency_line(line, seen)
+        if match is not None:
+            matches.append(match)
 
-        normalized_name: str | None = None
-        try:
-            req = Requirement(line)
-            normalized_name = canonicalize_name(req.name)
-        except InvalidRequirement:
-            fallback_name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
-            if fallback_name:
-                normalized_name = canonicalize_name(fallback_name)
+    return matches
 
-        if normalized_name is None or normalized_name in seen:
-            continue
-        if normalized_name in NATIVE_DEPENDENCY_PACKAGES:
-            matches.append((normalized_name, NATIVE_DEPENDENCY_PACKAGES[normalized_name]))
-            seen.add(normalized_name)
 
+def _detect_native_dependency_risks_for_project(req_path: Path) -> list[tuple[str, str]]:
+    """Like :func:`_detect_native_dependency_risks`, but follows local
+    ``-r``/``--requirement`` includes from ``req_path`` first (#587), so a
+    native-risk package declared only in an included file is still
+    detected -- not just one declared directly in the root requirements
+    file.
+    """
+    matches: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for _file_path, _line_no, line in _iter_requirements_with_location(req_path):
+        match = _match_native_dependency_line(line, seen)
+        if match is not None:
+            matches.append(match)
     return matches
 
 

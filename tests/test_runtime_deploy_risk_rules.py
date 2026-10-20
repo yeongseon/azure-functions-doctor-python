@@ -309,6 +309,54 @@ def test_unpinned_requirements_ignores_comments_and_flags(tmp_path: Path) -> Non
     assert _result("unpinned_requirements", tmp_path)["status"] == "pass"
 
 
+def test_unpinned_requirements_detects_included_unpinned_dependency(tmp_path: Path) -> None:
+    """An unpinned dependency declared only in a local -r include must still
+    warn, attributed to the included file and its real line number -- not
+    the root file's include directive (#587)."""
+    _write(tmp_path, "requirements.txt", "-r base.txt\n")
+    _write(tmp_path, "base.txt", "azure-functions==1.21.3\nrequests\n")
+
+    result = _result("unpinned_requirements", tmp_path)
+
+    assert result["status"] == "fail"
+    assert "requests" in result["detail"]
+    assert result["locations"] == [
+        {"file": "base.txt", "line": 2, "message": "requests (no version specifier)"}
+    ]
+
+
+def test_unpinned_requirements_included_via_requirement_flag_passes_when_pinned(
+    tmp_path: Path,
+) -> None:
+    _write(tmp_path, "requirements.txt", "--requirement base.txt\n")
+    _write(tmp_path, "base.txt", "azure-functions==1.21.3\nrequests>=2.0,<3.0\n")
+
+    assert _result("unpinned_requirements", tmp_path)["status"] == "pass"
+
+
+def test_unpinned_requirements_nested_includes_are_followed(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "-r middle.txt\n")
+    _write(tmp_path, "middle.txt", "-r base.txt\n")
+    _write(tmp_path, "base.txt", "azure-functions==1.21.3\nrequests\n")
+
+    result = _result("unpinned_requirements", tmp_path)
+
+    assert result["status"] == "fail"
+    assert result["locations"][0]["file"] == "base.txt"
+
+
+def test_unpinned_requirements_include_cycle_does_not_hang(tmp_path: Path) -> None:
+    """A requirements include cycle must be handled safely (no infinite
+    recursion), not just a missing/absent include (#587)."""
+    _write(tmp_path, "requirements.txt", "-r base.txt\nazure-functions==1.21.3\n")
+    _write(tmp_path, "base.txt", "-r requirements.txt\nrequests\n")
+
+    result = _result("unpinned_requirements", tmp_path)
+
+    assert result["status"] == "fail"
+    assert "requests" in result["detail"]
+
+
 # ---------------------------------------------------------------------------
 # Python x hosting-plan matrix (target_resolver)
 # ---------------------------------------------------------------------------
