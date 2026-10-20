@@ -514,6 +514,33 @@ def test_project_declares_opentelemetry_absent(tmp_path: Path) -> None:
     assert not _project_declares_opentelemetry(tmp_path)
 
 
+def test_project_declares_opentelemetry_logging_otel_extra_requirements(tmp_path: Path) -> None:
+    """Following the diagnostic's own remediation (installing
+    azure-functions-logging[otel]) must clear the finding -- a bare
+    azure-functions-logging dependency must continue to warn (#586)."""
+    _write(tmp_path, "requirements.txt", "azure-functions-logging[otel]>=0.14.0\n")
+    assert _project_declares_opentelemetry(tmp_path)
+
+
+def test_project_declares_opentelemetry_logging_otel_extra_pyproject(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        "pyproject.toml",
+        '[project]\nname = "x"\nversion = "0"\n'
+        'dependencies = ["azure-functions-logging[otel]>=0.14.0"]\n',
+    )
+    assert _project_declares_opentelemetry(tmp_path)
+
+
+def test_project_declares_opentelemetry_logging_without_otel_extra_warns(
+    tmp_path: Path,
+) -> None:
+    """A bare azure-functions-logging dependency (no extra) must not
+    satisfy the OTel requirement (#586)."""
+    _write(tmp_path, "requirements.txt", "azure-functions-logging>=0.14.0\n")
+    assert not _project_declares_opentelemetry(tmp_path)
+
+
 def test_otel_activation_without_dependency_fails(tmp_path: Path) -> None:
     _write(tmp_path, "a.py", "setup_logging(activate_trace_context=True)\n")
     _write(tmp_path, "requirements.txt", "azure-functions\n")
@@ -523,6 +550,18 @@ def test_otel_activation_without_dependency_fails(tmp_path: Path) -> None:
 def test_otel_activation_with_dependency_passes(tmp_path: Path) -> None:
     _write(tmp_path, "a.py", "setup_logging(activate_trace_context=True)\n")
     _write(tmp_path, "requirements.txt", "azure-functions\nopentelemetry-api>=1.24\n")
+    assert _status("otel_activation", tmp_path) == "pass"
+
+
+def test_otel_activation_with_logging_otel_extra_passes(tmp_path: Path) -> None:
+    """Applying the rule's own install-extra recommendation
+    (azure-functions-logging[otel]) must clear the finding (#586)."""
+    _write(tmp_path, "a.py", "setup_logging(activate_trace_context=True)\n")
+    _write(
+        tmp_path,
+        "requirements.txt",
+        "azure-functions\nazure-functions-logging[otel]>=0.14.0\n",
+    )
     assert _status("otel_activation", tmp_path) == "pass"
 
 
