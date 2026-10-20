@@ -332,9 +332,22 @@ and the `upload-sarif` step in [`action.yml`](https://github.com/yeongseon/azure
 upload step is needed.
 
 > **Fork pull requests.** Pull requests opened from a *fork* run with a
-> read-only `GITHUB_TOKEN`, so the SARIF upload step is blocked and findings
-> will not appear in Code scanning for those runs. This affects only
-> fork PRs; pushes and same-repository PRs upload normally.
+> read-only `GITHUB_TOKEN` by default, but GitHub makes a `pull_request`-specific
+> exception for code scanning: unlike ordinary branch uploads, which require
+> `security-events: write` on the token actually executing the run, a SARIF
+> upload triggered by the `pull_request` event is accepted even though that
+> token is read-only. See GitHub's [upload-sarif-file guidance](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/integrate-with-existing-tools/upload-sarif-file)
+> and its [resource-not-accessible troubleshooting](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/resource-not-accessible)
+> for the exact permission rule.
+>
+> Two prerequisites independent of token scope still apply: the repository
+> must have code scanning available (private repositories need GitHub
+> Advanced Security), and a first-time contributor's fork workflow run must
+> be approved by a maintainer before it executes at all — see
+> [approving workflow runs from public forks](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/approving-workflow-runs-from-public-forks).
+> Keep `security-events: write` above as-is for the `push` trigger (which
+> does need it); do not switch to `pull_request_target` or a more broadly
+> scoped token to "fix" fork PRs — neither is required for this recipe.
 
 > **Action pinning.** This copy-paste template uses mutable tags
 > (`actions/checkout@v4`, `yeongseon/azure-functions-doctor@v1`) for readability.
