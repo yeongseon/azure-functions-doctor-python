@@ -69,6 +69,14 @@ def _evaluate_flex_runtime_config(
     a Flex app is a misconfiguration (WARN) because Flex ignores it. Otherwise the
     declared Python runtime version is validated against the Flex hosting-plan
     matrix (Flex supports through 3.14); an undeclared or non-Python runtime SKIPs.
+
+    The effective ``functionAppConfig.runtime`` is evaluated independently of
+    ``linux_fx_present`` (#582): an unsupported runtime version must remain a
+    gating error even when a legacy ``linuxFxVersion`` is also present. The
+    legacy-property warning is only returned standalone when the effective
+    runtime is otherwise valid or not evaluable; when the runtime is invalid,
+    its gating error is returned with the legacy-property remediation appended,
+    rather than being replaced or downgraded by it.
     """
     if hosting_plan != FLEX_CONSUMPTION_PLAN:
         return _create_result(
@@ -76,13 +84,14 @@ def _evaluate_flex_runtime_config(
             "Not a Flex Consumption app; functionAppConfig.runtime check skipped.",
         )
 
-    if linux_fx_present:
-        detail = (
-            "linuxFxVersion is declared on a Flex Consumption app, which ignores "
-            "it; declare the runtime under functionAppConfig.runtime (name/version) "
-            "instead."
-        )
-        result = _create_result("fail", detail)
+    legacy_detail = (
+        "linuxFxVersion is declared on a Flex Consumption app, which ignores "
+        "it; declare the runtime under functionAppConfig.runtime (name/version) "
+        "instead."
+    )
+
+    def _legacy_only_warning() -> HandlerResult:
+        result = _create_result("fail", legacy_detail)
         result["severity"] = "warning"
         result["gate"] = False
         result["expected"] = "Runtime declared under functionAppConfig.runtime"
@@ -90,6 +99,8 @@ def _evaluate_flex_runtime_config(
         return result
 
     if runtime_name is None or runtime_version is None:
+        if linux_fx_present:
+            return _legacy_only_warning()
         return _create_result(
             "skip",
             "Flex Consumption app declares no functionAppConfig.runtime "
@@ -97,6 +108,8 @@ def _evaluate_flex_runtime_config(
         )
 
     if runtime_name != "python":
+        if linux_fx_present:
+            return _legacy_only_warning()
         return _create_result(
             "skip",
             f"Flex Consumption runtime is '{runtime_name}', not Python; "
@@ -104,6 +117,8 @@ def _evaluate_flex_runtime_config(
         )
 
     if is_supported_python_for_plan(runtime_version, FLEX_CONSUMPTION_PLAN):
+        if linux_fx_present:
+            return _legacy_only_warning()
         return _create_result(
             "pass",
             f"Flex Consumption runtime Python {runtime_version} is recognized for analysis.",
@@ -115,6 +130,8 @@ def _evaluate_flex_runtime_config(
         f"Flex Consumption runtime Python {runtime_version} is not recognized; "
         f"target an analyzable Python runtime ({target_range})."
     )
+    if linux_fx_present:
+        detail += f"\n\nAdditionally: {legacy_detail}"
     result = _create_result("fail", detail)
     result["severity"] = "error"
     result["gate"] = True
@@ -247,6 +264,18 @@ def _evaluate_flex_deprecated_settings(
     return result
 
 
+def _is_unresolved_arm_expression(value: object) -> bool:
+    """True when ``value`` is an ARM template expression string.
+
+    ARM expressions are wrapped in square brackets, e.g.
+    ``"[parameters('authType')]"`` or ``"[reference(...).resourceId]"``. This
+    static check has no template-evaluation context, so such a value is
+    neither a concrete invalid literal nor a verified one -- it must be
+    skipped rather than misclassified either way (#583).
+    """
+    return isinstance(value, str) and value.strip().startswith("[") and value.strip().endswith("]")
+
+
 def _evaluate_flex_deployment_storage(
     hosting_plan: str | None,
     storage: dict[str, object] | None,
@@ -290,6 +319,11 @@ def _evaluate_flex_deployment_storage(
         auth_type = authentication.get("type")
         if not isinstance(auth_type, str) or not auth_type.strip():
             problems.append("deployment storage authentication is missing a 'type'")
+        elif _is_unresolved_arm_expression(auth_type):
+            # A string like "[parameters('authType')]" is an ARM template
+            # expression this static check cannot evaluate; it must be
+            # neither flagged as an invalid literal nor claimed as verified.
+            pass
         elif auth_type == "StorageAccountConnectionString":
             name = authentication.get("storageAccountConnectionStringName")
             if not isinstance(name, str) or not name.strip():
@@ -297,6 +331,23 @@ def _evaluate_flex_deployment_storage(
                     "connection-string authentication is missing "
                     "'storageAccountConnectionStringName'"
                 )
+        elif auth_type == "UserAssignedIdentity":
+            resource_id = authentication.get("userAssignedIdentityResourceId")
+            if not _is_unresolved_arm_expression(resource_id) and (
+                not isinstance(resource_id, str) or not resource_id.strip()
+            ):
+                problems.append(
+                    "user-assigned identity authentication is missing "
+                    "'userAssignedIdentityResourceId'"
+                )
+        elif auth_type == "SystemAssignedIdentity":
+            pass
+        else:
+            problems.append(
+                f"deployment storage authentication type {auth_type!r} is not "
+                "recognized (expected SystemAssignedIdentity, UserAssignedIdentity, "
+                "or StorageAccountConnectionString)"
+            )
 
     if not problems:
         return _create_result(
@@ -536,10 +587,10 @@ class DeploymentHandlers:
         return _create_result(
             "fail",
             detail,
-            file=findings[0][0] if findings else None,
+            file=unsupported[0][0],
             locations=[
                 {"file": loc, "message": f"linuxFxVersion Python|{ver} is unsupported"}
-                for loc, ver in findings[:10]
+                for loc, ver in unsupported[:10]
             ],
         )
 

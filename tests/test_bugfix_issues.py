@@ -50,7 +50,7 @@ def test_summary_json_writes_counts_file(tmp_path: Path) -> None:
     assert result.exit_code in (0, 1)
     assert summary_path.exists()
     payload = json.loads(summary_path.read_text(encoding="utf-8"))
-    assert set(payload.keys()) == {"passed", "warned", "failed", "skipped"}
+    assert set(payload.keys()) == {"passed", "warned", "failed", "skipped", "gate_failed"}
 
 
 def test_summary_json_sidecar_created_with_json_format(tmp_path: Path) -> None:
@@ -369,3 +369,11 @@ def test_source_contains_ast_returns_false_without_decorators() -> None:
     """Issue #96: AST source detection returns False without decorators."""
     source = "x = 1\n"
     assert _source_contains_ast(source, "app") is False
+
+
+def test_source_contains_ast_detects_async_app_decorator() -> None:
+    """An async handler with the same @app.route decorator must be
+    recognized identically to a synchronous one -- changing only `def` to
+    `async def` must not change the diagnosis (#585)."""
+    source = "@app.route()\nasync def main(req):\n    return 'ok'\n"
+    assert _source_contains_ast(source, "app") is True

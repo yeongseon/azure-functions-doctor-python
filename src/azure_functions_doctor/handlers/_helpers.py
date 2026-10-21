@@ -202,6 +202,93 @@ FUNCTION_APP_CONTAINERS = {
     "WsgiFunctionApp",
 }
 
+# Modules that may export Blueprint/FunctionApp-family constructors directly
+# (``from azure.functions import FunctionApp as FA``), as opposed to the
+# attribute-access form (``func.FunctionApp()``) which needs no alias
+# resolution since the trailing attribute name is unaffected by how the
+# module itself was imported.
+_CONSTRUCTOR_SOURCE_MODULES = {"azure.functions", "azure.durable_functions"}
+
+
+def _resolve_import_aliases(
+    tree: ast.Module, target_names: set[str], modules: set[str] = _CONSTRUCTOR_SOURCE_MODULES
+) -> dict[str, str]:
+    """Map a local import alias back to the real name it refers to.
+
+    Seeded with an identity mapping for every name in *target_names* (so a
+    bare, un-aliased constructor name still matches even without an explicit
+    import -- the pre-existing, intentionally permissive behavior), then
+    resolves ``from <module> import <name> [as <alias>]`` where ``<module>``
+    is one of *modules* and ``<name>`` is in *target_names*, so a bare
+    ``ast.Name`` call site (e.g. ``FA()`` after
+    ``from azure.functions import FunctionApp as FA``) can be recognized the
+    same way an attribute call (``func.FunctionApp()``) already is,
+    regardless of the import alias chosen (#446).
+    """
+    aliases: dict[str, str] = {name: name for name in target_names}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module in modules:
+            for alias in node.names:
+                if alias.name in target_names:
+                    aliases[alias.asname or alias.name] = alias.name
+    return aliases
+
+
+_LANGGRAPH_ADAPTER_MODULE = "azure_functions_langgraph"
+_LANGGRAPH_ADAPTER_CLASS = "LangGraphApp"
+
+
+def _source_contains_langgraph_functionapp_export(source: str) -> bool:
+    """Return True for the documented toolkit composition pattern: import
+    ``LangGraphApp`` from ``azure_functions_langgraph``, construct an
+    instance, and export its real ``azure.functions.FunctionApp`` via the
+    documented ``.function_app`` property (e.g. ``app = adapter.function_app``)
+    (#590).
+
+    Bounded static recognition only, deliberately stricter than
+    :func:`_resolve_import_aliases` (which seeds an identity mapping for
+    every target name so a bare SDK constructor name still matches without
+    an import): ``LangGraphApp`` must actually be imported from
+    ``azure_functions_langgraph`` here, or an unrelated local class/function
+    of the same name would be misrecognized. The adapter instance must be
+    locally constructed in this file, and the exported attribute access
+    must be exactly ``.function_app`` on that instance -- never an
+    arbitrary object's same-named attribute or a factory call.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return False
+
+    imported_names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == _LANGGRAPH_ADAPTER_MODULE:
+            for alias in node.names:
+                if alias.name == _LANGGRAPH_ADAPTER_CLASS:
+                    imported_names.add(alias.asname or alias.name)
+    if not imported_names:
+        return False
+
+    adapter_names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
+            func_node = node.value.func
+            if isinstance(func_node, ast.Name) and func_node.id in imported_names:
+                adapter_names.update(t.id for t in node.targets if isinstance(t, ast.Name))
+    if not adapter_names:
+        return False
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Attribute):
+            exported = node.value
+            if (
+                exported.attr == "function_app"
+                and isinstance(exported.value, ast.Name)
+                and exported.value.id in adapter_names
+            ):
+                return True
+    return False
+
 
 def _discover_functionapp_aliases(source: str) -> set[str]:
     """Extract variable names assigned a supported app container or ``Blueprint()`` call.
@@ -215,8 +302,10 @@ def _discover_functionapp_aliases(source: str) -> set[str]:
     except SyntaxError:
         return {"app"}
 
-    names: set[str] = set()
     target_attrs = FUNCTION_APP_CONTAINERS | {"Blueprint"}
+    import_aliases = _resolve_import_aliases(tree, target_attrs)
+
+    names: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
             func_node = node.value.func
@@ -224,7 +313,7 @@ def _discover_functionapp_aliases(source: str) -> set[str]:
             if isinstance(func_node, ast.Attribute):
                 attr_name = func_node.attr
             elif isinstance(func_node, ast.Name):
-                attr_name = func_node.id
+                attr_name = import_aliases.get(func_node.id, func_node.id)
             if attr_name in target_attrs:
                 for target in node.targets:
                     if isinstance(target, ast.Name):
@@ -239,14 +328,10 @@ def _collect_blueprint_aliases(source: str) -> set[str]:
     except SyntaxError:
         return set()
 
-    constructor_names = {"Blueprint"}
+    import_aliases = _resolve_import_aliases(tree, {"Blueprint"})
     module_names: set[str] = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "azure.functions":
-            constructor_names.update(
-                alias.asname or alias.name for alias in node.names if alias.name == "Blueprint"
-            )
-        elif isinstance(node, ast.Import):
+        if isinstance(node, ast.Import):
             module_names.update(
                 alias.asname
                 for alias in node.names
@@ -258,7 +343,7 @@ def _collect_blueprint_aliases(source: str) -> set[str]:
         if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
             func_node = node.value.func
             is_constructor = (
-                isinstance(func_node, ast.Name) and func_node.id in constructor_names
+                isinstance(func_node, ast.Name) and func_node.id in import_aliases
             ) or (
                 isinstance(func_node, ast.Attribute)
                 and func_node.attr == "Blueprint"
@@ -276,25 +361,23 @@ def _collect_blueprint_aliases(source: str) -> set[str]:
 def _collect_register_functions_args(source: str) -> set[str]:
     """Collect Blueprint aliases passed to ``register_functions(...)`` calls.
 
-    Only calls on a discovered FunctionApp-family instance are recognized.
+    Only calls on a discovered FunctionApp-family instance are recognized
+    (any of ``FUNCTION_APP_CONTAINERS``, including ``DFApp`` -- #446 --, not
+    only ``FunctionApp``).
     """
     try:
         tree = ast.parse(source)
     except SyntaxError:
         return set()
 
-    constructor_names = {"FunctionApp"}
+    import_aliases = _resolve_import_aliases(tree, FUNCTION_APP_CONTAINERS)
     module_names: set[str] = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "azure.functions":
-            constructor_names.update(
-                alias.asname or alias.name for alias in node.names if alias.name == "FunctionApp"
-            )
-        elif isinstance(node, ast.Import):
+        if isinstance(node, ast.Import):
             module_names.update(
                 alias.asname
                 for alias in node.names
-                if alias.name == "azure.functions" and alias.asname is not None
+                if alias.name in _CONSTRUCTOR_SOURCE_MODULES and alias.asname is not None
             )
 
     app_names: set[str] = set()
@@ -302,11 +385,9 @@ def _collect_register_functions_args(source: str) -> set[str]:
         if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Call):
             continue
         func_node = node.value.func
-        is_constructor = (
-            isinstance(func_node, ast.Name) and func_node.id in constructor_names
-        ) or (
+        is_constructor = (isinstance(func_node, ast.Name) and func_node.id in import_aliases) or (
             isinstance(func_node, ast.Attribute)
-            and func_node.attr == "FunctionApp"
+            and func_node.attr in FUNCTION_APP_CONTAINERS
             and isinstance(func_node.value, ast.Name)
             and func_node.value.id in module_names
         )
@@ -353,7 +434,10 @@ def _source_contains_blueprint_decorator(source: str, blueprint_aliases: set[str
         return None
 
     for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.decorator_list:
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and node.decorator_list
+        ):
             for dec in node.decorator_list:
                 alias = decorator_alias(dec)
                 if alias is not None:
@@ -361,24 +445,169 @@ def _source_contains_blueprint_decorator(source: str, blueprint_aliases: set[str
     return matched_aliases
 
 
+def _resolve_project_module_path(
+    importer_file: Path, project_root: Path, module: str, level: int
+) -> Path | None:
+    """Resolve an import's module name to a project-local ``.py`` file path.
+
+    Bounded: handles absolute dotted module imports (``import first``,
+    ``from first import bp``) resolved from *project_root*, and relative
+    imports (``from .first import bp``) resolved from *importer_file*'s
+    directory. Returns ``None`` when the module isn't a local project file
+    (e.g. a third-party package) -- only statically resolvable project-local
+    modules participate in cross-file Blueprint identity resolution (#446);
+    dynamic imports are out of scope, matching this handler's existing
+    static-analysis-only design.
+    """
+    if level == 0:
+        if not module:
+            return None
+        parts = module.split(".")
+        base = project_root
+    else:
+        base = importer_file.parent
+        for _ in range(level - 1):
+            base = base.parent
+        parts = module.split(".") if module else []
+
+    if not parts:
+        return None
+    candidate = base.joinpath(*parts).with_suffix(".py")
+    if candidate.is_file():
+        return candidate
+    candidate_pkg = base.joinpath(*parts, "__init__.py")
+    if candidate_pkg.is_file():
+        return candidate_pkg
+    return None
+
+
 def _collect_unregistered_blueprint_aliases(path: Path) -> set[str]:
-    """Collect Blueprint aliases that are decorated but never registered."""
+    """Collect Blueprint aliases that are decorated but never registered.
+
+    Tracks module-qualified identity -- (source file, local name) -- through
+    discovery, import resolution, and registration matching, so two distinct
+    ``Blueprint()`` instances that happen to share a bare local name across
+    files (e.g. ``bp`` in both ``first.py`` and ``second.py``) are never
+    conflated: registering one must never be treated as registering the
+    other (#446). A registration argument is resolved back to its defining
+    file by following project-local ``from <module> import <name> [as
+    <alias>]`` re-exports; a name with no statically resolvable origin is
+    treated as not registered, matching this handler's existing
+    static-analysis-only scope (no dynamic imports or wildcard resolution).
+    """
     project_contents = list(_iter_project_py_contents(path))
-    blueprint_aliases: set[str] = set()
+    contents_by_file: dict[Path, str] = dict(project_contents)
 
-    for _py_file, content in project_contents:
-        blueprint_aliases |= _collect_blueprint_aliases(content)
+    parsed: dict[Path, ast.Module] = {}
+    for py_file, content in project_contents:
+        try:
+            parsed[py_file] = ast.parse(content)
+        except SyntaxError:
+            continue
 
-    decorated_blueprint_aliases: set[str] = set()
-    registered_blueprint_aliases: set[str] = set()
+    file_blueprints: dict[Path, set[str]] = {}
+    file_receivers: dict[Path, set[str]] = {}
+    file_imports: dict[Path, dict[str, tuple[Path, str]]] = {}
 
-    for _py_file, content in project_contents:
-        decorated_blueprint_aliases |= _source_contains_blueprint_decorator(
-            content, blueprint_aliases
+    for py_file, tree in parsed.items():
+        bp_import_aliases = _resolve_import_aliases(tree, {"Blueprint"})
+        app_import_aliases = _resolve_import_aliases(tree, FUNCTION_APP_CONTAINERS)
+        module_names: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                module_names.update(
+                    alias.asname
+                    for alias in node.names
+                    if alias.name in _CONSTRUCTOR_SOURCE_MODULES and alias.asname is not None
+                )
+
+        local_blueprints: set[str] = set()
+        local_receivers: set[str] = set()
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Assign) and isinstance(node.value, ast.Call)):
+                continue
+            func_node = node.value.func
+            is_blueprint = (
+                isinstance(func_node, ast.Name) and func_node.id in bp_import_aliases
+            ) or (
+                isinstance(func_node, ast.Attribute)
+                and func_node.attr == "Blueprint"
+                and isinstance(func_node.value, ast.Name)
+                and func_node.value.id in module_names
+            )
+            is_receiver = (
+                isinstance(func_node, ast.Name) and func_node.id in app_import_aliases
+            ) or (
+                isinstance(func_node, ast.Attribute)
+                and func_node.attr in FUNCTION_APP_CONTAINERS
+                and isinstance(func_node.value, ast.Name)
+                and func_node.value.id in module_names
+            )
+            if is_blueprint:
+                local_blueprints.update(t.id for t in node.targets if isinstance(t, ast.Name))
+            elif is_receiver:
+                local_receivers.update(t.id for t in node.targets if isinstance(t, ast.Name))
+
+        file_blueprints[py_file] = local_blueprints
+        file_receivers[py_file] = local_receivers
+
+        imports: dict[str, tuple[Path, str]] = {}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                origin = _resolve_project_module_path(py_file, path, node.module or "", node.level)
+                if origin is None or origin not in parsed:
+                    continue
+                for alias in node.names:
+                    imports[alias.asname or alias.name] = (origin, alias.name)
+        file_imports[py_file] = imports
+
+    def _resolve_to_blueprint_identity(
+        file: Path, name: str, _seen: frozenset[tuple[Path, str]] = frozenset()
+    ) -> tuple[Path, str] | None:
+        key = (file, name)
+        if key in _seen:
+            return None
+        if name in file_blueprints.get(file, set()):
+            return key
+        origin = file_imports.get(file, {}).get(name)
+        if origin is None:
+            return None
+        origin_file, origin_name = origin
+        return _resolve_to_blueprint_identity(origin_file, origin_name, _seen | {key})
+
+    decorated: set[tuple[Path, str]] = set()
+    registered: set[tuple[Path, str]] = set()
+
+    for py_file, tree in parsed.items():
+        local_blueprints = file_blueprints[py_file]
+        decorated_names = _source_contains_blueprint_decorator(
+            contents_by_file[py_file], local_blueprints
         )
-        registered_blueprint_aliases |= _collect_register_functions_args(content)
+        for name in decorated_names:
+            decorated.add((py_file, name))
 
-    return decorated_blueprint_aliases - registered_blueprint_aliases
+        local_receivers = file_receivers[py_file]
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func_node = node.func
+            if not isinstance(func_node, ast.Attribute):
+                continue
+            if func_node.attr not in {"register_blueprint", "register_functions"}:
+                continue
+            if (
+                not isinstance(func_node.value, ast.Name)
+                or func_node.value.id not in local_receivers
+            ):
+                continue
+            for arg in node.args:
+                if isinstance(arg, ast.Name):
+                    identity = _resolve_to_blueprint_identity(py_file, arg.id)
+                    if identity is not None:
+                        registered.add(identity)
+
+    unregistered = decorated - registered
+    return {name for _file, name in unregistered}
 
 
 def _decorator_simple_name(dec: ast.expr) -> str | None:
@@ -885,12 +1114,72 @@ def _first_call_arg_is_true(node: ast.Call) -> bool:
     return not node.keywords
 
 
+_KNOWN_OTEL_EXTRA_PACKAGES = {"azure-functions-logging"}
+
+
+def _pyproject_dependency_specs(path: Path) -> list[str]:
+    """Return raw dependency specifier strings from pyproject.toml, with
+    extras markers intact (unlike :func:`pyproject_dependency_names`, which
+    discards them after canonicalizing the bare name)."""
+    data = _load_pyproject(path)
+    if not data:
+        return []
+    project = data.get("project")
+    if not isinstance(project, dict):
+        return []
+    specs: list[str] = []
+    deps = project.get("dependencies")
+    if isinstance(deps, list):
+        specs.extend(str(item) for item in deps)
+    optional = project.get("optional-dependencies")
+    if isinstance(optional, dict):
+        for group in optional.values():
+            if isinstance(group, list):
+                specs.extend(str(item) for item in group)
+    return specs
+
+
+def _declares_known_otel_extra(path: Path) -> bool:
+    """Return True when the project declares a known package's ``otel`` extra
+    (currently ``azure-functions-logging[otel]``) in requirements.txt or
+    pyproject.toml.
+
+    This is a hardcoded, known declared-extra relationship -- installed
+    ``azure-functions-logging`` metadata declares
+    ``opentelemetry-api>=1.24; extra == 'otel'`` -- recognized offline from
+    the parsed specifier alone, not a resolution of arbitrary transitive
+    dependencies or an inspection of installed packages (#586).
+    """
+    specs: list[str] = list(_pyproject_dependency_specs(path))
+    req_path = path / "requirements.txt"
+    if req_path.exists():
+        content = _read_project_python_file(req_path)
+        if content is not None:
+            specs.extend(
+                line
+                for line in _iter_requirements_txt_lines(content, req_path)
+                if not (line.startswith("-e ") or line.startswith("--editable"))
+            )
+    for spec in specs:
+        try:
+            req = Requirement(spec)
+        except InvalidRequirement:
+            continue
+        if canonicalize_name(req.name) in _KNOWN_OTEL_EXTRA_PACKAGES and "otel" in {
+            extra.lower() for extra in req.extras
+        }:
+            return True
+    return False
+
+
 def _project_declares_opentelemetry(path: Path) -> bool:
     """Return True when the project declares any ``opentelemetry`` distribution in
-    ``requirements.txt`` or ``pyproject.toml`` (runtime or optional dependencies).
+    ``requirements.txt`` or ``pyproject.toml`` (runtime or optional dependencies),
+    or a known package's declared ``otel`` extra that pulls one in transitively.
 
     The ``azure-functions-logging[otel]`` extra pulls in ``opentelemetry-api``, so
-    any declared ``opentelemetry-*`` package satisfies the activation requirement.
+    any declared ``opentelemetry-*`` package -- or the ``azure-functions-logging``
+    ``otel`` extra itself (#586) -- satisfies the activation requirement.
     """
     declared: set[str] = set(pyproject_dependency_names(path))
     req_path = path / "requirements.txt"
@@ -898,7 +1187,9 @@ def _project_declares_opentelemetry(path: Path) -> bool:
         content = _read_project_python_file(req_path)
         if content is not None:
             declared |= _parse_requirements_names(content, req_path)
-    return any(name.startswith("opentelemetry") for name in declared)
+    if any(name.startswith("opentelemetry") for name in declared):
+        return True
+    return _declares_known_otel_extra(path)
 
 
 def _collect_orchestrator_nondeterminism(
@@ -1010,11 +1301,19 @@ def _source_contains_ast(source: str, identifier: str) -> bool:
         return False
 
     for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.decorator_list:
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and node.decorator_list
+        ):
             for dec in node.decorator_list:
                 if decorator_matches(dec):
                     return True
-    return False
+    # The documented LangGraph adapter composition exports a real
+    # FunctionApp through a property, never a decorator on a locally
+    # defined handler, so a project using only that pattern has no
+    # decorator for the loop above to find; it is recognized directly
+    # instead of being misreported as missing v2 signals (#590).
+    return _source_contains_langgraph_functionapp_export(source)
 
 
 def _iter_project_py_contents(path: Path) -> Iterator[tuple[Path, str]]:
@@ -1044,11 +1343,17 @@ def _read_project_python_file(py_file: Path) -> str | None:
         return None
 
 
-def _parse_requirements_names(content: str, source_path: Path | None = None) -> set[str]:
-    """Extract normalized package names from requirements.txt content.
+def _iter_requirements_txt_lines(content: str, source_path: Path | None = None) -> list[str]:
+    """Yield cleaned requirement-spec lines from requirements.txt content,
+    including editable-install lines unmodified.
 
-    Handles extras (``requests[security]``), environment markers (``;``),
-    URL installs (``@``), pip directives (``-r``, ``-e``), and inline comments.
+    Shared by :func:`_parse_requirements_names` and the OpenTelemetry-extra
+    check (#586): follows ``-r``/``--requirement`` includes recursively (same
+    depth/cycle guards), skips other pip flags and comments, but -- unlike
+    ``_parse_requirements_names``'s final name set -- preserves each line's
+    extras marker (``pkg[extra]``) instead of discarding it, since
+    recognizing a known package's declared extra requires the extras, not
+    just its name.
     """
     contents = [content.removeprefix("\ufeff")]
     if source_path is not None:
@@ -1077,36 +1382,46 @@ def _parse_requirements_names(content: str, source_path: Path | None = None) -> 
 
         collect_includes(content, source_path, 0)
 
-    names: set[str] = set()
+    lines: list[str] = []
     for requirements_content in contents:
         for raw_line in requirements_content.splitlines():
             line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
-            # Skip -r / -c / --requirement / --constraint includes
             if line.startswith(("-r ", "-c ", "--requirement", "--constraint")):
                 continue
-            # Handle editable installs: -e git+...#egg=name
-            if line.startswith(("-e ", "--editable")):
-                egg_match = re.search(r"#egg=([^&\s]+)", line)
-                if egg_match:
-                    names.add(canonicalize_name(egg_match.group(1)))
+            if line.startswith("-e ") or line.startswith("--editable"):
+                lines.append(line)
                 continue
-            # Skip other pip flags (--find-links, --index-url, etc.)
             if line.startswith("-"):
                 continue
-            # Strip inline comments
             line = line.split("#")[0].strip()
-            if not line:
-                continue
-            try:
-                req = Requirement(line)
-                names.add(canonicalize_name(req.name))
-            except InvalidRequirement:
-                # Fall back to a simple split for unparseable lines
-                name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
-                if name:
-                    names.add(canonicalize_name(name))
+            if line:
+                lines.append(line)
+    return lines
+
+
+def _parse_requirements_names(content: str, source_path: Path | None = None) -> set[str]:
+    """Extract normalized package names from requirements.txt content.
+
+    Handles extras (``requests[security]``), environment markers (``;``),
+    URL installs (``@``), pip directives (``-r``, ``-e``), and inline comments.
+    """
+    names: set[str] = set()
+    for line in _iter_requirements_txt_lines(content, source_path):
+        if line.startswith("-e ") or line.startswith("--editable"):
+            egg_match = re.search(r"#egg=([^&\s]+)", line)
+            if egg_match:
+                names.add(canonicalize_name(egg_match.group(1)))
+            continue
+        try:
+            req = Requirement(line)
+            names.add(canonicalize_name(req.name))
+        except InvalidRequirement:
+            # Fall back to a simple split for unparseable lines
+            name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
+            if name:
+                names.add(canonicalize_name(name))
     return names
 
 
@@ -1218,6 +1533,87 @@ def is_local_prebuilt_deployment(path: Path, context: Optional["RuleContext"] = 
     return (path / ".python_packages").is_dir()
 
 
+def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, str]]:
+    """Walk ``req_path`` and every local ``-r``/``--requirement`` include it
+    reaches, yielding ``(declaring_file, line_no, cleaned_line)`` for each
+    actual requirement line.
+
+    Bounded depth and a visited-file guard make this safe against cycles and
+    deep include chains. Unlike :func:`_iter_requirements_txt_lines` (which
+    flattens every included file's lines into one list), this preserves each
+    line's declaring file and original line number, so a consumer can
+    attribute a finding to where it is *actually* declared -- the included
+    file and line -- rather than to the root file's include directive
+    (#587). Remote (``://``) includes and ``-c``/``--constraint`` files are
+    not followed, matching this project's existing offline-only scope.
+    """
+    seen: set[Path] = set()
+
+    def walk(file_path: Path, depth: int) -> list[tuple[Path, int, str]]:
+        if depth >= 10 or file_path in seen or not file_path.is_file():
+            return []
+        seen.add(file_path)
+        content = _read_project_python_file(file_path)
+        if content is None:
+            return []
+        results: list[tuple[Path, int, str]] = []
+        for line_no, raw_line in enumerate(content.removeprefix("\ufeff").splitlines(), start=1):
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            include_match = re.match(r"^(?:-r\s+|--requirement(?:\s+|=))(.+)$", line)
+            if include_match is not None:
+                include_value = include_match.group(1).split(" #", 1)[0].strip().strip("'\"")
+                if "://" not in include_value:
+                    include_path = (file_path.parent / include_value).resolve()
+                    results.extend(walk(include_path, depth + 1))
+                continue
+            if line.startswith(("-c ", "--constraint")):
+                continue
+            if line.startswith(("-e ", "--editable")):
+                results.append((file_path, line_no, line))
+                continue
+            if line.startswith("-"):
+                continue
+            cleaned = line.split("#")[0].strip()
+            if cleaned:
+                results.append((file_path, line_no, cleaned))
+        return results
+
+    return walk(req_path.resolve(), 0)
+
+
+def _match_native_dependency_line(line: str, seen: set[str]) -> tuple[str, str] | None:
+    """Return ``(package, hint)`` when a single cleaned requirement line
+    names a package in ``NATIVE_DEPENDENCY_PACKAGES`` not already in
+    ``seen``, handling both the ``-e ...#egg=name`` editable form and an
+    ordinary (possibly unparseable) requirement specifier. ``seen`` is
+    mutated in place so repeated calls across root + included files never
+    double-report the same package (#587).
+    """
+    if line.startswith(("-e ", "--editable")):
+        egg_match = re.search(r"#egg=([^&\s]+)", line)
+        if not egg_match:
+            return None
+        normalized_name = canonicalize_name(egg_match.group(1))
+    else:
+        normalized_name = None
+        try:
+            req = Requirement(line)
+            normalized_name = canonicalize_name(req.name)
+        except InvalidRequirement:
+            fallback_name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
+            if fallback_name:
+                normalized_name = canonicalize_name(fallback_name)
+
+    if normalized_name is None or normalized_name in seen:
+        return None
+    if normalized_name in NATIVE_DEPENDENCY_PACKAGES:
+        seen.add(normalized_name)
+        return normalized_name, NATIVE_DEPENDENCY_PACKAGES[normalized_name]
+    return None
+
+
 def _detect_native_dependency_risks(content: str) -> list[tuple[str, str]]:
     """Return matching native-dependency packages in requirements order."""
     matches: list[tuple[str, str]] = []
@@ -1229,34 +1625,35 @@ def _detect_native_dependency_risks(content: str) -> list[tuple[str, str]]:
         if line.startswith(("-r ", "-c ", "--requirement", "--constraint")):
             continue
         if line.startswith(("-e ", "--editable")):
-            egg_match = re.search(r"#egg=([^&\s]+)", line)
-            if egg_match:
-                normalized_egg = canonicalize_name(egg_match.group(1))
-                if normalized_egg in NATIVE_DEPENDENCY_PACKAGES and normalized_egg not in seen:
-                    matches.append((normalized_egg, NATIVE_DEPENDENCY_PACKAGES[normalized_egg]))
-                    seen.add(normalized_egg)
+            match = _match_native_dependency_line(line, seen)
+            if match is not None:
+                matches.append(match)
             continue
         if line.startswith("-"):
             continue
         line = line.split("#")[0].strip()
         if not line:
             continue
+        match = _match_native_dependency_line(line, seen)
+        if match is not None:
+            matches.append(match)
 
-        normalized_name: str | None = None
-        try:
-            req = Requirement(line)
-            normalized_name = canonicalize_name(req.name)
-        except InvalidRequirement:
-            fallback_name = re.split(r"[=<>!~;\[\]@]", line, maxsplit=1)[0].strip()
-            if fallback_name:
-                normalized_name = canonicalize_name(fallback_name)
+    return matches
 
-        if normalized_name is None or normalized_name in seen:
-            continue
-        if normalized_name in NATIVE_DEPENDENCY_PACKAGES:
-            matches.append((normalized_name, NATIVE_DEPENDENCY_PACKAGES[normalized_name]))
-            seen.add(normalized_name)
 
+def _detect_native_dependency_risks_for_project(req_path: Path) -> list[tuple[str, str]]:
+    """Like :func:`_detect_native_dependency_risks`, but follows local
+    ``-r``/``--requirement`` includes from ``req_path`` first (#587), so a
+    native-risk package declared only in an included file is still
+    detected -- not just one declared directly in the root requirements
+    file.
+    """
+    matches: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for _file_path, _line_no, line in _iter_requirements_with_location(req_path):
+        match = _match_native_dependency_line(line, seen)
+        if match is not None:
+            matches.append(match)
     return matches
 
 

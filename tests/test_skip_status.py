@@ -105,7 +105,7 @@ def test_summary_json_includes_skipped_count(tmp_path: Path) -> None:
     )
     assert result.exit_code in (0, 1)
     payload = json.loads(summary_path.read_text(encoding="utf-8"))
-    assert set(payload.keys()) == {"passed", "warned", "failed", "skipped"}
+    assert set(payload.keys()) == {"passed", "warned", "failed", "skipped", "gate_failed"}
     counts = _json_status_counts(V2_FIXTURE_PATH)
     assert payload["skipped"] == counts.get("skip", 0)
 

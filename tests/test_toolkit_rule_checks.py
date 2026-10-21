@@ -65,6 +65,7 @@ def test_dotted_call_name_variants() -> None:
 
 
 def test_openapi_version_mixing_both_signals_fails(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(
         tmp_path,
         "app.py",
@@ -79,6 +80,7 @@ def test_openapi_version_mixing_both_signals_fails(tmp_path: Path) -> None:
 
 
 def test_openapi_version_mixing_nullable_counts_as_v30(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(
         tmp_path,
         "app.py",
@@ -91,24 +93,52 @@ def test_openapi_version_mixing_nullable_counts_as_v30(tmp_path: Path) -> None:
 
 
 def test_openapi_version_mixing_single_version_passes(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "app.py", "V = '3.1.0'\n")
     assert _status("openapi_version_mixing", tmp_path) == "pass"
 
 
 def test_openapi_version_mixing_32_only_passes(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "app.py", "V = '3.2.0'\n")
     assert _collect_openapi_version_mixing(tmp_path)["3.2"] == {"3.2.0"}
     assert _status("openapi_version_mixing", tmp_path) == "pass"
 
 
 def test_openapi_version_mixing_31_and_32_fails(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "app.py", "V31 = '3.1.0'\nV32 = '3.2.0'\n")
     assert _status("openapi_version_mixing", tmp_path) == "fail"
 
 
 def test_openapi_version_mixing_skips_syntax_error(tmp_path: Path) -> None:
+    _write(tmp_path, "requirements.txt", "azure-functions-openapi==0.24.0\n")
     _write(tmp_path, "broken.py", "def f(:\n")
     assert _collect_openapi_version_mixing(tmp_path) == {"3.0": set(), "3.1": set(), "3.2": set()}
+
+
+def test_openapi_version_mixing_skipped_without_openapi_dependency(tmp_path: Path) -> None:
+    """The check must skip entirely for a project with no declared OpenAPI
+    integration, regardless of what version-like strings it contains (#589)."""
+    _write(tmp_path, "requirements.txt", "azure-functions==1.25.0\n")
+    _write(tmp_path, "app.py", "V30 = '3.0.3'\nV31 = '3.1.0'\n")
+    result = _status("openapi_version_mixing", tmp_path)
+    assert result == "skip"
+
+
+def test_openapi_version_mixing_ignores_unrelated_constants_without_dependency(
+    tmp_path: Path,
+) -> None:
+    """Ordinary application/upstream version constants matching a
+    version-like pattern must not be interpreted as OpenAPI signals when no
+    OpenAPI integration is declared (#589)."""
+    _write(tmp_path, "requirements.txt", "azure-functions==1.25.0\n")
+    _write(
+        tmp_path,
+        "app.py",
+        "APP_VERSION = '3.0.0'\nUPSTREAM_VERSION = '3.1.0'\n",
+    )
+    assert _status("openapi_version_mixing", tmp_path) == "skip"
 
 
 # ---------------------------------------------------------------------------
@@ -357,6 +387,59 @@ def test_durable_nondeterminism_skips_syntax_error(tmp_path: Path) -> None:
     assert _collect_orchestrator_nondeterminism(tmp_path, _BLOCK, _DECOS) == []
 
 
+def test_durable_nondeterminism_default_scope_excludes_entity_trigger(tmp_path: Path) -> None:
+    """Durable entities have no orchestrator-specific replay constraint
+    (Microsoft's Durable entities documentation), so an entity calling
+    time.time() must not be flagged by the default (unscoped) rule
+    condition -- only orchestration_trigger is in default scope (#588)."""
+    _write(
+        tmp_path,
+        "function_app.py",
+        "@app.entity_trigger(context_name='context')\n"
+        "def work(context):\n"
+        "    context.set_state(time.time())\n",
+    )
+    assert _status("durable_nondeterminism", tmp_path) == "pass"
+
+
+def test_durable_nondeterminism_default_scope_still_flags_orchestrator(
+    tmp_path: Path,
+) -> None:
+    """The actual unsafe orchestrator call must still fail with the
+    default (unscoped) rule condition -- this fix narrows scope, it does
+    not weaken orchestrator detection (#588)."""
+    _write(
+        tmp_path,
+        "function_app.py",
+        "@app.orchestration_trigger(context_name='context')\n"
+        "def work(context):\n"
+        "    return time.time()\n",
+    )
+    assert _status("durable_nondeterminism", tmp_path) == "fail"
+
+
+def test_durable_nondeterminism_entity_scope_still_available_via_condition(
+    tmp_path: Path,
+) -> None:
+    """A caller may still widen decorator_names via the rule condition to
+    include entity_trigger for other analysis needs (#588)."""
+    _write(
+        tmp_path,
+        "function_app.py",
+        "@app.entity_trigger(context_name='context')\n"
+        "def work(context):\n"
+        "    context.set_state(time.time())\n",
+    )
+    assert (
+        _status(
+            "durable_nondeterminism",
+            tmp_path,
+            {"decorator_names": ["orchestration_trigger", "entity_trigger"]},
+        )
+        == "fail"
+    )
+
+
 # ---------------------------------------------------------------------------
 # unsupported_metadata_version
 # ---------------------------------------------------------------------------
@@ -514,6 +597,33 @@ def test_project_declares_opentelemetry_absent(tmp_path: Path) -> None:
     assert not _project_declares_opentelemetry(tmp_path)
 
 
+def test_project_declares_opentelemetry_logging_otel_extra_requirements(tmp_path: Path) -> None:
+    """Following the diagnostic's own remediation (installing
+    azure-functions-logging[otel]) must clear the finding -- a bare
+    azure-functions-logging dependency must continue to warn (#586)."""
+    _write(tmp_path, "requirements.txt", "azure-functions-logging[otel]>=0.14.0\n")
+    assert _project_declares_opentelemetry(tmp_path)
+
+
+def test_project_declares_opentelemetry_logging_otel_extra_pyproject(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        "pyproject.toml",
+        '[project]\nname = "x"\nversion = "0"\n'
+        'dependencies = ["azure-functions-logging[otel]>=0.14.0"]\n',
+    )
+    assert _project_declares_opentelemetry(tmp_path)
+
+
+def test_project_declares_opentelemetry_logging_without_otel_extra_warns(
+    tmp_path: Path,
+) -> None:
+    """A bare azure-functions-logging dependency (no extra) must not
+    satisfy the OTel requirement (#586)."""
+    _write(tmp_path, "requirements.txt", "azure-functions-logging>=0.14.0\n")
+    assert not _project_declares_opentelemetry(tmp_path)
+
+
 def test_otel_activation_without_dependency_fails(tmp_path: Path) -> None:
     _write(tmp_path, "a.py", "setup_logging(activate_trace_context=True)\n")
     _write(tmp_path, "requirements.txt", "azure-functions\n")
@@ -523,6 +633,18 @@ def test_otel_activation_without_dependency_fails(tmp_path: Path) -> None:
 def test_otel_activation_with_dependency_passes(tmp_path: Path) -> None:
     _write(tmp_path, "a.py", "setup_logging(activate_trace_context=True)\n")
     _write(tmp_path, "requirements.txt", "azure-functions\nopentelemetry-api>=1.24\n")
+    assert _status("otel_activation", tmp_path) == "pass"
+
+
+def test_otel_activation_with_logging_otel_extra_passes(tmp_path: Path) -> None:
+    """Applying the rule's own install-extra recommendation
+    (azure-functions-logging[otel]) must clear the finding (#586)."""
+    _write(tmp_path, "a.py", "setup_logging(activate_trace_context=True)\n")
+    _write(
+        tmp_path,
+        "requirements.txt",
+        "azure-functions\nazure-functions-logging[otel]>=0.14.0\n",
+    )
     assert _status("otel_activation", tmp_path) == "pass"
 
 

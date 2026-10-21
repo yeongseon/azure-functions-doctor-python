@@ -45,10 +45,149 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             doctor = Doctor(str(temp_path))
             assert doctor.programming_model == "v2"
 
+    def test_detect_v2_with_aliased_functionapp_constructor(self) -> None:
+        """An aliased direct-name constructor import (#446) is still recognized:
+        ``from azure.functions import FunctionApp as FA`` then ``FA()`` must
+        resolve the same as ``func.FunctionApp()`` does via attribute access."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            python_file = temp_path / "function_app.py"
+            python_file.write_text("""
+import azure.functions as func
+from azure.functions import FunctionApp as FA
+
+custom_app = FA()
+
+@custom_app.route(route="health", auth_level=func.AuthLevel.FUNCTION)
+def health(req: func.HttpRequest) -> func.HttpResponse:
+    return func.HttpResponse("ok")
+
+app = custom_app
+""")
+
+            doctor = Doctor(str(temp_path))
+            assert doctor.programming_model == "v2"
+
+    def test_detect_v2_with_langgraph_adapter_functionapp_export(self) -> None:
+        """A project that composes the documented LangGraph toolkit
+        adapter (#590) -- constructing ``LangGraphApp`` and exporting its
+        real ``FunctionApp`` via ``adapter.function_app`` -- must be
+        recognized as v2 even though it defines no decorator of its own."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            python_file = temp_path / "function_app.py"
+            python_file.write_text("""
+import azure.functions as func
+from azure_functions_langgraph import LangGraphApp
+
+adapter = LangGraphApp(auth_level=func.AuthLevel.FUNCTION)
+adapter.register(graph=None, name="echo", stream=False)
+app = adapter.function_app
+""")
+
+            doctor = Doctor(str(temp_path))
+            assert doctor.programming_model == "v2"
+
+    def test_detect_unknown_for_unimported_langgraphapp_lookalike(self) -> None:
+        """A local class merely *named* ``LangGraphApp`` (never imported
+        from ``azure_functions_langgraph``) must not be misrecognized as
+        the toolkit adapter -- this guards the strict, import-qualified
+        resolution #590 deliberately requires."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            python_file = temp_path / "function_app.py"
+            python_file.write_text("""
+class LangGraphApp:
+    def __init__(self):
+        self.function_app = object()
+
+adapter = LangGraphApp()
+app = adapter.function_app
+""")
+
+            doctor = Doctor(str(temp_path))
+            assert doctor.programming_model == "unknown"
+
     def test_detect_unknown_when_no_signals(self) -> None:
         """Test unknown detection when no v1 or v2 signals are found."""
         doctor = Doctor(str(FIXTURES_DIR / "unknown"))
         assert doctor.programming_model == "unknown"
+
+    def test_detect_v2_beneath_ancestor_directory_named_build(self, tmp_path: Path) -> None:
+        """A v2 project nested beneath an ancestor directory that merely
+        happens to be *named* like a default exclusion (e.g. "build", not
+        the project's own excluded subdirectory) must still be detected --
+        model detection must see the selected project root, not fall back
+        to matching default-exclusion names anywhere in the absolute path
+        (#517)."""
+        project = tmp_path / "build" / "project"
+        project.mkdir(parents=True)
+        (project / "function_app.py").write_text(
+            "import azure.functions as func\n"
+            "app = func.FunctionApp()\n"
+            "@app.route(route='health', auth_level=func.AuthLevel.FUNCTION)\n"
+            "def health(req: func.HttpRequest) -> func.HttpResponse:\n"
+            "    return func.HttpResponse('ok')\n",
+            encoding="utf-8",
+        )
+
+        doctor = Doctor(str(project))
+        assert doctor.programming_model == "v2"
+
+    def test_configured_exclude_applies_to_v1_signal_detection(self, tmp_path: Path) -> None:
+        """A configured ``[tool.azure-functions-doctor].exclude`` entry must
+        apply while detecting legacy v1 signals too, not only during rule
+        execution -- an excluded legacy function.json must not make an
+        otherwise plain v2 project appear "mixed" (#517)."""
+        (tmp_path / "function_app.py").write_text(
+            "import azure.functions as func\n"
+            "app = func.FunctionApp()\n"
+            "@app.route(route='health', auth_level=func.AuthLevel.FUNCTION)\n"
+            "def health(req: func.HttpRequest) -> func.HttpResponse:\n"
+            "    return func.HttpResponse('ok')\n",
+            encoding="utf-8",
+        )
+        legacy = tmp_path / "legacy"
+        legacy.mkdir()
+        (legacy / "function.json").write_text("{}", encoding="utf-8")
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.azure-functions-doctor]\nexclude = ["legacy"]\n', encoding="utf-8"
+        )
+
+        doctor = Doctor(str(tmp_path))
+        assert doctor.programming_model == "v2"
+
+    def test_sequential_scans_with_different_roots_do_not_leak_context(
+        self, tmp_path: Path
+    ) -> None:
+        """Constructing a Doctor for one root, then another, must not leak
+        the first scan's exclusion context into the second (#517)."""
+        excluded_project = tmp_path / "build" / "project"
+        excluded_project.mkdir(parents=True)
+        (excluded_project / "function_app.py").write_text(
+            "import azure.functions as func\n"
+            "app = func.FunctionApp()\n"
+            "@app.route(route='health')\n"
+            "def health(req): return func.HttpResponse('ok')\n",
+            encoding="utf-8",
+        )
+        plain_project = tmp_path / "plain"
+        plain_project.mkdir()
+        (plain_project / "function_app.py").write_text(
+            "import azure.functions as func\n"
+            "app = func.FunctionApp()\n"
+            "@app.route(route='health')\n"
+            "def health(req): return func.HttpResponse('ok')\n",
+            encoding="utf-8",
+        )
+
+        first = Doctor(str(excluded_project))
+        second = Doctor(str(plain_project))
+        third = Doctor(str(excluded_project))
+
+        assert first.programming_model == "v2"
+        assert second.programming_model == "v2"
+        assert third.programming_model == "v2"
 
     def test_detect_unsupported_v1_when_only_function_json(self) -> None:
         """Test v1-only projects are reported as unsupported."""

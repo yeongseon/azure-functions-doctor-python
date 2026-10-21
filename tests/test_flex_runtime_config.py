@@ -102,6 +102,44 @@ class TestEvaluateFlexRuntimeConfig:
         assert "not recognized" in result["detail"]
         assert result["actual"] == "functionAppConfig.runtime = python 3.9"
 
+    def test_unsupported_python_with_linux_fx_stays_gating_error(self) -> None:
+        """An unsupported effective runtime must remain a gating error even
+        when a legacy linuxFxVersion is also declared -- the legacy property
+        must not downgrade or replace the runtime error (#582)."""
+        result = _evaluate_flex_runtime_config(
+            FLEX_CONSUMPTION_PLAN, "python", "3.9", linux_fx_present=True
+        )
+        assert result["status"] == "fail"
+        assert result["severity"] == "error"
+        assert result["gate"] is True
+        assert result["actual"] == "functionAppConfig.runtime = python 3.9"
+        # Combined actionable result: both the runtime error and the
+        # legacy-property remediation are present.
+        assert "3.9" in result["detail"]
+        assert "not recognized" in result["detail"]
+        assert "linuxFxVersion" in result["detail"]
+
+    def test_supported_python_with_linux_fx_still_warns(self) -> None:
+        """An otherwise-valid runtime with a legacy property keeps its
+        existing non-gating warning, unaffected by this fix (#582)."""
+        result = _evaluate_flex_runtime_config(
+            FLEX_CONSUMPTION_PLAN, "python", "3.12", linux_fx_present=True
+        )
+        assert result["status"] == "fail"
+        assert result["severity"] == "warning"
+        assert result["gate"] is False
+        assert "linuxFxVersion" in result["detail"]
+
+    def test_non_python_runtime_with_linux_fx_still_warns(self) -> None:
+        """A non-Python runtime (skip-worthy on its own) with a legacy
+        property still produces the standalone legacy-only warning (#582)."""
+        result = _evaluate_flex_runtime_config(
+            FLEX_CONSUMPTION_PLAN, "dotnet-isolated", "8.0", linux_fx_present=True
+        )
+        assert result["status"] == "fail"
+        assert result["severity"] == "warning"
+        assert result["gate"] is False
+
 
 class TestInfraDeclaresLinuxFxVersion:
     def test_detects_bicep_linux_fx(self, tmp_path: Path) -> None:

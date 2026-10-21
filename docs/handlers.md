@@ -135,7 +135,7 @@ The authoritative dispatch map is `_RULE_DISPATCH` in
 | `openapi_version_mixing` | none | Warn when OpenAPI 3.0 and 3.1 signals both appear. |
 | `scan_before_spec` | optional `scan_names`, `spec_names` | Warn when the OpenAPI spec is built before endpoints are scanned. |
 | `langgraph_anonymous_auth` | optional `flag_missing_auth_level` | Warn when a LangGraph project exposes anonymous-auth routes. |
-| `durable_nondeterminism` | optional `blocklist`, `decorator_names` | Fail when orchestrator/entity functions call nondeterministic APIs. |
+| `durable_nondeterminism` | optional `blocklist`, `decorator_names` | Fail when orchestrator functions call nondeterministic APIs (default scope excludes entity triggers, which have no orchestrator-specific replay constraint). |
 | `unsupported_metadata_version` | optional `files`, `fields`, `supported_versions` | Warn when metadata declares an unsupported version. |
 
 ## Example Rule JSON by Handler Type
@@ -223,7 +223,8 @@ The authoritative dispatch map is `_RULE_DISPATCH` in
   `app_insights_connection` type, not `any_of_exists`: it requires
   `APPLICATIONINSIGHTS_CONNECTION_STRING` and reports a legacy
   `APPINSIGHTS_INSTRUMENTATIONKEY` or `host.json` instrumentation key as stale,
-  because instrumentation-key ingestion ended on 2025-03-31.
+  because technical support for instrumentation-key-based global ingestion
+  ended on 2025-03-31.
 - Handler implementations live in the `src/azure_functions_doctor/handlers/` package
   (domain modules listed above; dispatch in `registry.py`).
 
