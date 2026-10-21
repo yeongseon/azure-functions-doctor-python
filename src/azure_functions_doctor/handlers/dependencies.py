@@ -14,8 +14,9 @@ from azure_functions_doctor.handlers._helpers import (
     Rule,
     RuleContext,
     _create_result,
-    _detect_native_dependency_risks,
+    _detect_native_dependency_risks_for_project,
     _handle_specific_exceptions,
+    _iter_requirements_with_location,
     _parse_requirements_names,
     _rule_handler,
     is_local_prebuilt_deployment,
@@ -62,16 +63,12 @@ class DependencyHandlers:
                 "so generate one (e.g. 'pip freeze > requirements.txt') or deploy "
                 "with a local/prebuilt build (--deployment-mode local)."
             )
-            if not rule.get("required", True):
-                detail += " (optional)"
             return _create_result(
                 "fail",
                 detail,
                 file="requirements.txt",
             )
         detail = f"{req_path} not found and pyproject.toml declares no dependencies"
-        if not rule.get("required", True):
-            detail += " (optional)"
         return _create_result("fail", detail)
 
     @_rule_handler
@@ -191,7 +188,8 @@ class DependencyHandlers:
     def _handle_native_dependency_risk(
         self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
-        """Warn when requirements.txt includes packages with native extension risk."""
+        """Warn when requirements.txt (or a local ``-r``/``--requirement``
+        include it reaches) declares packages with native extension risk."""
         condition = rule.get("condition", {}) or {}
         req_file_obj = condition.get("file", "requirements.txt")
         req_file = str(req_file_obj)
@@ -199,11 +197,10 @@ class DependencyHandlers:
         if not req_path.exists():
             return _create_result("skip", f"{req_file} not found; check skipped")
         try:
-            content = req_path.read_text(encoding="utf-8")
+            matches = _detect_native_dependency_risks_for_project(req_path)
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
 
-        matches = _detect_native_dependency_risks(content)
         if not matches:
             return _create_result("pass", "No native dependency risk packages declared")
 
@@ -223,12 +220,16 @@ class DependencyHandlers:
     def _handle_unpinned_requirements(
         self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
-        """Warn when ``requirements.txt`` declares unpinned/unbounded dependencies.
+        """Warn when ``requirements.txt`` (or a local ``-r``/``--requirement``
+        include it reaches) declares unpinned/unbounded dependencies.
 
         Azure remote build resolves ``requirements.txt`` at deploy time, so
         unpinned dependencies (no version specifier, or an open ``>=`` lower
         bound with no upper bound) make deployments non-reproducible and prone to
-        surprise breakage.
+        surprise breakage. A finding is attributed to the file and line where
+        the dependency is actually declared -- the included file, when
+        reached through a local include -- rather than to the root file's
+        include directive (#587).
         """
         condition = rule.get("condition", {}) or {}
         target = parse_target(condition) or "requirements.txt"
@@ -236,14 +237,13 @@ class DependencyHandlers:
         if not req_path.is_file():
             return _create_result("skip", f"{target} not found; unpinned check skipped")
         try:
-            content = req_path.read_text(encoding="utf-8")
+            entries = _iter_requirements_with_location(req_path)
         except OSError as exc:
             return _handle_specific_exceptions(f"reading {target}", exc)
         unpinned: list[str] = []
         finding_lines: list[dict[str, object]] = []
-        for line_no, raw in enumerate(content.splitlines(), start=1):
-            line = raw.strip()
-            if not line or line.startswith("#") or line.startswith("-"):
+        for declaring_file, line_no, line in entries:
+            if line.startswith("-"):
                 continue
             try:
                 requirement = Requirement(line)
@@ -251,12 +251,13 @@ class DependencyHandlers:
                 continue
             if requirement.url is not None:
                 continue
+            declaring_rel = str(declaring_file.relative_to(path.resolve()))
             specifiers = list(requirement.specifier)
             if not specifiers:
                 unpinned.append(f"- {requirement.name} (no version specifier)")
                 finding_lines.append(
                     {
-                        "file": target,
+                        "file": declaring_rel,
                         "line": line_no,
                         "message": f"{requirement.name} (no version specifier)",
                     }
@@ -270,7 +271,7 @@ class DependencyHandlers:
                 unpinned.append(f"- {requirement.name} ({bounds}; no upper bound)")
                 finding_lines.append(
                     {
-                        "file": target,
+                        "file": declaring_rel,
                         "line": line_no,
                         "message": f"{requirement.name} ({bounds}; no upper bound)",
                     }

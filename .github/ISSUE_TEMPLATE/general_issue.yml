@@ -14,6 +14,11 @@ body:
         
         **Note**: For questions or discussions, consider using [GitHub Discussions](https://github.com/yeongseon/azure-functions-doctor-python/discussions) instead.
 
+        Describe the problem or requested change in this repository. Explain
+        the relevance of any external project link, and remove unrelated
+        project names or policies copied from another issue.
+        See [Issue Conventions](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/AGENTS.md#issue-conventions).
+
   - type: dropdown
     id: issue-type
     attributes:

@@ -153,8 +153,6 @@ class GenericHandlers:
 
         exists = resolved_path.exists()
         detail = f"{resolved_path} {'exists' if exists else 'missing'}"
-        if not exists and not rule.get("required", True):
-            detail += " (optional)"
         return _create_result("pass" if exists else "fail", detail)
 
     @_rule_handler
@@ -171,8 +169,6 @@ class GenericHandlers:
         rel_target = target.replace("\\", "/")
         exists = file_path.is_file()
         detail = f"{file_path} {'exists' if exists else 'not found'}"
-        if not exists and not rule.get("required", True):
-            detail += " (optional)"
         return _create_result("pass" if exists else "fail", detail, file=rel_target)
 
     @_rule_handler

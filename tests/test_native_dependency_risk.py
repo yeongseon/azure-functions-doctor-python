@@ -64,6 +64,32 @@ def test_native_dependency_risk_handler_reports_matches_and_hints(tmp_path: Path
     assert "psycopg2-binary" in result["detail"]
 
 
+def test_native_dependency_risk_handler_detects_included_requirements(tmp_path: Path) -> None:
+    """A native-risk package declared only in a local -r/--requirement
+    include must still be detected -- moving the same declaration into an
+    included file must not make the check report a clean result (#587)."""
+    (tmp_path / "requirements.txt").write_text("-r base.txt\n", encoding="utf-8")
+    (tmp_path / "base.txt").write_text("azure-functions==1.25.0\nnumpy\n", encoding="utf-8")
+    rule: Rule = {"type": "native_dependency_risk", "condition": {"file": "requirements.txt"}}
+    result = generic_handler(rule, tmp_path)
+    assert result["status"] == "fail"
+    assert "numpy" in result["detail"]
+
+
+def test_native_dependency_risk_handler_safe_requirements_via_requirement_flag(
+    tmp_path: Path,
+) -> None:
+    """The long-form --requirement flag is followed the same way as -r,
+    and a safe (non-native) included declaration still passes (#587)."""
+    (tmp_path / "requirements.txt").write_text("--requirement base.txt\n", encoding="utf-8")
+    (tmp_path / "base.txt").write_text(
+        "azure-functions==1.25.0\npackaging==25.0\n", encoding="utf-8"
+    )
+    rule: Rule = {"type": "native_dependency_risk", "condition": {"file": "requirements.txt"}}
+    result = generic_handler(rule, tmp_path)
+    assert result["status"] == "pass"
+
+
 def test_native_dependency_risk_fixture_warns_in_full_profile() -> None:
     doctor = Doctor(str(FIXTURES_DIR / "native_deps_present"), profile="full")
     results = doctor.run_all_checks()

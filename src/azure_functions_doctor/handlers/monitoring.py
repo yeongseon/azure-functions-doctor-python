@@ -33,26 +33,49 @@ class MonitoringHandlers:
     ) -> HandlerResult:
         """Validate Application Insights connection configuration.
 
-        Instrumentation-key ingestion ended 2025-03-31, so a connection string
-        (``APPLICATIONINSIGHTS_CONNECTION_STRING``) is now required. A legacy
-        instrumentation key (``APPINSIGHTS_INSTRUMENTATIONKEY`` or
-        ``host.json:instrumentationKey``) is treated as stale, and
+        Technical support for instrumentation-key-based global ingestion
+        ended 2025-03-31 (Microsoft continues to accept data sent to that
+        path without further updates or customer support for it), so a
+        connection string (``APPLICATIONINSIGHTS_CONNECTION_STRING``) is now
+        recommended. A legacy instrumentation key (``APPINSIGHTS_INSTRUMENTATIONKEY``
+        or ``host.json:instrumentationKey``) is treated as stale, and
         ``APPLICATIONINSIGHTS_AUTHENTICATION_STRING`` is recognised for Entra
         (AAD) authentication.
+
+        Values are resolved with precedence current process environment >
+        ``local.settings.json`` > the resolved deployment target context
+        (#584), so a setting already ingested from a supported ARM/Bicep
+        ``siteConfig.appSettings`` declaration is used instead of being
+        reported as unconfigured -- the existing local/environment-only
+        fallback (#519) is unchanged when no deployment declaration exists.
         """
-        settings = local_settings_values(path)
-        conn = (
-            os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
-            or settings.get("APPLICATIONINSIGHTS_CONNECTION_STRING", "")
-        ).strip()
-        auth = (
-            os.getenv("APPLICATIONINSIGHTS_AUTHENTICATION_STRING")
-            or settings.get("APPLICATIONINSIGHTS_AUTHENTICATION_STRING", "")
-        ).strip()
-        ik_env = (
-            os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")
-            or settings.get("APPINSIGHTS_INSTRUMENTATIONKEY", "")
-        ).strip()
+        local = local_settings_values(path)
+        target_config = context.get("target_config") if context is not None else None
+        resolved_settings = dict(target_config.app_settings) if target_config is not None else {}
+        setting_sources: dict[str, str] = (
+            dict(target_config.app_settings_files) if target_config is not None else {}
+        )
+        for name in local:
+            setting_sources.setdefault(name, "local.settings.json")
+
+        def _resolve_setting(name: str) -> tuple[str, str]:
+            """Resolve one setting's value and its provenance file, so a
+            finding never blames a nonexistent local.settings.json for a
+            setting that actually came from a resolved IaC declaration."""
+            env_value = os.getenv(name)
+            if env_value:
+                return env_value.strip(), "local.settings.json"
+            local_value = local.get(name, "")
+            if local_value:
+                return local_value.strip(), "local.settings.json"
+            iac_value = resolved_settings.get(name, "")
+            if iac_value:
+                return iac_value.strip(), setting_sources.get(name, "local.settings.json")
+            return "", "local.settings.json"
+
+        conn, conn_file = _resolve_setting("APPLICATIONINSIGHTS_CONNECTION_STRING")
+        auth, _ = _resolve_setting("APPLICATIONINSIGHTS_AUTHENTICATION_STRING")
+        ik_env, ik_env_file = _resolve_setting("APPINSIGHTS_INSTRUMENTATIONKEY")
 
         ik_host = False
         host_path = path / "host.json"
@@ -65,6 +88,7 @@ class MonitoringHandlers:
                 logger.debug(f"Skip invalid host.json while checking App Insights: {exc}")
 
         has_ik = bool(ik_env) or ik_host
+        ik_file = "host.json" if (ik_host and not ik_env) else ik_env_file
         auth_note = (
             " Entra auth via APPLICATIONINSIGHTS_AUTHENTICATION_STRING is configured."
             if auth
@@ -76,9 +100,9 @@ class MonitoringHandlers:
                 return _create_result(
                     "fail",
                     "Connection string is set, but a legacy instrumentation key is "
-                    "also configured; remove it (instrumentation-key ingestion ended "
-                    "2025-03-31)." + auth_note,
-                    file="local.settings.json",
+                    "also configured; remove it (support for instrumentation-key-based "
+                    "global ingestion ended 2025-03-31)." + auth_note,
+                    file=ik_file,
                 )
             return _create_result(
                 "pass",
@@ -89,9 +113,9 @@ class MonitoringHandlers:
             return _create_result(
                 "fail",
                 "Only a legacy Application Insights instrumentation key is configured; "
-                "instrumentation-key ingestion ended 2025-03-31. Set "
-                "APPLICATIONINSIGHTS_CONNECTION_STRING instead." + auth_note,
-                file="local.settings.json",
+                "support for instrumentation-key-based global ingestion ended "
+                "2025-03-31. Set APPLICATIONINSIGHTS_CONNECTION_STRING instead." + auth_note,
+                file=ik_file,
             )
 
         if auth:
@@ -101,7 +125,7 @@ class MonitoringHandlers:
                 "(APPLICATIONINSIGHTS_AUTHENTICATION_STRING) is configured, but "
                 "APPLICATIONINSIGHTS_CONNECTION_STRING is missing; set the connection "
                 "string to enable telemetry.",
-                file="local.settings.json",
+                file=conn_file,
             )
 
         return _create_result(
