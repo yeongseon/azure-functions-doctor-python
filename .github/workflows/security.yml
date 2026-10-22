@@ -7,6 +7,7 @@ on:
     branches: [main]
   schedule:
     - cron: "0 2 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -31,6 +32,21 @@ jobs:
       - name: Run Bandit
         run: make security
 
+      - name: Enforce complete Bandit inventory and reviewed suppressions
+        if: always()
+        run: hatch run python -m tools.security_evidence bandit
+
+      - name: Type check security tools
+        run: hatch run mypy --strict tools/security_report.py tools/security_exceptions.py tools/security_evidence.py tools/dependency_audit_policy.py
+
+      - name: Upload redacted security evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-bandit
+          path: security-results/**
+          if-no-files-found: error
+
   semgrep:
     runs-on: ubuntu-latest
     steps:
@@ -38,6 +54,27 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Run Semgrep
+        id: scan
         uses: semgrep/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
         with:
           config: p/python
+
+      - name: Set up evidence interpreter
+        if: always()
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Record Semgrep execution evidence
+        if: always()
+        env:
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+        run: python -m tools.security_evidence semgrep --outcome "$SCAN_OUTCOME"
+
+      - name: Upload redacted security evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-semgrep
+          path: security-results/**
+          if-no-files-found: error

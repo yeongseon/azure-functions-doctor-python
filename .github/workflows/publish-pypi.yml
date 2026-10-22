@@ -174,9 +174,57 @@ jobs:
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+  runtime-dependency-audit:
+    name: Runtime dependency audit gate
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        interpreter: ["3.11", "3.12", "3.13", "3.14"]
+        closure: ["base"]
+    steps:
+      - name: Checkout security policy and tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up audit interpreter
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.interpreter }}
+      - name: Download the exact candidate artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dist
+          path: candidate-dist
+      - name: Install only the candidate runtime closure
+        env:
+          CLOSURE: ${{ matrix.closure }}
+        run: |
+          python -m pip install 'pip-audit==2.10.1'
+          python -m venv --without-pip "$RUNNER_TEMP/candidate"
+          wheels=(candidate-dist/*.whl)
+          test "${#wheels[@]}" -eq 1
+          requirement="${wheels[0]}"
+          if [ "$CLOSURE" != "base" ]; then
+            requirement="${requirement}[${CLOSURE}]"
+          fi
+          python -m pip --python "$RUNNER_TEMP/candidate/bin/python" install "$requirement"
+      - name: Enforce runtime dependency policy
+        run: |
+          site_packages=$("$RUNNER_TEMP/candidate/bin/python" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+          python -m tools.dependency_audit_policy --site-packages "$site_packages" --output security-results/base
+      - name: Upload redacted release security evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-security-${{ matrix.interpreter }}-${{ matrix.closure }}
+          path: security-results/**
+          if-no-files-found: error
+
   publish:
     name: Publish to PyPI
-    needs: [build, lib-tests, doctor-runtime-gate, azure-e2e]
+    needs: [build, lib-tests, doctor-runtime-gate, azure-e2e, runtime-dependency-audit]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
