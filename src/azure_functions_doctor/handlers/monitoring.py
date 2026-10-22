@@ -172,8 +172,7 @@ class MonitoringHandlers:
         if default_rank is None:
             return _create_result(
                 "fail",
-                f"host.json logging.logLevel.default '{log_level['default']}' "
-                "is not a recognized log level.",
+                "host.json logging.logLevel.default is not a recognized log level.",
                 file="host.json",
             )
         conflicts: list[str] = []

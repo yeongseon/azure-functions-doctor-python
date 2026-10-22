@@ -1072,7 +1072,8 @@ def test_extension_bundle_v4_fail_wrong_id(tmp_path: Path) -> None:
     rule = _make_rule("host_json_extension_bundle_version", {})
     res = generic_handler(rule, tmp_path)
     assert res["status"] == "fail"
-    assert "Custom.Bundle" in res.get("detail", "")
+    assert "extensionBundle id" in res.get("detail", "")
+    assert "Custom.Bundle" not in res.get("detail", "")
 
 
 def test_extension_bundle_v4_fail_missing_host_json(tmp_path: Path) -> None:

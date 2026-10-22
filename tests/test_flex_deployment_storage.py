@@ -148,7 +148,8 @@ class TestEvaluateFlexDeploymentStorage:
         assert result["status"] == "fail"
         assert result["severity"] == "warning"
         assert result["gate"] is False
-        assert "BogusAuthentication" in result["detail"]
+        assert "authentication type" in result["detail"]
+        assert "BogusAuthentication" not in result["detail"]
         assert "not recognized" in result["detail"]
 
     def test_user_assigned_identity_missing_resource_id_warns(self) -> None:
