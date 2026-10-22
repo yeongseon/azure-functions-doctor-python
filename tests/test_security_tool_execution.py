@@ -1,3 +1,4 @@
+from importlib.metadata import PackageNotFoundError
 import json
 from pathlib import Path
 import subprocess
@@ -28,15 +29,42 @@ def test_inventory_mismatch_is_incomplete_when_scanner_omits_file() -> None:
     del metrics[next(iter(metrics))]
     metrics["_totals"] = {"loc": len(metrics)}
     raw = json.dumps({"errors": [], "metrics": metrics, "results": []})
-    with patch(
-        "subprocess.run",
-        return_value=subprocess.CompletedProcess([], 0, stdout=raw, stderr="CANARY_SECRET_STDERR"),
+    with (
+        patch(
+            "subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                [], 0, stdout=raw, stderr="CANARY_SECRET_STDERR"
+            ),
+        ),
+        patch.object(security_evidence, "version", return_value="1.9.4"),
     ):
         # When the helper compares actual and reported inventory.
         result = security_evidence.run_bandit()
     # Then missing scope cannot masquerade as a clean scan.
     assert result.status == Status.INCOMPLETE
     assert "CANARY_SECRET" not in repr(result)
+
+
+def test_missing_bandit_metadata_is_tool_error() -> None:
+    # Given valid scanner output but unavailable tool identity metadata.
+    metrics = {
+        p.as_posix(): {"loc": 1}
+        for surface in security_evidence.SCOPE
+        for p in Path(surface).rglob("*.py")
+    }
+    metrics["_totals"] = {"loc": len(metrics)}
+    raw = json.dumps({"errors": [], "metrics": metrics, "results": []})
+    with (
+        patch(
+            "subprocess.run",
+            return_value=subprocess.CompletedProcess([], 0, stdout=raw, stderr=""),
+        ),
+        patch.object(security_evidence, "version", side_effect=PackageNotFoundError("bandit")),
+    ):
+        # When evidence collection cannot identify the scanner.
+        result = security_evidence.run_bandit()
+    # Then missing tooling still fails closed, even with clean scanner output.
+    assert result.status == Status.TOOL_ERROR
 
 
 def test_audit_reads_only_isolated_installation(tmp_path: Path) -> None:
