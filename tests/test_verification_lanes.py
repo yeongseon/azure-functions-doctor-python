@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
 
 import pytest
 
@@ -87,3 +88,42 @@ def test_wheel_smoke_rejects_stale_dist(tmp_path: Path, monkeypatch: pytest.Monk
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("tools.verification_wheel.run", empty_build)
     assert wheel_smoke() != 0
+
+
+def test_wheel_smoke_installs_candidate_when_parent_has_same_version(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Given a candidate and a dependency environment containing the same version.
+    wheel = tmp_path / "candidate.whl"
+    wheel.write_bytes(b"candidate")
+    monkeypatch.setenv("VERIFICATION_WHEEL", str(wheel))
+    monkeypatch.chdir(tmp_path)
+    installed = False
+
+    def candidate_run(
+        command: list[str], log: Path, timeout: float = 600, *, cwd: Path | None = None
+    ) -> int:
+        nonlocal installed
+        if "venv" in command:
+            packages = (
+                Path(command[-1])
+                / "lib"
+                / f"python{sys.version_info.major}.{sys.version_info.minor}"
+                / "site-packages"
+            )
+            packages.mkdir(parents=True)
+        elif "pip" in command:
+            # Pip otherwise skips the wheel visible through the dependency .pth.
+            assert "--force-reinstall" in command
+            assert "--no-deps" in command and "--no-index" in command
+            installed = True
+        log.parent.mkdir(parents=True, exist_ok=True)
+        log.write_text("{}")
+        return 0
+
+    monkeypatch.setattr("tools.verification_wheel.run", candidate_run)
+    # When wheel smoke installs into its private environment.
+    result = wheel_smoke()
+    # Then the same-version candidate is actually installed, not silently skipped.
+    assert result == 0
+    assert installed

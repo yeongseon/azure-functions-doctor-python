@@ -64,17 +64,32 @@ def main() -> int:
                 sysconfig.get_path("purelib") + "\n"
             )
             code = run(
-                [python, "-m", "pip", "install", "--no-deps", "--no-index", str(wheels[0])],
+                [
+                    python,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--force-reinstall",
+                    "--no-deps",
+                    "--no-index",
+                    str(wheels[0]),
+                ],
                 directory / "logs/install.log",
             )
             if code:
                 raise RuntimeError("Candidate wheel installation failed")
             script = (
-                "from pathlib import Path; from importlib.metadata import version; "
+                "from pathlib import Path; from importlib.metadata import distribution; "
+                "import json, sys; "
                 "import azure_functions_doctor as a; "
-                f"assert Path(a.__file__).resolve().is_relative_to(Path({str(work)!r})); "
-                "assert version('azure-functions-doctor') == "
+                "assert Path(a.__file__).resolve().is_relative_to(Path(sys.prefix)); "
+                "dist = distribution('azure-functions-doctor'); "
+                "assert Path(dist.locate_file('')).resolve().is_relative_to(Path(sys.prefix)); "
+                "assert dist.version == "
                 f"{expected!r}; "
+                "origin = json.loads(dist.read_text('direct_url.json')); "
+                f"assert origin['url'] == {wheels[0].as_uri()!r}; "
+                f"assert origin['archive_info']['hashes']['sha256'] == {digest!r}; "
                 "print('Installed candidate identity matches outside checkout')"
             )
             code = run([python, "-I", "-c", script], directory / "logs/identity.log", cwd=work)
