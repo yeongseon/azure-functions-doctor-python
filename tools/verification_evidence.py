@@ -20,6 +20,14 @@ REMOTE_ASSERTIONS = frozenset(
 )
 
 
+def read_xml_root(path: Path) -> ET.Element:
+    """Parse a locally generated report, refusing entity declarations."""
+    data = path.read_bytes()
+    if b"<!ENTITY" in data.upper():
+        raise ValueError("XML reports must not declare entities")
+    return ET.fromstring(data)
+
+
 @dataclass(frozen=True, slots=True)
 class Summary:
     schema_version: int
@@ -87,7 +95,7 @@ def collect(directory: Path, command: list[str], exit_code: int) -> Summary:
     cases = [
         case
         for path in directory.rglob("*junit.xml")
-        for case in ET.parse(path).getroot().iter("testcase")
+        for case in read_xml_root(path).iter("testcase")
     ]
     skipped = sum(case.find("skipped") is not None for case in cases)
     failed = sum(
@@ -108,7 +116,7 @@ def collect(directory: Path, command: list[str], exit_code: int) -> Summary:
         status, reason = "FAIL", "Nonzero pytest exit"
     coverage = None
     if (directory / "coverage.xml").exists():
-        coverage = float(ET.parse(directory / "coverage.xml").getroot().get("line-rate", "0"))
+        coverage = float(read_xml_root(directory / "coverage.xml").get("line-rate", "0"))
     return Summary(
         1,
         directory.name,
