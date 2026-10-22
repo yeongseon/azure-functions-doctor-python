@@ -13,6 +13,28 @@ while optional checks provide operational guidance (tooling, telemetry, and hygi
 
 ## Programming Model Detection
 
+### Privacy and inspection trust
+
+Diagnostic reports are intended to identify setting **names**, rule IDs, status,
+locations and remediation, not persist credentials. Unknown extension/runtime
+values and invalid host-field values are masked or omitted; recognized runtime
+pins remain visible. Table, JSON, SARIF and JUnit use the same findings. The
+agent adapter projects generated reports; it does not sanitize arbitrary reports.
+
+Ordinary inspection parses source without importing application code or installing
+dependencies. Requirements includes stay within the manifest root; discovered
+out-of-tree symlink files are skipped. Shared source/local-settings readers
+reject symlinks, nonregular files, NUL-containing binary data and files over
+4 MiB. Some legacy readers remain unbounded, so this is **not a sandbox** for
+actively hostile trees. Use an isolated credential-free environment with trusted
+PATH and resource limits. Custom rules and output paths are trusted inputs.
+Enabling the Action's `install-project-deps` can execute package build hooks.
+
+See the repository [security policy](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/SECURITY.md)
+for verified boundaries, remaining limitations, release audit policy and
+production versus local/test-only assumptions. Do not embed secrets in filenames
+or setting names: those metadata remain intentionally visible.
+
 Before running rule handlers, Doctor classifies the repository into one of four programming-model states:
 
 | State | Meaning | Doctor behavior |
