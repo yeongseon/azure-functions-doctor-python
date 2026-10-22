@@ -96,11 +96,18 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Hatch
-        run: pip install hatch
+      - name: Install selected-interpreter development dependencies
+        run: make install-ci
 
       - name: Run test suite
-        run: hatch run test
+        run: python -m tools.verification test
+
+      - name: Upload release library evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-library-evidence
+          path: test-results/**
 
   doctor-runtime-gate:
     name: Package runtime gate (doctor CLI against example app, candidate wheel)
@@ -159,6 +166,20 @@ jobs:
             --path examples/v2/http-trigger \
             --profile minimal
 
+      - name: Record exact candidate wheel identity and isolated CLI evidence
+        env:
+          E2E_EXPECTED_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          export VERIFICATION_WHEEL="$(realpath candidate-dist/*.whl)"
+          python -m tools.verification_wheel
+
+      - name: Upload candidate runtime evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: candidate-runtime-evidence
+          path: test-results/**
+
   azure-e2e:
     name: Azure release certification
     needs: build
@@ -189,11 +210,7 @@ jobs:
           path: dist
 
       - name: Publish to PyPI
-        # Exception to the SHA-pinning policy: PyPA's official guidance is to
-        # consume this action via the `release/v1` channel rather than a commit
-        # SHA, so trusted-publisher token issuance keeps working across patch
-        # releases. See CONTRIBUTING.md § "GitHub Actions Pinning" for details.
-        uses: pypa/gh-action-pypi-publish@release/v1 # pin-exempt: PyPA official publisher (trusted-publisher OIDC); tracks release/v1 by design
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
 
   notify-cookbook:
     name: Trigger cookbook e2e re-verification
