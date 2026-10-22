@@ -7,10 +7,19 @@ Azure Functions Doctor uses pytest as its primary testing framework. The suite s
 You can execute the tests using the provided Makefile or by calling pytest directly.
 
 ```bash
-make test                                  # Run all tests
+make test                                  # Offline regressions, coverage >=95%
 make cov                                   # Run with coverage (terminal, HTML, and XML reports)
 python -m pytest tests/test_handler.py -v  # Run a specific test file
 ```
+
+`make integration` separately runs static example CLI and a managed real Functions
+host with private Azurite storage/ports and owned-process cleanup. `make verify`
+(exact alias: `make check-all`) also runs quality, wheel-installed CLI, build and
+strict docs. `make doctor` checks developer tools; it is not the product
+`azure-functions-doctor doctor`. Missing prerequisites, zero tests and unexpected
+required skips are INCOMPLETE/nonzero. `make report` renders saved `test-results/`
+evidence without rerunning tests. Action/published-v1/cookbook workflows remain
+separate and NOT_APPLICABLE locally. See [Development Guide](development.md#command-contract).
 
 ## Test Structure
 The codebase follows a modular test structure to ensure specific components are isolated and verified correctly.
@@ -99,7 +108,7 @@ The project includes a real Azure end-to-end test workflow that deploys an actua
 ### Workflow
 
 - **File**: `.github/workflows/e2e-azure.yml`
-- **Trigger**: Manual (`workflow_dispatch`) or weekly schedule (Mondays 02:00 UTC)
+- **Trigger**: Release-chain `workflow_call` or explicit `workflow_dispatch`
 - **Infrastructure**: Linux Consumption plan (`Y1`/Dynamic) running Python 3.12, deployed by `infra/main.bicep` to the `koreacentral` region by default
 - **Note**: Linux Consumption is the legacy plan (retires 30 September 2028) and is used here only because it is the cheapest throwaway target for a weekly smoke run
 - **Cleanup**: Resource group deleted immediately after tests (`if: always()`)
@@ -109,6 +118,18 @@ The project includes a real Azure end-to-end test workflow that deploys an actua
 ```bash
 gh workflow run e2e-azure.yml --ref main
 ```
+
+Against an already deployed candidate (no provisioning):
+
+```bash
+E2E_BASE_URL=https://your-app.azurewebsites.net E2E_EXPECTED_VERSION=<candidate-version> make e2e-azure
+```
+
+The expected version must match the installed CLI. URL/version preflight happens
+before pytest; both required E2E assertions must execute, not skip. Existing skip
+guards remain for casual pytest use. This proves deployed HTTP and local diagnostics,
+not a deployed doctor-version endpoint (`deployed_version_match=NOT_APPLICABLE`).
+Local wheel SHA-256/version, installed CLI, host and Azure evidence are distinct.
 
 ### Required Secrets & Variables
 
@@ -121,4 +142,5 @@ gh workflow run e2e-azure.yml --ref main
 
 ### Test Report
 
-HTML test report is uploaded as a GitHub Actions artifact (retained 30 days).
+JUnit, redacted logs, environment metadata and JSON summaries are uploaded with
+`if: always()` (retained 30 days); the same counts appear in the Job Summary.
