@@ -41,6 +41,13 @@ print(json.dumps({'code': result.exit_code, 'output': result.output}))
         "symlink",
         "multilevel",
         "root-symlink",
+        "alias-base",
+        "bom-include",
+        "included-alias-base",
+        "bom-child",
+        "crlf",
+        "alias-integration",
+        "alias-gap",
     ],
 )
 @pytest.mark.parametrize("output_format", ["table", "json", "sarif"])
@@ -104,6 +111,37 @@ def test_normal_project_matches_main_bytes(
             (project / "requirements.txt").symlink_to(project / "root-manifest.txt")
     (project / "pyproject.toml").write_text('[project]\nname="fixture"\ndependencies=[]\n')
     (project / "main.bicep").write_text("linuxFxVersion: 'Python|3.12'\n")
+    if fixture in {"alias-base", "alias-integration", "alias-gap"}:
+        (project / "sub").mkdir()
+        (project / "sub/manifest.txt").write_text("-r common.txt\n")
+        (project / "requirements.txt").unlink()
+        (project / "requirements.txt").symlink_to(project / "sub/manifest.txt")
+        (project / "common.txt").write_text("azure-functions==1.21.3\nnumpy\n")
+        (project / "sub/common.txt").write_text("azure-functions-worker\n")
+        if fixture == "alias-integration":
+            (project / "common.txt").write_text(
+                "azure-functions==1.21.3\nazure-functions-validation\nazure-functions-openapi\n"
+            )
+            (project / "sub/common.txt").write_text("azure-functions-validation\n")
+        elif fixture == "alias-gap":
+            (project / "sub/manifest.txt").write_text("-r ../common.txt\n")
+    elif fixture == "bom-include":
+        (project / "requirements.txt").write_bytes(b"\xef\xbb\xbf-r child.txt\n")
+        (project / "child.txt").write_text("azure-functions==1.21.3\n")
+    elif fixture == "included-alias-base":
+        (project / "sub").mkdir()
+        (project / "requirements.txt").write_text("azure-functions==1.21.3\n-r alias.txt\n")
+        (project / "alias.txt").symlink_to(project / "sub/manifest.txt")
+        (project / "sub/manifest.txt").write_text("-r common.txt\n")
+        (project / "common.txt").write_text("azure-functions-worker\n")
+        (project / "sub/common.txt").write_text("numpy\nazure-functions-validation\n")
+    elif fixture == "bom-child":
+        (project / "requirements.txt").write_text("azure-functions==1.21.3\n-r child.txt\n")
+        (project / "child.txt").write_bytes(b"\xef\xbb\xbf-r common.txt\n")
+        (project / "common.txt").write_text("numpy\n")
+    elif fixture == "crlf":
+        (project / "requirements.txt").write_bytes(b"azure-functions==1.21.3\r\n-r child.txt\r\n")
+        (project / "child.txt").write_bytes(b"numpy\r\nrequests==2.32.5\r")
     if fixture == "deploy":
         (project / "infra.json").write_text(
             '{"functionAppConfig":{"runtime":{"name":"python","version":"3.12"},'
