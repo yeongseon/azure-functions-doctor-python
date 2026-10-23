@@ -26,16 +26,42 @@ dependencies. Out-of-root references are skipped: includes are contained within
 the top-level manifest directory and discovered files must resolve within the
 selected project root. Rules depending on an excluded reference report incomplete
 inspection as a non-gating advisory warning, with its written path and file/line.
-Requirements walkers and discovery follow/yield symlinks resolving **inside** the
-root; the bounded reader instead refuses symlinks and symlink ancestors.
+Discovery can yield in-root symlinks; direct project content reads refuse symlinks
+and symlink ancestors. Requirements consumers preserve main's distinct behavior:
+declaration traversal starts relative to a root alias directory, located traversal
+starts relative to its resolved target, and included aliases use target directories.
+Canonical identity is separate from the include base. Integration dependency helpers
+retain refusal of a symlinked root manifest. Allowed in-root targets remain bounded-read.
 
-The 4 MiB, regular-file-only (no devices/FIFOs), NUL-rejecting bound applies to
-`read_inspection_text`, used by Python source inspection/programming-model detection
-and `deploy_config._read_text` for Bicep/JSON infrastructure
-and `local.settings.json`. The location-preserving requirements walker uses it
-after resolving include paths; the flattened walker still reads included files
-directly. Source decoding retains a legacy direct-read invalid-UTF-8 fallback;
-other host/requirements/TOML readers are not uniformly bounded. Ancestor replacement,
+Known, intentionally unchanged: UTF-8 package readers retain a root BOM during
+directive discovery, so a BOM-prefixed first include remains missed as on main.
+Located/integration readers retain BOM stripping. A separate issue must address
+that existing include bug; it is intentionally unchanged and tracked in
+[#626](https://github.com/yeongseon/azure-functions-doctor-python/issues/626).
+Parity is verified by 51 captured-main goldens and 328 encoding-sweep projects over
+three new seeds, not an exhaustive compatibility claim. `.funcignore` retains
+its first-pattern BOM as main does; raw versus universal newline handling and
+UTF-8 versus UTF-8-sig decoding are selected per reader, not silently unified.
+
+All project readers use the strict UTF-8, regular-file-only (no devices/FIFOs),
+NUL-rejecting `read_inspection_text` boundary: Python/model detection, host/local
+settings JSON, Bicep/JSON infrastructure, requirements/includes, pyproject TOML,
+`.python-version` and `.funcignore`. Agent report JSON uses that same reader.
+The Action separately bounds its summary sidecar to 4 MiB regular non-symlink
+files, requires an object, and validates integer counts in 0–1,000,000. It does not
+apply the shared JSON depth precheck; stdlib parse/resource failures become
+unavailable counts and a warning.
+`MAX_FILE_BYTES` is 4 MiB; `MAX_JSON_DEPTH` is 100 levels with a linear,
+string/escape-aware pre-scan. TOML duplicate keys and parser resource failures
+degrade gracefully. Include traversal is cycle-safe with
+`MAX_REQUIREMENTS_FILES` = 128, `MAX_REQUIREMENTS_BYTES` = 16 MiB cumulative UTF-8
+content, and `MAX_REQUIREMENTS_DEPTH` = 10 levels including the root.
+Large requirements/lockfiles over 4 MiB now produce visible incomplete-inspection
+evidence rather than being read. Core Tools stdout is capped at
+`MAX_PROCESS_OUTPUT_BYTES` = 64 KiB, stderr is discarded and read/wait phases use
+`PROCESS_TIMEOUT_SECONDS` = 10; overflow/timeout kills and reaps the child. Git's
+unused streams are discarded and its timeout remains 10 seconds.
+Trusted bundled rules/catalogs are outside these project-reader bounds. Ancestor replacement,
 TOCTOU and concurrent file replacement are not covered. These are inspection
 bounds, **not a sandbox** for
 actively hostile trees. Use an isolated credential-free environment with trusted
@@ -45,7 +71,10 @@ Enabling the Action's `install-project-deps` can execute package build hooks.
 See the repository [security policy](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/SECURITY.md)
 for verified boundaries, remaining limitations, release audit policy and
 production versus local/test-only assumptions. Do not embed secrets in filenames
-or setting names: those metadata remain intentionally visible.
+or setting names: those metadata remain intentionally visible; control characters
+are escaped in diagnostic output. Content/parser/exception/log canary guarantees
+do not mean filenames are removed: malformed `CANARY_SECRET_FILENAME.py` can
+appear in JSON/SARIF locations by design.
 
 ### Compatibility
 

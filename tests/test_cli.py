@@ -283,9 +283,7 @@ def test_summary_sidecar_write_failure_preserves_json_report_and_exit_status(
     payload = json.loads(result.stdout)
     assert result.exit_code == expected_exit_code
     assert payload["results"] == results
-    warning.assert_called_once_with(
-        f"Failed to write summary JSON to {summary_path}: fixture denied"
-    )
+    warning.assert_called_once_with("Failed to write summary JSON (%s)", "PermissionError")
     assert summary_path.exists() is False
 
 

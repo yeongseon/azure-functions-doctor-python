@@ -9,6 +9,8 @@ import logging
 import os
 import sys
 
+from azure_functions_doctor.safe_output import escape_controls
+
 # Default logger name for the application
 DEFAULT_LOGGER_NAME = "azure_functions_doctor"
 
@@ -155,7 +157,7 @@ def log_diagnostic_start(path: str, rules_count: int) -> None:
         rules_count: Number of rules being executed
     """
     logger = get_logger(__name__)
-    logger.info(f"Starting diagnostics for path: {path}")
+    logger.info(f"Starting diagnostics for path: {escape_controls(path)}")
     logger.info(f"Executing {rules_count} diagnostic rules")
 
 

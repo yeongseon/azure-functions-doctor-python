@@ -296,7 +296,10 @@ def test_package_forbidden_req_file_read_exception() -> None:
                 raise ValueError("Simulated read error")
             return original_path(self, *args, **kwargs)
 
-        with patch.object(Path, "read_text", new=read_with_error):
+        with patch(
+            "azure_functions_doctor.handlers.dependencies.read_requirements_text",
+            side_effect=ValueError("Simulated read error"),
+        ):
             result = registry.handle(rule, tmp_path)
             assert result["status"] == "fail"
             assert "internal_error" in result

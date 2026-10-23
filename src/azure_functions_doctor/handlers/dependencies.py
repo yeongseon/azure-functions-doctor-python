@@ -25,6 +25,8 @@ from azure_functions_doctor.handlers._helpers import (
     pyproject_declares_dependencies,
     pyproject_dependency_names,
 )
+from azure_functions_doctor.inspection import contained_inspection_path
+from azure_functions_doctor.requirements_inspection import read_requirements_text
 
 
 class DependencyHandlers:
@@ -107,7 +109,7 @@ class DependencyHandlers:
             )
         package_name, req_file = params
         normalized_target = canonicalize_name(package_name)
-        req_path = path / Path(req_file)
+        req_path = contained_inspection_path(path, req_file)
         if not req_path.exists():
             # No requirements.txt: fall back to pyproject.toml. This is valid
             # only for a local/prebuilt deployment; remote build reads
@@ -130,7 +132,7 @@ class DependencyHandlers:
                 f"{req_path} not found and '{package_name}' not declared in pyproject.toml",
             )
         try:
-            content = req_path.read_text(encoding="utf-8")
+            content = read_requirements_text(req_path, path, encoding="utf-8")
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
         normalized = _parse_requirements_names(content, req_path)
@@ -167,11 +169,11 @@ class DependencyHandlers:
                 file="requirements.txt",
             )
         package_name, req_file = params
-        req_path = path / Path(req_file)
+        req_path = contained_inspection_path(path, req_file)
         if not req_path.exists():
             return _create_result("fail", f"{req_path} not found")
         try:
-            content = req_path.read_text(encoding="utf-8")
+            content = read_requirements_text(req_path, path, encoding="utf-8")
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
         normalized = _parse_requirements_names(content, req_path)
@@ -193,7 +195,7 @@ class DependencyHandlers:
         condition = rule.get("condition", {}) or {}
         req_file_obj = condition.get("file", "requirements.txt")
         req_file = str(req_file_obj)
-        req_path = path / Path(req_file)
+        req_path = contained_inspection_path(path, req_file)
         if not req_path.exists():
             return _create_result("skip", f"{req_file} not found; check skipped")
         try:

@@ -159,10 +159,11 @@ def _write_output(content: str, output: Path | None, label: str) -> None:
             )
         except (OSError, PermissionError) as e:
             console.print(
-                f"[red]{format_status_icon('fail')} Failed to write {label} output:[/red] {e}"
+                f"[red]{format_status_icon('fail')} Failed to write {label} output:[/red] "
+                f"{type(e).__name__}"
             )
-            logger.error(f"Failed to write {label} output to {output}: {e}")
-            raise typer.Exit(1) from e
+            logger.error("Failed to write output (%s)", type(e).__name__)
+            raise typer.Exit(1) from None
     else:
         print(content)
 
@@ -329,7 +330,7 @@ def doctor(
             summary_json.parent.mkdir(parents=True, exist_ok=True)
             summary_json.write_text(json.dumps(summary_data), encoding="utf-8")
         except (OSError, PermissionError) as exc:
-            logger.warning(f"Failed to write summary JSON to {summary_json}: {exc}")
+            logger.warning("Failed to write summary JSON (%s)", type(exc).__name__)
 
     if format == "json":
         generated_at = datetime.now(UTC).isoformat().replace("+00:00", "Z")

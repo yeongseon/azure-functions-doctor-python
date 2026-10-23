@@ -25,10 +25,10 @@ def test_resolve_func_core_tools_version(monkeypatch: pytest.MonkeyPatch) -> Non
         "azure_functions_doctor.target_resolver.shutil.which", lambda name: "/usr/bin/func"
     )
 
-    def mock_check_output(cmd: list[str], text: bool, timeout: int | None = None) -> str:
+    def mock_check_output(cmd: list[str]) -> str:
         return "4.0.5198"
 
-    monkeypatch.setattr(subprocess, "check_output", mock_check_output)
+    monkeypatch.setattr(target_resolver, "read_tool_output", mock_check_output)
     result = target_resolver.resolve_target_value("func_core_tools")
     assert result == "4.0.5198"
 
@@ -39,10 +39,10 @@ def test_resolve_func_core_tools_fallback(monkeypatch: pytest.MonkeyPatch) -> No
         "azure_functions_doctor.target_resolver.shutil.which", lambda name: "/usr/bin/func"
     )
 
-    def mock_check_output(cmd: list[str], text: bool, timeout: int | None = None) -> str:
+    def mock_check_output(cmd: list[str]) -> str:
         raise Exception("not found")
 
-    monkeypatch.setattr(subprocess, "check_output", mock_check_output)
+    monkeypatch.setattr(target_resolver, "read_tool_output", mock_check_output)
     result = target_resolver.resolve_target_value("func_core_tools")
     assert result == "unknown_error"
 
@@ -62,10 +62,10 @@ def test_resolve_func_core_tools_timeout_expired(monkeypatch: pytest.MonkeyPatch
         "azure_functions_doctor.target_resolver.shutil.which", lambda name: "/usr/bin/func"
     )
 
-    def mock_check_output(cmd: list[str], text: bool, timeout: int | None = None) -> str:
+    def mock_check_output(cmd: list[str]) -> str:
         raise subprocess.TimeoutExpired(cmd, 10.0)
 
-    monkeypatch.setattr(subprocess, "check_output", mock_check_output)
+    monkeypatch.setattr(target_resolver, "read_tool_output", mock_check_output)
     result = target_resolver.resolve_target_value("func_core_tools")
     assert result == "timeout"
 
@@ -75,10 +75,10 @@ def test_resolve_func_core_tools_called_process_error(monkeypatch: pytest.Monkey
         "azure_functions_doctor.target_resolver.shutil.which", lambda name: "/usr/bin/func"
     )
 
-    def mock_check_output(cmd: list[str], text: bool, timeout: int | None = None) -> str:
+    def mock_check_output(cmd: list[str]) -> str:
         raise subprocess.CalledProcessError(2, cmd)
 
-    monkeypatch.setattr(subprocess, "check_output", mock_check_output)
+    monkeypatch.setattr(target_resolver, "read_tool_output", mock_check_output)
     result = target_resolver.resolve_target_value("func_core_tools")
     assert result == "error_2"
 

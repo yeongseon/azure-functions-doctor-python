@@ -3,7 +3,6 @@
 Split out of handlers/registry.py; registration/dispatch stays there.
 """
 
-import json
 import os
 from pathlib import Path
 
@@ -19,6 +18,7 @@ from azure_functions_doctor.handlers._helpers import (
     _rule_handler,
     logger,
 )
+from azure_functions_doctor.inspection import read_inspection_json
 
 
 class MonitoringHandlers:
@@ -81,11 +81,11 @@ class MonitoringHandlers:
         host_path = path / "host.json"
         if host_path.exists():
             try:
-                data = json.loads(host_path.read_text(encoding="utf-8-sig"))
+                data = read_inspection_json(host_path)
                 node = _resolve_host_json_pointer(data, ["instrumentationKey"])
                 ik_host = node is not _HOST_JSON_MISSING and node is not None
-            except json.JSONDecodeError as exc:
-                logger.debug(f"Skip invalid host.json while checking App Insights: {exc}")
+            except (OSError, ValueError) as exc:
+                logger.debug("Skip invalid host.json (%s)", type(exc).__name__)
 
         has_ik = bool(ik_env) or ik_host
         ik_file = "host.json" if (ik_host and not ik_env) else ik_env_file
@@ -150,7 +150,7 @@ class MonitoringHandlers:
         if not host_path.exists():
             return _create_result("skip", "host.json not found; logLevel check skipped")
         try:
-            host_data = json.loads(host_path.read_text(encoding="utf-8-sig"))
+            host_data = read_inspection_json(host_path)
         except Exception as exc:
             return _handle_specific_exceptions("reading host.json", exc)
         logging_cfg = host_data.get("logging") if isinstance(host_data, dict) else None

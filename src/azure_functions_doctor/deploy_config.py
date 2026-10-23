@@ -24,11 +24,14 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
-import json
 from pathlib import Path
 import re
 
-from azure_functions_doctor.inspection import read_inspection_text
+from azure_functions_doctor.inspection import (
+    parse_inspection_json,
+    read_inspection_json,
+    read_inspection_text,
+)
 from azure_functions_doctor.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -143,7 +146,7 @@ def _shared_traversal() -> Callable[[Path, str | tuple[str, ...] | list[str]], I
 
 def _read_text(candidate: Path) -> str | None:
     try:
-        return read_inspection_text(candidate)
+        return read_inspection_text(candidate, universal_newlines=False)
     except (OSError, ValueError, UnicodeDecodeError):
         logger.debug("Skip unreadable infra file %s", candidate)
         return None
@@ -282,7 +285,7 @@ def flex_deployment_storage_shape(project_path: Path) -> dict[str, object] | Non
         if kind != "json":
             continue
         try:
-            data = json.loads(candidate.read_text(encoding="utf-8-sig"))
+            data = read_inspection_json(candidate)
         except (ValueError, UnicodeDecodeError, OSError):
             continue
         for obj in _walk_json(data):
@@ -315,10 +318,10 @@ def _plan_from_json(node: object) -> str | None:
     return plan
 
 
-def _scan_json_file(text: str, rel: str, scan: _IaCScan) -> None:
+def _scan_json_file(text: str, rel: str, scan: _IaCScan, path: Path | None = None) -> None:
     try:
-        data = json.loads(text)
-    except (ValueError, UnicodeDecodeError):
+        data = parse_inspection_json(text, path if path is not None else Path(rel))
+    except (OSError, ValueError, RecursionError, MemoryError):
         logger.debug("Skip non-JSON / malformed infra file %s", rel)
         return
 
@@ -399,7 +402,7 @@ def _scan_iac(project_path: Path) -> _IaCScan:
             continue
         rel = _rel(candidate, project_path)
         if kind == "json":
-            _scan_json_file(text, rel, scan)
+            _scan_json_file(text, rel, scan, candidate)
         else:
             _scan_bicep_file(text, rel, scan)
     return scan
@@ -413,8 +416,8 @@ def _local_signals(project_path: Path) -> _IaCScan:
     if text is None:
         return signals
     try:
-        data = json.loads(text)
-    except (ValueError, UnicodeDecodeError):
+        data = parse_inspection_json(text, settings_path)
+    except (OSError, ValueError, RecursionError, MemoryError):
         return signals
     values = data.get("Values") if isinstance(data, dict) else None
     if not isinstance(values, dict):
@@ -442,8 +445,8 @@ def local_settings_values(project_path: Path) -> dict[str, str]:
     if text is None:
         return {}
     try:
-        data = json.loads(text)
-    except (ValueError, UnicodeDecodeError):
+        data = parse_inspection_json(text, project_path / "local.settings.json")
+    except (OSError, ValueError, RecursionError, MemoryError):
         return {}
     values = data.get("Values") if isinstance(data, dict) else None
     if not isinstance(values, dict):
