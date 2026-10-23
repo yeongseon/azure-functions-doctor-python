@@ -26,7 +26,10 @@ from azure_functions_doctor.inspection import (
 from azure_functions_doctor.inspection_gaps import InspectionGap, record_gap
 from azure_functions_doctor.logging_config import get_logger
 from azure_functions_doctor.requirements_directives import parse_include_directive
-from azure_functions_doctor.requirements_inspection import iter_requirements_files
+from azure_functions_doctor.requirements_inspection import (
+    iter_requirements_files,
+    read_requirements_text,
+)
 
 logger = get_logger(__name__)
 
@@ -1348,7 +1351,11 @@ def _iter_project_py_contents(path: Path) -> Iterator[tuple[Path, str]]:
 def _read_project_python_file(py_file: Path) -> str | None:
     """Read Python source without failing the whole traversal."""
     try:
-        content = read_inspection_text(py_file)
+        content = (
+            read_requirements_text(py_file, py_file.parent)
+            if py_file.name == "requirements.txt"
+            else read_inspection_text(py_file)
+        )
         if py_file.suffix == ".py":
             check_python_parser(content, py_file)
         return content
@@ -1577,7 +1584,7 @@ def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, st
             if cleaned:
                 results.append((file_path, line_no, cleaned))
 
-    walk(req_path.absolute())
+    walk(req_path.resolve())
     return results
 
 

@@ -25,7 +25,8 @@ from azure_functions_doctor.handlers._helpers import (
     pyproject_declares_dependencies,
     pyproject_dependency_names,
 )
-from azure_functions_doctor.inspection import contained_inspection_path, read_inspection_text
+from azure_functions_doctor.inspection import contained_inspection_path
+from azure_functions_doctor.requirements_inspection import read_requirements_text
 
 
 class DependencyHandlers:
@@ -131,7 +132,7 @@ class DependencyHandlers:
                 f"{req_path} not found and '{package_name}' not declared in pyproject.toml",
             )
         try:
-            content = read_inspection_text(req_path)
+            content = read_requirements_text(req_path, path)
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
         normalized = _parse_requirements_names(content, req_path)
@@ -172,7 +173,7 @@ class DependencyHandlers:
         if not req_path.exists():
             return _create_result("fail", f"{req_path} not found")
         try:
-            content = read_inspection_text(req_path)
+            content = read_requirements_text(req_path, path)
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
         normalized = _parse_requirements_names(content, req_path)

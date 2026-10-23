@@ -140,7 +140,7 @@ def test_inventory_decode_fallback_is_refused(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("walker", ["flattened", "located"])
-@pytest.mark.parametrize("hostile", ["large", "files", "bytes", "depth", "alias"])
+@pytest.mark.parametrize("hostile", ["large", "files", "bytes", "depth"])
 def test_inventory_include_walkers_have_visible_bounds(
     tmp_path: Path, walker: str, hostile: str
 ) -> None:

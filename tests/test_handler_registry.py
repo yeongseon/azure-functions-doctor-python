@@ -495,7 +495,7 @@ def test_package_forbidden_req_file_read_exception() -> None:
             return original_path(self, *args, **kwargs)
 
         with patch(
-            "azure_functions_doctor.handlers.dependencies.read_inspection_text",
+            "azure_functions_doctor.handlers.dependencies.read_requirements_text",
             side_effect=ValueError("Simulated read error"),
         ):
             result = registry.handle(rule, tmp_path)
@@ -1027,7 +1027,7 @@ def test_package_forbidden_read_exception() -> None:
             return original_path(self, *args, **kwargs)
 
         with patch(
-            "azure_functions_doctor.handlers.dependencies.read_inspection_text",
+            "azure_functions_doctor.handlers.dependencies.read_requirements_text",
             side_effect=ValueError("Simulated read error"),
         ):
             result = registry.handle(rule, tmp_path)
@@ -2413,7 +2413,7 @@ def test_package_declared_read_exception() -> None:
             return original_read_text(self, *args, **kwargs)
 
         with patch(
-            "azure_functions_doctor.handlers.dependencies.read_inspection_text",
+            "azure_functions_doctor.handlers.dependencies.read_requirements_text",
             side_effect=PermissionError("Cannot read file"),
         ):
             rule = cast(

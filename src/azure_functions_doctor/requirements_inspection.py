@@ -13,6 +13,15 @@ MAX_REQUIREMENTS_BYTES: Final = 16 * 1024 * 1024
 MAX_REQUIREMENTS_DEPTH: Final = 10
 
 
+def read_requirements_text(path: Path, root: Path) -> str:
+    resolved = path.resolve()
+    if not resolved.is_relative_to(root.resolve()):
+        record_gap(InspectionGap(root.absolute() / "requirements.txt", 1, str(path)))
+        raise OSError("Requirements manifest leaves the project root")
+    target = resolved if any(part.is_symlink() for part in (path, *path.parents)) else path
+    return read_inspection_text(target)
+
+
 def iter_requirements_files(
     source: Path, initial_content: str | None = None
 ) -> Iterator[tuple[Path, str]]:
@@ -24,6 +33,9 @@ def iter_requirements_files(
     def walk(path: Path, depth: int, content: str | None = None) -> Iterator[tuple[Path, str]]:
         nonlocal total
         resolved = path.resolve()
+        if not resolved.is_relative_to(root):
+            record_gap(InspectionGap(source.absolute(), 1, str(path)))
+            return
         if resolved in seen:
             return
         if depth >= MAX_REQUIREMENTS_DEPTH or len(seen) >= MAX_REQUIREMENTS_FILES:
@@ -32,19 +44,19 @@ def iter_requirements_files(
         seen.add(resolved)
         if content is None:
             try:
-                content = read_inspection_text(path)
+                content = read_requirements_text(path, root)
             except (OSError, ValueError):
                 return
         total += len(content.encode("utf-8"))
         if total > MAX_REQUIREMENTS_BYTES:
             refuse_inspection(path)
             return
-        yield path, content
+        yield resolved, content
         for line_no, line in enumerate(content.splitlines(), 1):
             directive = parse_include_directive(line)
             if directive is None or "://" in directive.reference:
                 continue
-            include = path.parent / directive.reference
+            include = resolved.parent / directive.reference
             if not include.resolve().is_relative_to(root):
                 record_gap(InspectionGap(path.absolute(), line_no, directive.reference))
                 continue
