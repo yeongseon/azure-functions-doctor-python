@@ -134,8 +134,8 @@ jobs:
         working-directory: /tmp
         env:
           CHECKOUT: ${{ github.workspace }}
+          EXPECTED: ${{ needs.build.outputs.version }}
         run: |
-          EXPECTED="${{ needs.build.outputs.version }}"
           ACTUAL=$(python -c "import importlib.metadata as m; print(m.version('azure-functions-doctor'))")
           MODULE=$(python -c "import azure_functions_doctor; print(azure_functions_doctor.__file__)")
           echo "Expected candidate version: $EXPECTED"
