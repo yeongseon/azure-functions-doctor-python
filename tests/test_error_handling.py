@@ -95,7 +95,10 @@ class TestTargetResolverErrorHandling:
             "azure_functions_doctor.target_resolver.shutil.which",
             return_value="/usr/bin/func",
         ):
-            with patch("subprocess.check_output", side_effect=TimeoutError()):
+            with patch(
+                "azure_functions_doctor.target_resolver.read_tool_output",
+                side_effect=TimeoutError(),
+            ):
                 result = resolve_target_value("func_core_tools")
                 assert result == "timeout"
 
@@ -105,7 +108,10 @@ class TestTargetResolverErrorHandling:
             "azure_functions_doctor.target_resolver.shutil.which",
             return_value="/usr/bin/func",
         ):
-            with patch("subprocess.check_output", side_effect=Exception("Command failed")):
+            with patch(
+                "azure_functions_doctor.target_resolver.read_tool_output",
+                side_effect=Exception("Command failed"),
+            ):
                 result = resolve_target_value("func_core_tools")
                 assert result == "unknown_error"
 

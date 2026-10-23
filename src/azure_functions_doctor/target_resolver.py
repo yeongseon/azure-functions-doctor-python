@@ -6,7 +6,9 @@ import subprocess  # nosec B404
 import sys
 
 from azure_functions_doctor.compatibility import load_catalog
+from azure_functions_doctor.inspection import read_inspection_text
 from azure_functions_doctor.logging_config import get_logger
+from azure_functions_doctor.process_inspection import read_tool_output
 
 logger = get_logger(__name__)
 
@@ -111,8 +113,8 @@ def resolve_python_target(
         python_version_file = project_path / ".python-version"
         if python_version_file.is_file():
             try:
-                content = python_version_file.read_text(encoding="utf-8").strip()
-            except OSError:
+                content = read_inspection_text(python_version_file).strip()
+            except (OSError, ValueError):
                 content = ""
             match = _PYTHON_VERSION_RE.search(content)
             if match:
@@ -128,7 +130,7 @@ def _resolve_func_core_tools(override: str | None = None) -> str:
         logger.debug("Azure Functions Core Tools not found in PATH")
         return "not_installed"
     try:
-        output = subprocess.check_output([func_path, "--version"], text=True, timeout=10)  # nosec B603
+        output = read_tool_output([func_path, "--version"])
         return output.strip()
     except FileNotFoundError:
         logger.debug("Azure Functions Core Tools executable disappeared before execution")

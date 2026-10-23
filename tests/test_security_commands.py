@@ -56,7 +56,10 @@ def test_core_tools_exception_does_not_log_credentials(caplog: pytest.LogCapture
     # Given a failing executable whose exception message contains a credential.
     with (
         patch("shutil.which", return_value="/trusted/func"),
-        patch("subprocess.check_output", side_effect=RuntimeError("Bearer CANARY_SECRET_COMMAND")),
+        patch(
+            "azure_functions_doctor.target_resolver.read_tool_output",
+            side_effect=RuntimeError("Bearer CANARY_SECRET_COMMAND"),
+        ),
     ):
         # When the resolver handles that failure.
         result = resolve_target_value("func_core_tools")
