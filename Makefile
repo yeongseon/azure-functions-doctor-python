@@ -1,6 +1,7 @@
 VENV_DIR := .venv
 PYTHON ?= python
 HATCH ?= hatch
+MAINTENANCE_PYTHON ?= $(shell command -v python3.11 || command -v python3 || command -v python)
 ifeq ($(CI),)
 RUN := $(HATCH) run python
 else
@@ -68,7 +69,11 @@ security:
 	@$(RUN) -m bandit -r src
 
 .PHONY: check
-check: style typecheck security lint-workflows
+check:
+	@$(RUN) -m tools.verification focused check -m tools.verification_quality
+
+.PHONY: check-quality
+check-quality: style typecheck security lint-workflows
 	@$(RUN) scripts/lint_mermaid.py
 	@$(RUN) scripts/gen_rule_inventory.py --check
 	@$(RUN) scripts/check_docs_consistency.py
@@ -83,8 +88,11 @@ lint-workflows:
 check-all: verify
 
 .PHONY: integration verify report host-smoke cli-smoke wheel-smoke
-integration verify report host-smoke:
+integration verify host-smoke:
 	@$(RUN) -m tools.verification $@
+
+report:
+	@$(MAINTENANCE_PYTHON) -m tools.verification_maintenance report
 
 cli-smoke:
 	@$(RUN) -m tools.verification_cli
@@ -158,13 +166,11 @@ demo-image:
 
 .PHONY: doctor
 doctor:
-	@if [ -n "$$CI" ]; then $(PYTHON) -m tools.verification doctor; \
-	else environment=$$($(HATCH) env find) && test -x "$$environment/bin/python" && \
-	PATH="$$environment/bin:$$PATH" "$$environment/bin/python" -m tools.verification doctor; fi
+	@$(MAINTENANCE_PYTHON) -m tools.verification_maintenance doctor
 
 .PHONY: clean
 clean:
-	@$(RUN) -m tools.verification clean
+	@$(MAINTENANCE_PYTHON) -m tools.verification_maintenance clean
 
 .PHONY: clean-all
 clean-all: clean

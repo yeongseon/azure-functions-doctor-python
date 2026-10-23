@@ -63,7 +63,9 @@ def test_ci_preserves_explicit_interpreter_and_check_all_is_exact_alias() -> Non
 
 def test_check_runs_types_once_without_heavy_system_prerequisites() -> None:
     # Given the complete non-mutating quality target.
-    result = subprocess.run(["make", "-n", "check"], cwd=ROOT, capture_output=True, text=True)
+    result = subprocess.run(
+        ["make", "-n", "check-quality"], cwd=ROOT, capture_output=True, text=True
+    )
     # Then it runs strict types once and keeps the lightweight Mermaid linter.
     assert result.returncode == 0
     assert result.stdout.count("-m mypy") == 1

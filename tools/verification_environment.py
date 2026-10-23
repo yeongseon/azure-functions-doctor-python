@@ -31,6 +31,8 @@ def doctor(live: bool = False) -> int:
             healthy = healthy and path is not None
     for tool in ("az", "docker", "pre-commit"):
         print(f"{tool} OPTIONAL: {shutil.which(tool) or 'not installed'}")
+    if not healthy:
+        print("development environment not created: run make install")
     return 0 if healthy else 1
 
 
