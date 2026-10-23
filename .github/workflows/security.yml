@@ -34,10 +34,10 @@ jobs:
 
       - name: Enforce complete Bandit inventory and reviewed suppressions
         if: always()
-        run: hatch run python -m tools.security_evidence bandit
+        run: make security-bandit
 
       - name: Type check security tools
-        run: hatch run mypy --strict tools/security_report.py tools/security_exceptions.py tools/security_evidence.py tools/dependency_audit_policy.py
+        run: make security-types
 
       - name: Upload redacted security evidence
         if: always()
@@ -69,7 +69,7 @@ jobs:
         if: always()
         env:
           SCAN_OUTCOME: ${{ steps.scan.outcome }}
-        run: python -m tools.security_evidence semgrep --outcome "$SCAN_OUTCOME"
+        run: make security-semgrep SECURITY_PYTHON=python
 
       - name: Upload redacted security evidence
         if: always()

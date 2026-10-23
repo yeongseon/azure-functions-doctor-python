@@ -32,13 +32,15 @@ jobs:
       - name: Audit runtime dependencies
         run: |
           site_packages=$("$RUNNER_TEMP/runtime/bin/python" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
-          python -m tools.dependency_audit_policy --site-packages "$site_packages" --output security-results/runtime
+          candidate_version=$("$RUNNER_TEMP/runtime/bin/python" -c 'from importlib.metadata import version; print(version("azure-functions-doctor"))')
+          make security-audit SECURITY_PYTHON=python AUDIT_SITE_PACKAGES="$site_packages" CANDIDATE_NAME=azure-functions-doctor CANDIDATE_VERSION="$candidate_version" SECURITY_OUTPUT=security-results/runtime
       - name: Audit development dependencies (reporting only)
         if: always()
         continue-on-error: true
         run: |
           site_packages=$("$RUNNER_TEMP/development/bin/python" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
-          python -m tools.dependency_audit_policy --site-packages "$site_packages" --development --output security-results/development
+          candidate_version=$("$RUNNER_TEMP/development/bin/python" -c 'from importlib.metadata import version; print(version("azure-functions-doctor"))')
+          make security-audit-report SECURITY_PYTHON=python AUDIT_SITE_PACKAGES="$site_packages" CANDIDATE_NAME=azure-functions-doctor CANDIDATE_VERSION="$candidate_version" SECURITY_OUTPUT=security-results/development
       - name: Upload redacted reporting evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

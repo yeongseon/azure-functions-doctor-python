@@ -66,6 +66,31 @@ lint: ensure-hatch
 .PHONY: security
 security: ensure-hatch
 	@$(HATCH) run security
+	@$(MAKE) security-bandit
+
+SECURITY_PYTHON ?= $(HATCH) run python
+SECURITY_OUTPUT ?= security-results
+AUDIT_SITE_PACKAGES ?=
+CANDIDATE_NAME ?=
+CANDIDATE_VERSION ?=
+CANDIDATE_WHEEL ?=
+SCAN_OUTCOME ?=
+
+.PHONY: security-bandit security-semgrep security-audit security-audit-report security-types
+security-bandit:
+	@$(SECURITY_PYTHON) -m tools.security_evidence bandit --output "$(SECURITY_OUTPUT)"
+
+security-semgrep:
+	@$(SECURITY_PYTHON) -m tools.security_evidence semgrep --outcome "$(SCAN_OUTCOME)" --output "$(SECURITY_OUTPUT)"; code=$$?; test $$code -eq 0 -o $$code -eq 3
+
+security-audit:
+	@$(SECURITY_PYTHON) -m tools.dependency_audit_policy --site-packages "$(AUDIT_SITE_PACKAGES)" --candidate-name "$(CANDIDATE_NAME)" --candidate-version "$(CANDIDATE_VERSION)" $(if $(CANDIDATE_WHEEL),--candidate-wheel "$(CANDIDATE_WHEEL)") --output "$(SECURITY_OUTPUT)"
+
+security-audit-report:
+	@$(SECURITY_PYTHON) -m tools.dependency_audit_policy --site-packages "$(AUDIT_SITE_PACKAGES)" --candidate-name "$(CANDIDATE_NAME)" --candidate-version "$(CANDIDATE_VERSION)" --development --output "$(SECURITY_OUTPUT)"
+
+security-types:
+	@$(HATCH) run mypy --strict tools/security_report.py tools/security_exceptions.py tools/security_evidence.py tools/dependency_audit_policy.py tools/audit_candidate.py
 
 .PHONY: check
 check: ensure-hatch

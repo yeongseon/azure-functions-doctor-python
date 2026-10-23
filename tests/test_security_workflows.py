@@ -23,7 +23,8 @@ def test_release_gate_is_required_and_fail_closed() -> None:
     assert 'test "${#wheels[@]}" -eq 1' in gate
     assert "venv --without-pip" in gate
     assert "pip-audit==2.10.1" in gate
-    assert "python -m tools.dependency_audit_policy" in gate
+    assert "make security-audit" in gate
+    assert 'CANDIDATE_WHEEL="${wheels[0]}"' in gate
     assert "if: always()" in gate
     assert "if-no-files-found: error" in gate
 
@@ -47,10 +48,10 @@ def test_static_scanners_preserve_blocking_execution_and_failure_evidence() -> N
     assert "continue-on-error" not in workflow
     assert "|| true" not in workflow
     assert "make security" in workflow
-    assert "python -m tools.security_evidence bandit" in workflow
-    assert "mypy --strict" in workflow
+    assert "make security-bandit" in workflow
+    assert "make security-types" in workflow
     assert "semgrep/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d" in workflow
-    assert 'semgrep --outcome "$SCAN_OUTCOME"' in workflow
+    assert "make security-semgrep" in workflow
     assert workflow.count("if-no-files-found: error") == 2
 
 
@@ -58,7 +59,7 @@ def test_development_audit_alone_is_reporting_only() -> None:
     # Given scheduled audit configuration; When inspected; Then raw payloads stay discarded.
     workflow = (ROOT / ".github/workflows/dependency-audit.yml").read_text()
     assert workflow.count("continue-on-error: true") == 1
-    assert "--development" in workflow
-    assert "tools.dependency_audit_policy" in workflow
+    assert "make security-audit-report" in workflow
+    assert "make security-audit" in workflow
     assert "tee" not in workflow
     assert "if: always()" in workflow
