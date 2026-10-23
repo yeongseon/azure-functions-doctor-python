@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
 from pathlib import Path
 from typing import TypeAlias
+
+from azure_functions_doctor.inspection import read_inspection_json
 
 JsonValue: TypeAlias = None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
 
@@ -69,11 +70,11 @@ def _parse_finding(raw: JsonValue) -> AgentFinding:
 
 def _read_json(path: Path) -> dict[str, JsonValue]:
     try:
-        value: JsonValue = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise AgentReportError(f"cannot read JSON report {path}: {exc}") from exc
+        value = read_inspection_json(path)
+    except (OSError, ValueError, RecursionError, MemoryError) as exc:
+        raise AgentReportError(f"cannot read JSON report ({type(exc).__name__})") from None
     if not isinstance(value, dict):
-        raise AgentReportError(f"JSON report {path} must contain an object")
+        raise AgentReportError("JSON report must contain an object")
     return value
 
 
