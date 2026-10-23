@@ -143,7 +143,7 @@ def _resolve_func_core_tools(override: str | None = None) -> str:
         logger.warning(f"func command failed with code {e.returncode}")
         return f"error_{e.returncode}"
     except Exception as exc:
-        logger.error(f"Unexpected error getting func version: {exc}")
+        logger.error("Unexpected error getting func version (%s)", type(exc).__name__)
         return "unknown_error"
 
 

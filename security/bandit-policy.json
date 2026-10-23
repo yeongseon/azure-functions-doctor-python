@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "exceptions": [
+    {"id":"B311","file":"examples/v2/warn-nondeterministic-orchestrator/function_app.py","line":11,"kind":"reviewed-static","reason":"Intentionally broken replay fixture; randomness is not used for authentication","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B404","file":"scripts/soak_cookbook.py","line":28,"kind":"reviewed-static","reason":"Developer-only soak harness uses argument arrays","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B603","file":"scripts/soak_cookbook.py","line":62,"kind":"reviewed-static","reason":"Fixed doctor binary with project path as one argument and timeout","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B603","file":"scripts/soak_cookbook.py","line":137,"kind":"reviewed-static","reason":"Developer-only fixed doctor version command; timeout follow-up retained","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B105","file":"src/azure_functions_doctor/utils.py","line":7,"kind":"reviewed-static","reason":"Display icon keyed by diagnostic status, not a password","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B105","file":"src/azure_functions_doctor/utils.py","line":23,"kind":"reviewed-static","reason":"Display color keyed by diagnostic status, not a password","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B404","file":"tools/check_pr_format.py","line":5,"kind":"reviewed-static","reason":"CI formatter uses argument arrays and explicit path separator","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B607","file":"tools/check_pr_format.py","line":10,"kind":"reviewed-static","reason":"Trusted runner PATH supplies git; no shell","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B603","file":"tools/check_pr_format.py","line":10,"kind":"reviewed-static","reason":"Git diff receives refs in argument array and terminates options","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B607","file":"tools/check_pr_format.py","line":37,"kind":"reviewed-static","reason":"Trusted runner PATH supplies ruff; no shell","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B603","file":"tools/check_pr_format.py","line":37,"kind":"reviewed-static","reason":"Formatter paths follow explicit option terminator","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B404","file":"tools/dependency_audit_policy.py","line":11,"kind":"reviewed-static","reason":"Fixed interpreter runs audit tool, no shell","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B603","file":"tools/dependency_audit_policy.py","line":154,"kind":"reviewed-static","reason":"Fixed module and isolated installation inventory with 300-second timeout","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B404","file":"tools/security_evidence.py","line":11,"kind":"reviewed-static","reason":"Fixed interpreter runs Bandit, no shell","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B603","file":"tools/security_evidence.py","line":129,"kind":"reviewed-static","reason":"Fixed module and static inventory with 180-second timeout","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B105","file":"tools/security_report.py","line":59,"kind":"reviewed-static","reason":"PASS is an evidence status enum, not a credential","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"}
+  ],
+  "inline_suppressions": [
+    {"id":"B405","file":"src/azure_functions_doctor/cli.py","line":540,"kind":"reviewed-static","reason":"ElementTree constructs JUnit output; no XML input is parsed","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B404","file":"src/azure_functions_doctor/handlers/deployment.py","line":702,"kind":"reviewed-static","reason":"Git metadata inspection only, no shell","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B603","file":"src/azure_functions_doctor/handlers/deployment.py","line":710,"kind":"reviewed-static","reason":"Git argument array disables hooks and fsmonitor; timeout 10 seconds","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B607","file":"src/azure_functions_doctor/handlers/deployment.py","line":710,"kind":"reviewed-static","reason":"Git comes from operator-trusted PATH, never project metadata","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B404","file":"src/azure_functions_doctor/target_resolver.py","line":5,"kind":"reviewed-static","reason":"Core Tools version query only","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B603","file":"src/azure_functions_doctor/target_resolver.py","line":131,"kind":"reviewed-static","reason":"Resolved operator-trusted executable, fixed version flag, timeout 10 seconds","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B105","file":"src/azure_functions_doctor/utils.py","line":5,"kind":"reviewed-static","reason":"Existing display-icon annotation; actual finding is line 7","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B105","file":"src/azure_functions_doctor/utils.py","line":22,"kind":"reviewed-static","reason":"Existing display-color annotation; actual finding is line 23","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"}
+  ]
+}

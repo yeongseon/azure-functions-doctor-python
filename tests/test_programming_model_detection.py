@@ -305,7 +305,10 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse("Hello")
 """)
 
-            with patch("pathlib.Path.read_text", side_effect=OSError("Permission denied")):
+            with patch(
+                "azure_functions_doctor.handlers._helpers.read_inspection_text",
+                side_effect=OSError("Permission denied"),
+            ):
                 doctor = Doctor(str(temp_path))
                 assert doctor.programming_model == "unknown"
 

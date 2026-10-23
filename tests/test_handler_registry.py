@@ -1966,7 +1966,10 @@ def test_read_python_file_permission_error() -> None:
                 raise PermissionError("Access denied")
             return original_read_text(self, *args, **kwargs)
 
-        with patch.object(Path, "read_text", mock_read_text):
+        with patch(
+            "azure_functions_doctor.handlers._helpers.read_inspection_text",
+            side_effect=PermissionError("Access denied"),
+        ):
             rule: Rule = {
                 "id": "test_permission_error",
                 "type": "source_code_contains",
@@ -2003,7 +2006,13 @@ def test_read_python_file_unicode_decode_then_oserror() -> None:
                     raise OSError("I/O error")
             return original_read_text(self, *args, **kwargs)
 
-        with patch.object(Path, "read_text", mock_read_text):
+        with (
+            patch(
+                "azure_functions_doctor.handlers._helpers.read_inspection_text",
+                side_effect=UnicodeDecodeError("utf-8", b"", 0, 1, "invalid start byte"),
+            ),
+            patch.object(Path, "read_text", side_effect=OSError("I/O error")),
+        ):
             rule: Rule = {
                 "id": "test_unicode_then_oserror",
                 "type": "source_code_contains",
@@ -2034,7 +2043,10 @@ def test_read_python_file_memory_error() -> None:
                 raise MemoryError("Out of memory")
             return original_read_text(self, *args, **kwargs)
 
-        with patch.object(Path, "read_text", mock_read_text):
+        with patch(
+            "azure_functions_doctor.handlers._helpers.read_inspection_text",
+            side_effect=MemoryError("Out of memory"),
+        ):
             rule: Rule = {
                 "id": "test_memory_error",
                 "type": "source_code_contains",

@@ -76,6 +76,7 @@ from azure_functions_doctor.handlers.runtime import (
 from azure_functions_doctor.handlers.runtime import (
     _normalize_functions_runtime as _normalize_functions_runtime,
 )
+from azure_functions_doctor.inspection_gaps import collect_inspection_gaps, incomplete_result
 
 
 class HandlerRegistry(
@@ -108,7 +109,39 @@ class HandlerRegistry(
             return _create_result("fail", f"Unknown check type: {check_type}")
 
         try:
-            return handler(rule, path, context)
+            with collect_inspection_gaps() as gaps:
+                result = handler(rule, path, context)
+            if not gaps:
+                return result
+            advisory = incomplete_result(gaps, path.resolve())
+            if result.get("status") == "fail" and (
+                check_type != "package_declared" or result.get("internal_error")
+            ):
+                return {
+                    **result,
+                    "detail": result.get("detail", "") + "\n" + advisory["detail"],
+                    "locations": [
+                        *result.get(
+                            "locations",
+                            [
+                                {
+                                    "file": result.get("file", "."),
+                                    "line": result.get("line"),
+                                    "message": result.get("detail", "")
+                                    + (
+                                        " (optional)"
+                                        if not result.get(
+                                            "gate", rule.get("gate", rule.get("required", True))
+                                        )
+                                        else ""
+                                    ),
+                                }
+                            ],
+                        ),
+                        *advisory["locations"],
+                    ],
+                }
+            return advisory
         except Exception as exc:
             return _handle_specific_exceptions(f"executing {check_type} check", exc)
 

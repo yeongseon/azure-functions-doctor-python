@@ -25,6 +25,7 @@ from azure_functions_doctor.handlers._helpers import (
     iter_project_files,
 )
 from azure_functions_doctor.handlers.runtime import _attach_catalog_evidence
+from azure_functions_doctor.safe_output import extension_value, version_value
 from azure_functions_doctor.target_resolver import (
     PYTHON_HOSTING_PLAN_MATRIX,
     SUPPORTED_PYTHON_VERSIONS,
@@ -112,8 +113,7 @@ def _evaluate_flex_runtime_config(
             return _legacy_only_warning()
         return _create_result(
             "skip",
-            f"Flex Consumption runtime is '{runtime_name}', not Python; "
-            "Python runtime check skipped.",
+            "Flex Consumption runtime is not Python; Python runtime check skipped.",
         )
 
     if is_supported_python_for_plan(runtime_version, FLEX_CONSUMPTION_PLAN):
@@ -127,7 +127,7 @@ def _evaluate_flex_runtime_config(
     allowed = PYTHON_HOSTING_PLAN_MATRIX.get(FLEX_CONSUMPTION_PLAN, SUPPORTED_PYTHON_VERSIONS)
     target_range = f"{allowed[0]}\u2013{allowed[-1]}" if allowed else "the recognized set"
     detail = (
-        f"Flex Consumption runtime Python {runtime_version} is not recognized; "
+        f"Flex Consumption runtime Python {version_value(runtime_version)} is not recognized; "
         f"target an analyzable Python runtime ({target_range})."
     )
     if linux_fx_present:
@@ -136,7 +136,7 @@ def _evaluate_flex_runtime_config(
     result["severity"] = "error"
     result["gate"] = True
     result["expected"] = f"An analyzable Flex Consumption Python runtime ({target_range})"
-    result["actual"] = f"functionAppConfig.runtime = python {runtime_version}"
+    result["actual"] = f"functionAppConfig.runtime = python {version_value(runtime_version)}"
     return result
 
 
@@ -155,14 +155,15 @@ def _evaluate_flex_extension_version(ext_value: str | None) -> HandlerResult:
             "(the runtime is v4 and backend-managed); check skipped.",
         )
     detail = (
-        f"FUNCTIONS_EXTENSION_VERSION is set to '{ext_value}' but is not supported "
+        f"FUNCTIONS_EXTENSION_VERSION is set to '{extension_value(ext_value)}' "
+        "but is not supported "
         "on Flex Consumption; the runtime is v4 and backend-managed. Remove the setting."
     )
     result = _create_result("fail", detail)
     result["severity"] = "warning"
     result["gate"] = False
     result["expected"] = "No FUNCTIONS_EXTENSION_VERSION on Flex Consumption"
-    result["actual"] = f"FUNCTIONS_EXTENSION_VERSION = {ext_value}"
+    result["actual"] = f"FUNCTIONS_EXTENSION_VERSION = {extension_value(ext_value)}"
     return result
 
 
@@ -344,7 +345,7 @@ def _evaluate_flex_deployment_storage(
             pass
         else:
             problems.append(
-                f"deployment storage authentication type {auth_type!r} is not "
+                "deployment storage authentication type is not "
                 "recognized (expected SystemAssignedIdentity, UserAssignedIdentity, "
                 "or StorageAccountConnectionString)"
             )
@@ -521,7 +522,8 @@ class DeploymentHandlers:
         if str(current).strip() != expected:
             return _create_result(
                 "fail",
-                f"FUNCTIONS_EXTENSION_VERSION is '{current}', expected '{expected}'. "
+                f"FUNCTIONS_EXTENSION_VERSION is '{extension_value(str(current))}', "
+                f"expected '{expected}'. "
                 "Legacy runtimes (~1/~2/~3) are retired; target the v4 runtime.",
                 file="local.settings.json",
             )
@@ -689,7 +691,7 @@ class DeploymentHandlers:
             return _create_result("pass", 'host.json version is "2.0"')
         return _create_result(
             "fail",
-            f'host.json version is {version!r}, expected "2.0"',
+            f'host.json version is {version_value(str(version))!r}, expected "2.0"',
         )
 
     @_rule_handler
@@ -773,7 +775,7 @@ class DeploymentHandlers:
         if bundle_id != recommended_id:
             return _create_result(
                 "fail",
-                f"extensionBundle id '{bundle_id}' is not the recommended '{recommended_id}'",
+                f"extensionBundle id is not the recommended '{recommended_id}'",
             )
 
         version_str = str(bundle_version).strip()
@@ -788,8 +790,7 @@ class DeploymentHandlers:
         if range_match is None:
             return _create_result(
                 "fail",
-                f"extensionBundle version '{version_str}' is not a valid range;"
-                " use the recommended [4.0.0, 5.0.0)",
+                "extensionBundle version is not a valid range; use the recommended [4.0.0, 5.0.0)",
             )
 
         lower_bracket = range_match.group(1)

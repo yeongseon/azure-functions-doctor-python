@@ -28,6 +28,7 @@ import json
 from pathlib import Path
 import re
 
+from azure_functions_doctor.inspection import read_inspection_text
 from azure_functions_doctor.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -142,7 +143,7 @@ def _shared_traversal() -> Callable[[Path, str | tuple[str, ...] | list[str]], I
 
 def _read_text(candidate: Path) -> str | None:
     try:
-        return candidate.read_text(encoding="utf-8-sig")
+        return read_inspection_text(candidate)
     except (OSError, ValueError, UnicodeDecodeError):
         logger.debug("Skip unreadable infra file %s", candidate)
         return None

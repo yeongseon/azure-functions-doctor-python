@@ -19,7 +19,10 @@ from typing import (
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name
 
+from azure_functions_doctor.inspection import read_inspection_text
+from azure_functions_doctor.inspection_gaps import InspectionGap, record_gap
 from azure_functions_doctor.logging_config import get_logger
+from azure_functions_doctor.requirements_directives import parse_include_directive
 
 logger = get_logger(__name__)
 
@@ -134,6 +137,19 @@ def iter_project_files(
         pattern_list = tuple(patterns)
     for pattern in pattern_list:
         for candidate in sorted(project_path.rglob(pattern)):
+            try:
+                if not candidate.resolve().is_relative_to(project_path.resolve()):
+                    record_gap(
+                        InspectionGap(
+                            candidate.absolute(),
+                            1,
+                            str(candidate.relative_to(project_path)),
+                            "discovered file",
+                        )
+                    )
+                    continue
+            except (OSError, RuntimeError):
+                continue
             if include_default_excludes:
                 if not _matches_extra_exclude(candidate):
                     yield candidate
@@ -1328,7 +1344,7 @@ def _iter_project_py_contents(path: Path) -> Iterator[tuple[Path, str]]:
 def _read_project_python_file(py_file: Path) -> str | None:
     """Read Python source without failing the whole traversal."""
     try:
-        return py_file.read_text(encoding="utf-8-sig")
+        return read_inspection_text(py_file)
     except PermissionError:
         logger.warning(f"Permission denied reading {py_file}")
         return None
@@ -1362,14 +1378,19 @@ def _iter_requirements_txt_lines(content: str, source_path: Path | None = None) 
         def collect_includes(text: str, including_path: Path, depth: int) -> None:
             if depth >= 10:
                 return
-            for raw_line in text.splitlines():
-                match = re.match(r"^(?:-r\s+|--requirement(?:\s+|=))(.+)$", raw_line.strip())
-                if match is None:
+            for line_no, raw_line in enumerate(text.splitlines(), start=1):
+                directive = parse_include_directive(raw_line)
+                if directive is None:
                     continue
-                include_value = match.group(1).split(" #", 1)[0].strip().strip("'\"")
+                include_value = directive.reference
                 if "://" in include_value:
                     continue
                 include_path = (including_path.parent / include_value).resolve()
+                if not include_path.is_relative_to(source_path.parent.resolve()):
+                    record_gap(InspectionGap(including_path.absolute(), line_no, include_value))
+                    continue
+                if directive.constraint:
+                    continue
                 if include_path in seen or not include_path.is_file():
                     continue
                 seen.add(include_path)
@@ -1561,11 +1582,16 @@ def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, st
             line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
-            include_match = re.match(r"^(?:-r\s+|--requirement(?:\s+|=))(.+)$", line)
-            if include_match is not None:
-                include_value = include_match.group(1).split(" #", 1)[0].strip().strip("'\"")
+            directive = parse_include_directive(line)
+            if directive is not None:
+                include_value = directive.reference
                 if "://" not in include_value:
                     include_path = (file_path.parent / include_value).resolve()
+                    if not include_path.is_relative_to(req_path.parent.resolve()):
+                        record_gap(InspectionGap(file_path, line_no, include_value))
+                        continue
+                    if directive.constraint:
+                        continue
                     results.extend(walk(include_path, depth + 1))
                 continue
             if line.startswith(("-c ", "--constraint")):
@@ -1693,32 +1719,28 @@ def _create_result(
 
 def _handle_exception(operation: str, exc: Exception) -> HandlerResult:
     """Handle exceptions consistently across all handlers (always fail)."""
-    error_msg = f"Error during {operation}: {exc}"
-    logger.error(error_msg, exc_info=True)
+    error_msg = f"Error during {operation}: {type(exc).__name__}"
+    logger.error("Diagnostic operation failed: %s (%s)", operation, type(exc).__name__)
     return _create_result("fail", error_msg, internal_error=True)
 
 
 def _handle_specific_exceptions(operation: str, exc: Exception) -> HandlerResult:
     """Handle specific exception types with user-friendly messages (fail only)."""
     if isinstance(exc, UnicodeDecodeError):
-        return _create_result("fail", f"Encoding error in {operation}: {exc}.", internal_error=True)
+        return _create_result("fail", f"Encoding error in {operation}.", internal_error=True)
     if isinstance(exc, (ValueError, TypeError)):
-        return _create_result(
-            "fail", f"Configuration error in {operation}: {exc}.", internal_error=True
-        )
+        return _create_result("fail", f"Configuration error in {operation}.", internal_error=True)
     if isinstance(exc, (OSError, PermissionError)):
-        return _create_result(
-            "fail", f"File system error in {operation}: {exc}", internal_error=True
-        )
+        return _create_result("fail", f"File system error in {operation}", internal_error=True)
     if isinstance(exc, ImportError):
-        return _create_result("fail", f"Import error in {operation}: {exc}", internal_error=True)
+        return _create_result("fail", f"Import error in {operation}", internal_error=True)
     if isinstance(exc, MemoryError):
         return _create_result("fail", "Memory error: file too large", internal_error=True)
     if isinstance(exc, KeyboardInterrupt):
         raise exc
     if isinstance(exc, SystemExit):
         raise exc
-    logger.error(f"Unexpected error in {operation}: {exc}", exc_info=True)
+    logger.error("Unexpected diagnostic error in %s (%s)", operation, type(exc).__name__)
     return _create_result("fail", f"Unexpected error in {operation}", internal_error=True)
 
 
@@ -1767,6 +1789,7 @@ class Rule(TypedDict, total=False):
         "package_declared",
         "blueprint_registration",
         "native_dependency_risk",
+        "unpinned_requirements",
         "decorator_order",
         "endpoint_metadata",
         "openapi_version_mixing",

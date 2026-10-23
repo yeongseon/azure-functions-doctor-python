@@ -13,6 +13,53 @@ while optional checks provide operational guidance (tooling, telemetry, and hygi
 
 ## Programming Model Detection
 
+### Privacy and inspection trust
+
+Diagnostic reports are intended to identify setting **names**, rule IDs, status,
+locations and remediation, not persist credentials. Unknown extension/runtime
+values and invalid host-field values are masked or omitted; recognized runtime
+pins remain visible. Table, JSON, SARIF and JUnit use the same findings. The
+agent adapter projects generated reports; it does not sanitize arbitrary reports.
+
+Ordinary inspection parses source without importing application code or installing
+dependencies. Out-of-root references are skipped: includes are contained within
+the top-level manifest directory and discovered files must resolve within the
+selected project root. Rules depending on an excluded reference report incomplete
+inspection as a non-gating advisory warning, with its written path and file/line.
+Requirements walkers and discovery follow/yield symlinks resolving **inside** the
+root; the bounded reader instead refuses symlinks and symlink ancestors.
+
+The 4 MiB, regular-file-only (no devices/FIFOs), NUL-rejecting bound applies to
+`read_inspection_text`, used by Python source inspection/programming-model detection
+and `deploy_config._read_text` for Bicep/JSON infrastructure
+and `local.settings.json`. The location-preserving requirements walker uses it
+after resolving include paths; the flattened walker still reads included files
+directly. Source decoding retains a legacy direct-read invalid-UTF-8 fallback;
+other host/requirements/TOML readers are not uniformly bounded. Ancestor replacement,
+TOCTOU and concurrent file replacement are not covered. These are inspection
+bounds, **not a sandbox** for
+actively hostile trees. Use an isolated credential-free environment with trusted
+PATH and resource limits. Custom rules and output paths are trusted inputs.
+Enabling the Action's `install-project-deps` can execute package build hooks.
+
+See the repository [security policy](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/SECURITY.md)
+for verified boundaries, remaining limitations, release audit policy and
+production versus local/test-only assumptions. Do not embed secrets in filenames
+or setting names: those metadata remain intentionally visible.
+
+### Compatibility
+
+- Shared references such as `-r ../common.txt` (also absolute out-of-root `-r`
+  and `-c` references) are no longer read. Affected checks report an incomplete-
+  inspection warning instead of silently passing. Vendor/copy the file inside
+  the project, or run doctor from the monorepo root with `--path`.
+- Handled-exception findings omit exception messages and traceback payloads:
+  they retain only the exception type/category and operation. Non-secret values
+  such as extension bundle IDs, storage authentication types and `logLevel.default`
+  are no longer quoted in finding text. Rule IDs, CLI flags and Finding Contract
+  v2/JSON shape are unchanged; projects without excluded references retain their
+  existing exit-code behavior.
+
 Before running rule handlers, Doctor classifies the repository into one of four programming-model states:
 
 | State | Meaning | Doctor behavior |
