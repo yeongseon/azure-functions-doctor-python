@@ -197,7 +197,7 @@ def semgrep_evidence(outcome: str) -> Check:
     code: int | None
     match outcome:
         case "success":
-            status, code = Status.PASS, 0
+            status, code = Status.INCOMPLETE, 0
         case "failure":
             status, code = Status.TOOL_ERROR, 1
         case _:
