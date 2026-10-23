@@ -26,16 +26,24 @@ dependencies. Out-of-root references are skipped: includes are contained within
 the top-level manifest directory and discovered files must resolve within the
 selected project root. Rules depending on an excluded reference report incomplete
 inspection as a non-gating advisory warning, with its written path and file/line.
-Requirements walkers and discovery follow/yield symlinks resolving **inside** the
-root; the bounded reader instead refuses symlinks and symlink ancestors.
+Discovery can yield in-root symlinks; every content reader refuses symlinks and
+symlink ancestors, including requirements includes.
 
-The 4 MiB, regular-file-only (no devices/FIFOs), NUL-rejecting bound applies to
-`read_inspection_text`, used by Python source inspection/programming-model detection
-and `deploy_config._read_text` for Bicep/JSON infrastructure
-and `local.settings.json`. The location-preserving requirements walker uses it
-after resolving include paths; the flattened walker still reads included files
-directly. Source decoding retains a legacy direct-read invalid-UTF-8 fallback;
-other host/requirements/TOML readers are not uniformly bounded. Ancestor replacement,
+All project readers use the strict UTF-8, regular-file-only (no devices/FIFOs),
+NUL-rejecting `read_inspection_text` boundary: Python/model detection, host/local
+settings JSON, Bicep/JSON infrastructure, requirements/includes, pyproject TOML,
+`.python-version` and `.funcignore`. Agent report and Action summary JSON are also
+bounded. `MAX_FILE_BYTES` is 4 MiB; `MAX_JSON_DEPTH` is 100 levels with a linear,
+string/escape-aware pre-scan. TOML duplicate keys and parser resource failures
+degrade gracefully. Include traversal is cycle-safe with
+`MAX_REQUIREMENTS_FILES` = 128, `MAX_REQUIREMENTS_BYTES` = 16 MiB cumulative UTF-8
+content, and `MAX_REQUIREMENTS_DEPTH` = 10 levels including the root.
+Large requirements/lockfiles over 4 MiB now produce visible incomplete-inspection
+evidence rather than being read. Core Tools stdout is capped at
+`MAX_PROCESS_OUTPUT_BYTES` = 64 KiB, stderr is discarded and read/wait phases use
+`PROCESS_TIMEOUT_SECONDS` = 10; overflow/timeout kills and reaps the child. Git's
+unused streams are discarded and its timeout remains 10 seconds.
+Trusted bundled rules/catalogs are outside these project-reader bounds. Ancestor replacement,
 TOCTOU and concurrent file replacement are not covered. These are inspection
 bounds, **not a sandbox** for
 actively hostile trees. Use an isolated credential-free environment with trusted
@@ -45,7 +53,8 @@ Enabling the Action's `install-project-deps` can execute package build hooks.
 See the repository [security policy](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/SECURITY.md)
 for verified boundaries, remaining limitations, release audit policy and
 production versus local/test-only assumptions. Do not embed secrets in filenames
-or setting names: those metadata remain intentionally visible.
+or setting names: those metadata remain intentionally visible; control characters
+are escaped in diagnostic output.
 
 ### Compatibility
 

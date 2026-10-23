@@ -136,30 +136,43 @@ than silently passing. Copy/vendor shared manifests inside the root or select th
 monorepo root with `--path`. Constraint files are not dependency declarations and
 are not followed; out-of-root `-c` references are nevertheless reported.
 
-Symlinks resolving **inside** the root are followed by requirements walkers and
-yielded by discovery. In contrast, the bounded reader `read_inspection_text`
-refuses symlinks (including symlink ancestors), nonregular files/devices/FIFOs,
-binary NUL content and files over 4 MiB. It is used by Python source inspection
-(`_read_project_python_file`, including programming-model detection) and
-`deploy_config._read_text` for Bicep/JSON infrastructure and
-`local.settings.json`. The location-preserving requirements walker also uses it
-after resolving the include path, so an in-root include symlink is followed first.
-The source helper retains a legacy invalid-UTF-8 fallback that reads directly.
-Other legacy host/requirements/TOML readers are not yet uniformly bounded.
+All project content readers use `read_inspection_text`: Python source and model
+detection, host/local settings JSON, infrastructure Bicep/JSON, requirements and
+their includes, pyproject TOML, `.python-version` and `.funcignore`. Agent report
+and Action summary JSON use the same boundary. It refuses symlinks (including
+symlink ancestors), nonregular files/devices/FIFOs, binary NUL content, invalid
+UTF-8 and files over `MAX_FILE_BYTES` (4 MiB). No decoding fallback bypasses it.
+Discovery may yield in-root symlinks, but reading them is refused visibly.
 
-These are inspection bounds, **not a sandbox**: JSON depth/duplicate-key behavior
-is parser-defined, and ancestor replacement/TOCTOU and concurrent file replacement
+`MAX_JSON_DEPTH` is 100 levels; its string/escape-aware scan is linear time.
+TOML duplicate keys and parser resource failures are handled without echoing
+parser payloads. Requirements traversal shares `MAX_REQUIREMENTS_FILES` (128),
+`MAX_REQUIREMENTS_BYTES` (16 MiB cumulative UTF-8 content) and
+`MAX_REQUIREMENTS_DEPTH` (10 levels including the root); cycles are visited once.
+Refused files and exhausted include budgets produce incomplete-inspection evidence.
+Large requirements/lockfiles over 4 MiB are no longer read: affected rules report
+a visible incomplete-inspection warning rather than silently passing.
+
+These are inspection bounds, **not a sandbox**: JSON duplicate-key behavior remains
+stdlib-defined; trusted bundled rule/catalog assets are outside project-reader bounds.
+Ancestor replacement/TOCTOU and concurrent file replacement
 are not covered. Pre-open regular-file checks avoid opening known nonregular paths
 without nonblocking support but do not prevent replacement. Nested IaC remains part
 of the selected tree and can contribute deployment signals. Do not scan actively hostile
 trees in a privileged environment; use a disposable credential-free container,
 read-only mount, resource limits and trusted PATH.
 
-The two runtime subprocess sites use argument arrays and 10-second timeouts.
+The two runtime subprocess sites use argument arrays and timeouts.
 Git metadata queries disable fsmonitor/hooks; injected shell syntax remains one
-path argument. Captured output is not yet size-bounded, and the trusted Core
-Tools executable can emit arbitrary output. Further hardening is required before
-claiming hostile executable or unlimited-output resistance.
+path argument, and both unused output streams go to the null device. Core Tools
+stdout is limited to `MAX_PROCESS_OUTPUT_BYTES` (64 KiB), with stderr discarded;
+`PROCESS_TIMEOUT_SECONDS` is 10 per read/wait phase. Overflow or timeout kills and
+reaps both the tool and its isolated bounded-reader child. POSIX cleanup also
+kills the tool's process group. Windows process trees and descendants that escape
+the POSIX group are not sandboxed; executables and PATH remain operator-trusted.
+The reader is a separate process so inherited pipes cannot leave blocked reader threads.
+File names remain intentionally visible metadata, with control characters escaped
+in diagnostic output. Never put credentials in file or setting names.
 
 ## Infrastructure and examples
 
