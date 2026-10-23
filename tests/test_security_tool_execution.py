@@ -14,6 +14,7 @@ from tools.security_report import Status
 def test_tool_failures_discard_raw_diagnostics(tmp_path: Path, failure: Exception) -> None:
     # Given unavailable scanners; When invoked; Then failure never becomes PASS.
     (tmp_path / "example.dist-info").mkdir()
+    (tmp_path / "example.dist-info/METADATA").write_text("Name: example\nVersion: 1\n")
     with patch("subprocess.run", side_effect=failure):
         assert security_evidence.run_bandit().status == Status.TOOL_ERROR
         assert dependency_audit_policy.run_audit(tmp_path, tmp_path).status == Status.TOOL_ERROR
@@ -70,6 +71,7 @@ def test_missing_bandit_metadata_is_tool_error() -> None:
 def test_audit_reads_only_isolated_installation(tmp_path: Path) -> None:
     # Given one isolated wheel installation and an empty runtime exception policy.
     (tmp_path / "example.dist-info").mkdir()
+    (tmp_path / "example.dist-info/METADATA").write_text("Name: example\nVersion: 1\n")
     policy = tmp_path / "policy.json"
     policy.write_text('{"schema_version":1,"blocking":"all-known-runtime","exceptions":[]}')
     raw = '{"dependencies":[{"name":"example","version":"1","vulns":[]}]}'

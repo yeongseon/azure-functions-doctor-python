@@ -5,12 +5,15 @@ from __future__ import annotations
 import argparse
 from dataclasses import replace
 from datetime import date
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import PackageNotFoundError, distributions, version
 from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
+from zipfile import BadZipFile
 
+from tools.audit_candidate import wheel_identity
 from tools.security_exceptions import parse_exceptions
 from tools.security_report import (
     Check,
@@ -88,7 +91,13 @@ def classify_audit(raw: str, exit_status: int, *, policy_raw: str, today: date) 
         return replace(result, message="Invalid audit/tool/policy evidence; release blocked.")
 
 
-def run_audit(site_packages: Path, policy: Path) -> Check:
+def run_audit(
+    site_packages: Path,
+    policy: Path,
+    *,
+    candidate_name: str = "",
+    candidate_version: str = "",
+) -> Check:
     try:
         if not site_packages.is_dir() or not list(site_packages.glob("*.dist-info")):
             return Check(
@@ -98,35 +107,100 @@ def run_audit(site_packages: Path, policy: Path) -> Check:
                 None,
                 message="Candidate installation inventory missing.",
             )
-        process = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "pip_audit",
-                "--path",
-                str(site_packages),
-                "--format",
-                "json",
-                "--desc",
-                "off",
-                "--progress-spinner",
-                "off",
-                "--timeout",
-                "30",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=300,
-        )
+        installed = list(distributions(path=[str(site_packages)]))
+        inventory = {
+            re.sub(r"[-_.]+", "-", dist.metadata["Name"].lower()): dist.version
+            for dist in installed
+            if dist.metadata["Name"]
+        }
+        if len(inventory) != len(installed):
+            return Check(
+                "pip-audit",
+                ("resolved-runtime-wheel",),
+                Status.INCOMPLETE,
+                None,
+                message="Duplicate or missing installed distribution identity.",
+            )
+        candidate = re.sub(r"[-_.]+", "-", candidate_name.lower())
+        if candidate and inventory.get(candidate) != candidate_version:
+            return Check(
+                "pip-audit",
+                ("resolved-runtime-wheel",),
+                Status.INCOMPLETE,
+                None,
+                message="Candidate identity missing or mismatched.",
+            )
+        with tempfile.TemporaryDirectory(prefix="doctor-audit-") as temporary:
+            requirement = Path(temporary) / "requirements.txt"
+            if candidate:
+                del inventory[candidate]
+                if not inventory:
+                    return Check(
+                        "pip-audit",
+                        ("resolved-runtime-wheel",),
+                        Status.INCOMPLETE,
+                        None,
+                        message="Empty third-party inventory.",
+                    )
+                requirement.write_text(
+                    "".join(f"{name}=={release}\n" for name, release in sorted(inventory.items())),
+                    encoding="utf-8",
+                )
+            scope = (
+                ["--requirement", str(requirement), "--no-deps", "--disable-pip"]
+                if candidate
+                else ["--path", str(site_packages)]
+            )
+            process = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip_audit",
+                    *scope,
+                    "--format",
+                    "json",
+                    "--desc",
+                    "off",
+                    "--progress-spinner",
+                    "off",
+                    "--timeout",
+                    "30",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=300,
+            )
         result = classify_audit(
             process.stdout,
             process.returncode,
             policy_raw=policy.read_text(encoding="utf-8"),
             today=date.today(),
         )
+        if candidate and result.status in {Status.PASS, Status.FAIL}:
+            reported = {
+                re.sub(r"[-_.]+", "-", text(mapping(item)["name"]).lower()): text(
+                    mapping(item)["version"]
+                )
+                for item in sequence(load(process.stdout)["dependencies"])
+            }
+            if candidate in reported and reported[candidate] == candidate_version:
+                del reported[candidate]
+            if reported != inventory:
+                result = replace(
+                    result,
+                    status=Status.INCOMPLETE,
+                    message="Audit differs from installed third-party inventory.",
+                )
         return replace(result, tool_versions={"pip-audit": version("pip-audit")})
-    except (OSError, subprocess.TimeoutExpired, PackageNotFoundError):
+    except (
+        OSError,
+        subprocess.TimeoutExpired,
+        PackageNotFoundError,
+        ValueError,
+        KeyError,
+        TypeError,
+    ):
         return Check(
             "pip-audit",
             ("resolved-runtime-wheel",),
@@ -144,8 +218,34 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path, default=Path("security-results"))
     parser.add_argument("--development", action="store_true")
+    parser.add_argument("--candidate-name", default="")
+    parser.add_argument("--candidate-version", default="")
+    parser.add_argument("--candidate-wheel", type=Path)
     args = parser.parse_args()
-    check = run_audit(args.site_packages, args.policy)
+    try:
+        if args.candidate_wheel:
+            args.candidate_name, args.candidate_version = wheel_identity(args.candidate_wheel)
+        if not args.candidate_name or not args.candidate_version:
+            raise ValueError("Candidate identity required")
+    except (OSError, ValueError, BadZipFile):
+        return write_report(
+            [
+                Check(
+                    "pip-audit",
+                    ("resolved-runtime-wheel",),
+                    Status.INCOMPLETE,
+                    None,
+                    message="Candidate wheel identity unavailable.",
+                )
+            ],
+            args.output,
+        )
+    check = run_audit(
+        args.site_packages,
+        args.policy,
+        candidate_name=args.candidate_name,
+        candidate_version=args.candidate_version,
+    )
     if args.development:
         check = replace(check, name="pip-audit-development", scope=("runtime-and-development",))
     return write_report([check], args.output)

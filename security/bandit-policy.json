@@ -13,7 +13,7 @@
     {"id":"B607","file":"tools/check_pr_format.py","line":37,"kind":"reviewed-static","reason":"Trusted runner PATH supplies ruff; no shell","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
     {"id":"B603","file":"tools/check_pr_format.py","line":37,"kind":"reviewed-static","reason":"Formatter paths follow explicit option terminator","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
     {"id":"B404","file":"tools/dependency_audit_policy.py","line":11,"kind":"reviewed-static","reason":"Fixed interpreter runs audit tool, no shell","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
-    {"id":"B603","file":"tools/dependency_audit_policy.py","line":101,"kind":"reviewed-static","reason":"Fixed module and isolated installation path with 300-second timeout","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
+    {"id":"B603","file":"tools/dependency_audit_policy.py","line":154,"kind":"reviewed-static","reason":"Fixed module and isolated installation inventory with 300-second timeout","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
     {"id":"B404","file":"tools/security_evidence.py","line":11,"kind":"reviewed-static","reason":"Fixed interpreter runs Bandit, no shell","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
     {"id":"B603","file":"tools/security_evidence.py","line":129,"kind":"reviewed-static","reason":"Fixed module and static inventory with 180-second timeout","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"},
     {"id":"B105","file":"tools/security_report.py","line":59,"kind":"reviewed-static","reason":"PASS is an evidence status enum, not a credential","owner":"maintainer","added":"2026-10-22","expires":"2027-01-20"}
