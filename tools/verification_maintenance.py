@@ -26,10 +26,10 @@ def main() -> int:
             )
             if compatible.returncode:
                 continue
-            command = [str(python.resolve()), "-m", "tools.verification", *sys.argv[1:]]
+            command = [str(python.absolute()), "-m", "tools.verification", *sys.argv[1:]]
             environment = dict(
                 os.environ,
-                PATH=str(python.resolve().parent) + os.pathsep + os.environ.get("PATH", ""),
+                PATH=str(python.absolute().parent) + os.pathsep + os.environ.get("PATH", ""),
             )
             return subprocess.call(command, env=environment)
     print("Python >=3.11 required; development environment not created: run make install")
