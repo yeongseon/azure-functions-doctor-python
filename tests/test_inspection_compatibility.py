@@ -48,6 +48,7 @@ print(json.dumps({'code': result.exit_code, 'output': result.output}))
         "crlf",
         "alias-integration",
         "alias-gap",
+        "bom-funcignore",
     ],
 )
 @pytest.mark.parametrize("output_format", ["table", "json", "sarif"])
@@ -142,6 +143,10 @@ def test_normal_project_matches_main_bytes(
     elif fixture == "crlf":
         (project / "requirements.txt").write_bytes(b"azure-functions==1.21.3\r\n-r child.txt\r\n")
         (project / "child.txt").write_bytes(b"numpy\r\nrequests==2.32.5\r")
+    elif fixture == "bom-funcignore":
+        (project / ".funcignore").write_bytes(b"\xef\xbb\xbf.venv\n")
+        (project / ".venv").mkdir()
+        (project / ".venv/hello").touch()
     if fixture == "deploy":
         (project / "infra.json").write_text(
             '{"functionAppConfig":{"runtime":{"name":"python","version":"3.12"},'
