@@ -48,23 +48,69 @@ class Summary:
     deployed_version_match: Status = "NOT_APPLICABLE"
 
 
+_REDACTED = "[REDACTED]"
+_QUOTED = r"\"(?:[^\"\\]|\\.)*\"|'(?:[^'\\]|\\.)*'"
+_AUTHORIZATION = re.compile(
+    r"(?im)(?P<key>(?:proxy-)?authorization[\"']?\s*[:=]\s*)(?P<value>" + _QUOTED + r"|[^\r\n\"<]+)"
+)
+_URL_CREDENTIALS = re.compile(r"([\w+.-]+://)[^/@\s\"']+@")
+_SECRET_FIELD = re.compile(
+    r"(?i)(?<![\w-])(?P<key>(?:[\w.-]*(?:token|password|passwd|secret|api[_-]?key|"
+    r"connection[_-]?string)|AccountKey|SharedAccessKey|SharedAccessSignature|"
+    r"AzureWebJobsStorage|InstrumentationKey|x-functions-key|code|sig|sas)"
+    r"[\"']?\s*[:=]\s*)(?P<value>" + _QUOTED + r"|[^\s;&<>\"',]+)"
+)
+_SECRET_ENV_NAME = re.compile(
+    r"(?i)secret|token|password|conn|string|accountkey|functions.key|api.?key|sas"
+)
+_TEXT_SUFFIXES = frozenset({".log", ".txt", ".xml", ".json", ".md"})
+
+
+def _mask(match: re.Match[str]) -> str:
+    value = match.group("value")
+    quote = value[0] if value[:1] in {'"', "'"} else ""
+    return f"{match.group('key')}{quote}{_REDACTED}{quote}"
+
+
+def _known_secrets() -> list[str]:
+    values = {
+        value
+        for key, value in os.environ.items()
+        if len(value) >= 6 and _SECRET_ENV_NAME.search(key)
+    }
+    escaped = {json.dumps(value)[1:-1] for value in values}
+    return sorted(values | escaped, key=len, reverse=True)
+
+
 def redact(text: str) -> str:
-    text = re.sub(r"(?im)(authorization[\"']?\s*[:=]\s*)[^\r\n<\"]+", r"\1[REDACTED]", text)
-    text = re.sub(r"([\w+.-]+://)[^/\s<>\"']*@", r"\1[REDACTED]@", text)
-    text = re.sub(r"(?i)(DefaultEndpointsProtocol=)[^\s<\"']+", r"\1[REDACTED]", text)
-    text = re.sub(
-        r"(?i)(?<![\w-])((?:[\w-]*(?:token|password|secret|connection[_-]?string)|AccountKey|"
-        r"SharedAccessSignature|AzureWebJobsStorage|x-functions-key|code|sig|sas|api[_-]?key)"
-        r"[\"']?\s*[:=]\s*[\"']?)[^\s;&<\"']+",
-        r"\1[REDACTED]",
-        text,
-    )
-    for key, value in os.environ.items():
-        if len(value) >= 6 and re.search(
-            r"(?i)secret|token|password|conn|accountkey|functions.key", key
-        ):
-            text = text.replace(value, "[REDACTED]")
-    return text
+    for value in _known_secrets():
+        text = text.replace(value, _REDACTED)
+    text = _AUTHORIZATION.sub(_mask, text)
+    text = _URL_CREDENTIALS.sub(r"\1" + _REDACTED + "@", text)
+    return _SECRET_FIELD.sub(_mask, text)
+
+
+def redact_json(value: object) -> object:
+    if isinstance(value, str):
+        return redact(value)
+    if isinstance(value, (list, tuple)):
+        return [redact_json(item) for item in value]
+    if isinstance(value, dict):
+        return {redact(str(key)): redact_json(item) for key, item in value.items()}
+    return value
+
+
+def dump_json(value: object) -> str:
+    return json.dumps(redact_json(value), indent=2) + "\n"
+
+
+def _redact_file_text(suffix: str, text: str) -> str:
+    if suffix == ".json":
+        try:
+            return dump_json(json.loads(text))
+        except ValueError:
+            return redact(text)
+    return redact(text)
 
 
 def environment() -> dict[str, str]:
@@ -147,11 +193,16 @@ def publish(summary: Summary) -> None:
 def save(directory: Path, summary: Summary) -> Summary:
     directory.mkdir(parents=True, exist_ok=True)
     for path in directory.rglob("*"):
-        if path.is_file():
-            path.write_text(redact(path.read_text(encoding="utf-8")), encoding="utf-8")
-    (directory / "environment.json").write_text(
-        redact(json.dumps(environment(), indent=2)) + "\n", encoding="utf-8"
-    )
+        if path.is_symlink() or not path.is_file() or path.suffix not in _TEXT_SUFFIXES:
+            continue
+        try:
+            original = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        redacted = _redact_file_text(path.suffix, original)
+        if redacted != original:
+            path.write_text(redacted, encoding="utf-8")
+    (directory / "environment.json").write_text(dump_json(environment()), encoding="utf-8")
     summary = replace(
         summary,
         command=tuple(redact(part) for part in summary.command),
@@ -162,8 +213,8 @@ def save(directory: Path, summary: Summary) -> Summary:
             if path.is_file() and path.name != "summary.json"
         ),
     )
-    serialized = redact(json.dumps(asdict(summary), indent=2))
-    (directory / "summary.json").write_text(serialized + "\n", encoding="utf-8")
+    serialized = dump_json(asdict(summary))
+    (directory / "summary.json").write_text(serialized, encoding="utf-8")
     return Summary(**json.loads(serialized))
 
 

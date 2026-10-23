@@ -16,7 +16,16 @@ from urllib.parse import urlsplit
 import xml.etree.ElementTree as ET
 
 from tools.verification_environment import clean, doctor
-from tools.verification_evidence import Status, Summary, collect, publish, redact, report, save
+from tools.verification_evidence import (
+    Status,
+    Summary,
+    collect,
+    dump_json,
+    publish,
+    redact,
+    report,
+    save,
+)
 from tools.verification_host import host_smoke
 from tools.verification_process import run
 
@@ -135,7 +144,7 @@ def aggregate(lane: str, outcomes: list[Summary]) -> int:
         status = "INCOMPLETE"
     directory = Path("test-results") / lane
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / "lanes.json").write_text(json.dumps([asdict(item) for item in outcomes], indent=2))
+    (directory / "lanes.json").write_text(dump_json([asdict(item) for item in outcomes]))
     summary = Summary(
         1,
         lane,
