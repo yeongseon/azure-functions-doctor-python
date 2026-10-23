@@ -50,7 +50,11 @@ independently demonstrated**. A clean static scan is not Azure certification.
 The runtime gate installs the **single exact candidate wheel** from the build
 artifact into an isolated `venv --without-pip`. The audit tool
 (`pip-audit==2.10.1`) runs outside that installation and audits only its
-site-packages. No production runtime extras are currently declared; `dev` and
+site-packages. Candidate name/version from the wheel METADATA must match the installed
+distribution before excluding only that first-party candidate. The exact installed
+third-party inventory is audited as pinned requirements with `--no-deps --disable-pip`,
+so unpublished candidate versions do not require a PyPI entry. Missing/mismatched
+identity, empty inventory and third-party skips still block. No production runtime extras are currently declared; `dev` and
 `docs` are not production closures. Adding a production extra requires updating
 the audited matrix. All known runtime advisories block, including UNKNOWN
 severity because the upstream feed need not provide consistent severity data.
@@ -69,7 +73,16 @@ surfaces. The Action entrypoint is Bash, not Python; it is reviewed separately.
 Existing inline `# nosec` annotations are retained and audited using
 `--ignore-nosec` against exact rule/file/line allow-lists. A changed annotation
 inventory fails completeness. Semgrep evidence records the pinned action's
-outcome only: its finding count is unknown, not zero.
+outcome only: its finding count is unknown, not zero. A successful action without
+structured scan evidence is `INCOMPLETE` ("action outcome only"); the evidence target
+tolerates only exit 3 while the pinned action remains the blocking gate.
+
+Local entry points are `make security` (including the expanded Bandit inventory),
+`make security-bandit`, `make security-semgrep`, `make security-types`,
+`make security-audit` (blocking), and `make security-audit-report` (reporting workflow).
+For audits supply `AUDIT_SITE_PACKAGES` plus `CANDIDATE_WHEEL`, or the independently
+expected `CANDIDATE_NAME` and `CANDIDATE_VERSION`. `SECURITY_PYTHON` selects the tooling
+interpreter and `SECURITY_OUTPUT` selects the evidence directory.
 
 The JSON evidence and GitHub summary retain IDs, relative paths, lines,
 severities/confidences, counts, tool versions and applied exception identifiers.
@@ -117,11 +130,13 @@ arbitrary externally supplied reports.
 
 Project discovery rejects resolved out-of-root symlink files and does not follow
 symlink directory loops. Requirements includes cannot leave the top-level
-manifest directory. Shared source and local/deployment-setting reads reject
+manifest directory in both flattened and location-preserving rule walkers. Shared source and local/deployment-setting reads reject
 symlinks, FIFOs/devices, binary NUL content and files over 4 MiB. These protections
 are **not yet universal**: several legacy host/requirements/TOML readers still
 read directly, JSON depth/duplicate-key behavior is parser-defined, and concurrent
-filesystem replacement is not a hardened sandbox. Nested IaC remains part of the
+filesystem replacement is not a hardened sandbox. Pre-open regular-file checks
+avoid opening known nonregular paths when platform nonblocking flags are unavailable;
+they do not prevent concurrent replacement. Nested IaC remains part of the
 selected tree and can contribute deployment signals. Do not scan actively hostile
 trees in a privileged environment; use a disposable credential-free container,
 read-only mount, resource limits and trusted PATH.
