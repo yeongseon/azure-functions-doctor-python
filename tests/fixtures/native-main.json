@@ -1,0 +1,24 @@
+{
+  "json": {
+    "rule_id": "check_native_dependency_risk",
+    "label": "Native dependency risk",
+    "value": "Native dependencies detected: numpy\nThese packages depend on platform-specific native libraries.\nEnsure your build environment matches the Azure Functions Linux runtime.\nRecommended: use remote build (`func azure functionapp publish --build remote`).\n- numpy: ensure compiled wheels match the Azure Functions Linux runtime (optional)",
+    "status": "warn",
+    "severity": "warning",
+    "tier": "extended",
+    "analysis": {"type": "deterministic"},
+    "hint": "If you deploy native-extension packages, build against the Azure Functions Linux runtime. Prefer remote build with `func azure functionapp publish --build remote`.",
+    "hint_url": "https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-python#remote-build"
+  },
+  "sarif": {
+    "ruleId": "check_native_dependency_risk",
+    "message": {"text": "Native dependencies detected: numpy\nThese packages depend on platform-specific native libraries.\nEnsure your build environment matches the Azure Functions Linux runtime.\nRecommended: use remote build (`func azure functionapp publish --build remote`).\n- numpy: ensure compiled wheels match the Azure Functions Linux runtime (optional)"},
+    "level": "warning",
+    "locations": [{"physicalLocation": {"artifactLocation": {"uri": ".", "uriBaseId": "%SRCROOT%"}}}],
+    "partialFingerprints": {"primaryLocationLineHash": "8330317154bbb1a62d370997c78f068f0a4e0e6d89b164cb5ce8e55046f2e576"},
+    "properties": {
+      "hint": "If you deploy native-extension packages, build against the Azure Functions Linux runtime. Prefer remote build with `func azure functionapp publish --build remote`.",
+      "analysis": {"type": "deterministic"}
+    }
+  }
+}

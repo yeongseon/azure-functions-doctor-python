@@ -127,7 +127,14 @@ class HandlerRegistry(
                                 {
                                     "file": result.get("file", "."),
                                     "line": result.get("line"),
-                                    "message": result.get("detail", ""),
+                                    "message": result.get("detail", "")
+                                    + (
+                                        " (optional)"
+                                        if not result.get(
+                                            "gate", rule.get("gate", rule.get("required", True))
+                                        )
+                                        else ""
+                                    ),
                                 }
                             ],
                         ),

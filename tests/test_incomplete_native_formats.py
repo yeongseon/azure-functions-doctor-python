@@ -73,9 +73,11 @@ def test_native_finding_and_gap_survive_all_formats(tmp_path: Path, output: str)
             r for r in data["runs"][0]["results"] if r["ruleId"] == "check_native_dependency_risk"
         ]
         assert len(native) == 2
+        baseline = json.loads((Path(__file__).parent / "fixtures/native-main.json").read_text())
+        assert native[0] == baseline["sarif"]
         assert sum("numpy" in r["message"]["text"] for r in native) == 1
         assert sum("not inspected" in r["message"]["text"] for r in native) == 1
-        assert [r["locations"][0]["physicalLocation"]["region"]["startLine"] for r in native] == [
-            2,
-            3,
-        ]
+        legacy_location = native[0]["locations"][0]["physicalLocation"]
+        assert legacy_location["artifactLocation"]["uri"] == "."
+        assert "region" not in legacy_location
+        assert native[1]["locations"][0]["physicalLocation"]["region"]["startLine"] == 3
