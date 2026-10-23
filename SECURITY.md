@@ -128,16 +128,30 @@ not payloads or chained tracebacks. Recognized runtime pins remain visible.
 The agent adapter consumes existing reports; it is not a sanitizer for
 arbitrary externally supplied reports.
 
-Project discovery rejects resolved out-of-root symlink files and does not follow
-symlink directory loops. Requirements includes cannot leave the top-level
-manifest directory in both flattened and location-preserving rule walkers. Shared source and local/deployment-setting reads reject
-symlinks, FIFOs/devices, binary NUL content and files over 4 MiB. These protections
-are **not yet universal**: several legacy host/requirements/TOML readers still
-read directly, JSON depth/duplicate-key behavior is parser-defined, and concurrent
-filesystem replacement is not a hardened sandbox. Pre-open regular-file checks
-avoid opening known nonregular paths when platform nonblocking flags are unavailable;
-they do not prevent concurrent replacement. Nested IaC remains part of the
-selected tree and can contribute deployment signals. Do not scan actively hostile
+Out-of-root references are not read: both requirements walkers contain includes
+within the top-level manifest directory, and discovery skips files resolving outside
+the selected project root. A rule that encounters one reports incomplete inspection
+as an advisory warning, with the written reference and declaring file/line, rather
+than silently passing. Copy/vendor shared manifests inside the root or select the
+monorepo root with `--path`. Constraint files are not dependency declarations and
+are not followed; out-of-root `-c` references are nevertheless reported.
+
+Symlinks resolving **inside** the root are followed by requirements walkers and
+yielded by discovery. In contrast, the bounded reader `read_inspection_text`
+refuses symlinks (including symlink ancestors), nonregular files/devices/FIFOs,
+binary NUL content and files over 4 MiB. It is used by Python source inspection
+(`_read_project_python_file`, including programming-model detection) and
+`deploy_config._read_text` for Bicep/JSON infrastructure and
+`local.settings.json`. The location-preserving requirements walker also uses it
+after resolving the include path, so an in-root include symlink is followed first.
+The source helper retains a legacy invalid-UTF-8 fallback that reads directly.
+Other legacy host/requirements/TOML readers are not yet uniformly bounded.
+
+These are inspection bounds, **not a sandbox**: JSON depth/duplicate-key behavior
+is parser-defined, and ancestor replacement/TOCTOU and concurrent file replacement
+are not covered. Pre-open regular-file checks avoid opening known nonregular paths
+without nonblocking support but do not prevent replacement. Nested IaC remains part
+of the selected tree and can contribute deployment signals. Do not scan actively hostile
 trees in a privileged environment; use a disposable credential-free container,
 read-only mount, resource limits and trusted PATH.
 
