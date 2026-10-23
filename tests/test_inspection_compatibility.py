@@ -1,10 +1,12 @@
 """Byte baselines captured from origin/main 94f987f in a temporary git worktree.
 
 Generate with DOCTOR_GOLDEN_SOURCE=<main-worktree>/src and DOCTOR_GOLDEN_RECORD=1.
-Only project paths and generated_at timestamps are normalized. No main import is
-performed during ordinary tests; the saved bytes and exit codes are authoritative.
+The child environment is allowlisted and external executable discovery is fixed.
+Paths, timestamps, package versions and tool-runtime Python versions alone are
+normalized; finding text, order, whitespace, counts and exit codes remain byte-pinned.
 """
 
+import difflib
 import json
 import os
 from pathlib import Path
@@ -20,7 +22,7 @@ import json, sys
 from unittest.mock import patch
 from typer.testing import CliRunner
 from azure_functions_doctor.cli import cli
-with patch('shutil.which', return_value=None):
+with patch('shutil.which', return_value=None), patch('sys.executable', 'python'):
     result = CliRunner().invoke(cli, ['doctor', '--path', sys.argv[1],
         '--format', sys.argv[2], '--target-python', '3.12'])
 print(json.dumps({'code': result.exit_code, 'output': result.output}))
@@ -35,6 +37,7 @@ def test_normal_project_matches_main_bytes(
     # Given normal regular-file projects, with in-root requirements includes.
     project = tmp_path / "project"
     project.mkdir()
+    (project / "python").write_text("")
     source = "import azure.functions as func\napp = func.FunctionApp()\n"
     if fixture == "langgraph":
         source = (
@@ -61,16 +64,28 @@ def test_normal_project_matches_main_bytes(
             '"authentication":{"type":"SystemAssignedIdentity"}}}}}'
         )
     env = {
-        **os.environ,
         "PYTHONPATH": os.environ.get("DOCTOR_GOLDEN_SOURCE", str(Path("src").absolute())),
-        "COLUMNS": "120",
+        "PATH": str(tmp_path / "empty-bin"),
+        "HOME": str(tmp_path),
+        "USERPROFILE": str(tmp_path),
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONIOENCODING": "utf-8",
+        "PYTHONUTF8": "1",
+        "PYTHONHASHSEED": "0",
+        "COLUMNS": "10000",
+        "LINES": "40",
         "NO_COLOR": "1",
         "TERM": "dumb",
     }
+    if "SYSTEMROOT" in os.environ:
+        env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
     # When the real CLI renders each format in an isolated interpreter.
     run = subprocess.run(
         [sys.executable, "-c", PROBE, str(project), output_format],
         env=env,
+        cwd=project,
         capture_output=True,
         text=True,
         timeout=30,
@@ -78,11 +93,24 @@ def test_normal_project_matches_main_bytes(
     )
     payload = json.loads(run.stdout)
     payload["output"] = payload["output"].replace(str(project), "<PROJECT>")
+    payload["output"] = payload["output"].replace(sys.executable, "<PYTHON_EXECUTABLE>")
     payload["output"] = re.sub(
         r'("generated_at": ")[^"]+("|$)', r"\1<TIMESTAMP>\2", payload["output"]
+    )
+    payload["output"] = re.sub(
+        r"Tool runtime: \d+\.\d+\.\d+", "Tool runtime: <PYTHON>", payload["output"]
+    )
+    payload["output"] = re.sub(
+        r'("(?:tool_version|python_version)": ")[^"]+("|$)',
+        r"\1<VERSION>\2",
+        payload["output"],
     )
     saved = BASELINES / f"{fixture}-{output_format}.json"
     if os.environ.get("DOCTOR_GOLDEN_RECORD") == "1":
         saved.write_text(json.dumps(payload, indent=2) + "\n")
     # Then bytes and exit codes equal the baseline, not a recomputed main import.
-    assert payload == json.loads(saved.read_text())
+    expected = json.loads(saved.read_text())
+    assert payload["code"] == expected["code"]
+    assert payload["output"] == expected["output"], "\n".join(
+        difflib.unified_diff(expected["output"].splitlines(), payload["output"].splitlines())
+    )
