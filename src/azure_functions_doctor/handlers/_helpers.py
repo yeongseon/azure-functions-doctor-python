@@ -22,6 +22,7 @@ from packaging.utils import canonicalize_name
 from azure_functions_doctor.inspection import read_inspection_text
 from azure_functions_doctor.inspection_gaps import InspectionGap, record_gap
 from azure_functions_doctor.logging_config import get_logger
+from azure_functions_doctor.requirements_directives import parse_include_directive
 
 logger = get_logger(__name__)
 
@@ -1378,19 +1379,17 @@ def _iter_requirements_txt_lines(content: str, source_path: Path | None = None) 
             if depth >= 10:
                 return
             for line_no, raw_line in enumerate(text.splitlines(), start=1):
-                match = re.match(
-                    r"^(?:-[rc]\s+|--(?:requirement|constraint)(?:\s+|=))(.+)$", raw_line.strip()
-                )
-                if match is None:
+                directive = parse_include_directive(raw_line)
+                if directive is None:
                     continue
-                include_value = match.group(1).split(" #", 1)[0].strip().strip("'\"")
+                include_value = directive.reference
                 if "://" in include_value:
                     continue
                 include_path = (including_path.parent / include_value).resolve()
                 if not include_path.is_relative_to(source_path.parent.resolve()):
                     record_gap(InspectionGap(including_path.absolute(), line_no, include_value))
                     continue
-                if raw_line.strip().startswith(("-c ", "--constraint")):
+                if directive.constraint:
                     continue
                 if include_path in seen or not include_path.is_file():
                     continue
@@ -1583,17 +1582,15 @@ def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, st
             line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
-            include_match = re.match(
-                r"^(?:-[rc]\s+|--(?:requirement|constraint)(?:\s+|=))(.+)$", line
-            )
-            if include_match is not None:
-                include_value = include_match.group(1).split(" #", 1)[0].strip().strip("'\"")
+            directive = parse_include_directive(line)
+            if directive is not None:
+                include_value = directive.reference
                 if "://" not in include_value:
                     include_path = (file_path.parent / include_value).resolve()
                     if not include_path.is_relative_to(req_path.parent.resolve()):
                         record_gap(InspectionGap(file_path, line_no, include_value))
                         continue
-                    if line.startswith(("-c ", "--constraint")):
+                    if directive.constraint:
                         continue
                     results.extend(walk(include_path, depth + 1))
                 continue
