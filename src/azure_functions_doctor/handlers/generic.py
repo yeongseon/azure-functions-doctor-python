@@ -4,7 +4,6 @@ Split out of handlers/registry.py; registration/dispatch stays there.
 """
 
 import ast
-import json
 import os
 from pathlib import Path
 import re
@@ -34,6 +33,7 @@ from azure_functions_doctor.handlers._helpers import (
     parse_source_code,
     parse_target,
 )
+from azure_functions_doctor.inspection import read_inspection_json, read_inspection_text
 from azure_functions_doctor.target_resolver import (
     SUPPORTED_PYTHON_VERSIONS,
     is_supported_python_target,
@@ -233,7 +233,7 @@ class GenericHandlers:
             return _create_result("fail", "host.json missing (durable usage)")
 
         try:
-            host_data = json.loads(host_path.read_text(encoding="utf-8-sig"))
+            host_data = read_inspection_json(host_path)
         except Exception as exc:
             return _handle_specific_exceptions("reading host.json", exc)
 
@@ -344,12 +344,12 @@ class GenericHandlers:
                 host_path = path / "host.json"
                 if host_path.exists():
                     try:
-                        data = json.loads(host_path.read_text(encoding="utf-8-sig"))
+                        data = read_inspection_json(host_path)
                         node = _resolve_host_json_pointer(data, key.split("."))
                         if node is not _HOST_JSON_MISSING and node is not None:
                             return _create_result("pass", f"host.json:{key} present")
-                    except json.JSONDecodeError as exc:
-                        logger.debug(f"Skip invalid host.json while checking {key}: {exc}")
+                    except (OSError, ValueError) as exc:
+                        logger.debug("Skip invalid host.json (%s)", type(exc).__name__)
             else:
                 # env var
                 if os.getenv(str(t)) is not None:
@@ -374,7 +374,7 @@ class GenericHandlers:
         funcignore_patterns = (
             [
                 line.strip().rstrip("/")
-                for line in funcignore_path.read_text(encoding="utf-8").splitlines()
+                for line in read_inspection_text(funcignore_path).splitlines()
             ]
             if funcignore_path.is_file()
             else []

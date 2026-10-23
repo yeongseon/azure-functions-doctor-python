@@ -2,11 +2,9 @@ import ast
 from collections.abc import Callable, Iterable, Iterator
 import contextvars
 from fnmatch import fnmatch
-import json
 from pathlib import Path
 import re
 import sys
-import tomllib
 from typing import (
     TYPE_CHECKING,
     Literal,
@@ -19,10 +17,16 @@ from typing import (
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name
 
-from azure_functions_doctor.inspection import read_inspection_text
+from azure_functions_doctor.inspection import (
+    check_python_parser,
+    read_inspection_json,
+    read_inspection_text,
+    read_inspection_toml,
+)
 from azure_functions_doctor.inspection_gaps import InspectionGap, record_gap
 from azure_functions_doctor.logging_config import get_logger
 from azure_functions_doctor.requirements_directives import parse_include_directive
+from azure_functions_doctor.requirements_inspection import iter_requirements_files
 
 logger = get_logger(__name__)
 
@@ -1263,7 +1267,7 @@ def _collect_unsupported_metadata_versions(
 
     def _load(p: Path) -> object:
         try:
-            return json.loads(p.read_text(encoding="utf-8-sig"))
+            return read_inspection_json(p)
         except (OSError, ValueError, UnicodeDecodeError):
             return None
 
@@ -1276,7 +1280,7 @@ def _collect_unsupported_metadata_versions(
 
     seen: set[Path] = set()
     for pattern in files:
-        for match in path.rglob(pattern):
+        for match in iter_project_files(path, pattern):
             if match in seen or _is_excluded_path(match):
                 continue
             seen.add(match)
@@ -1344,18 +1348,15 @@ def _iter_project_py_contents(path: Path) -> Iterator[tuple[Path, str]]:
 def _read_project_python_file(py_file: Path) -> str | None:
     """Read Python source without failing the whole traversal."""
     try:
-        return read_inspection_text(py_file)
+        content = read_inspection_text(py_file)
+        if py_file.suffix == ".py":
+            check_python_parser(content, py_file)
+        return content
     except PermissionError:
-        logger.warning(f"Permission denied reading {py_file}")
+        logger.warning("Permission denied reading source")
         return None
-    except UnicodeDecodeError:
-        try:
-            return py_file.read_text(encoding="utf-8-sig", errors="ignore")
-        except (OSError, PermissionError, ValueError) as exc:
-            logger.debug(f"Skip {py_file}: {exc}")
-            return None
     except (MemoryError, OSError, ValueError) as exc:
-        logger.debug(f"Skip {py_file}: {exc}")
+        logger.debug("Skip unreadable source (%s)", type(exc).__name__)
         return None
 
 
@@ -1371,37 +1372,11 @@ def _iter_requirements_txt_lines(content: str, source_path: Path | None = None) 
     recognizing a known package's declared extra requires the extras, not
     just its name.
     """
-    contents = [content.removeprefix("\ufeff")]
-    if source_path is not None:
-        seen = {source_path.resolve()}
-
-        def collect_includes(text: str, including_path: Path, depth: int) -> None:
-            if depth >= 10:
-                return
-            for line_no, raw_line in enumerate(text.splitlines(), start=1):
-                directive = parse_include_directive(raw_line)
-                if directive is None:
-                    continue
-                include_value = directive.reference
-                if "://" in include_value:
-                    continue
-                include_path = (including_path.parent / include_value).resolve()
-                if not include_path.is_relative_to(source_path.parent.resolve()):
-                    record_gap(InspectionGap(including_path.absolute(), line_no, include_value))
-                    continue
-                if directive.constraint:
-                    continue
-                if include_path in seen or not include_path.is_file():
-                    continue
-                seen.add(include_path)
-                try:
-                    included = include_path.read_text(encoding="utf-8-sig")
-                except (OSError, UnicodeDecodeError):
-                    continue
-                contents.append(included)
-                collect_includes(included, include_path, depth + 1)
-
-        collect_includes(content, source_path, 0)
+    contents = (
+        [text.removeprefix("\ufeff") for _, text in iter_requirements_files(source_path, content)]
+        if source_path is not None
+        else [content.removeprefix("\ufeff")]
+    )
 
     lines: list[str] = []
     for requirements_content in contents:
@@ -1456,11 +1431,9 @@ def _load_pyproject(path: Path) -> dict[str, object] | None:
     if not pyproject_path.exists():
         return None
     try:
-        with pyproject_path.open("rb") as handle:
-            data: dict[str, object] = tomllib.load(handle)
-            return data
+        return dict(read_inspection_toml(pyproject_path))
     except (OSError, ValueError) as exc:
-        logger.debug(f"Skip pyproject.toml at {pyproject_path}: {exc}")
+        logger.debug("Skip pyproject.toml (%s)", type(exc).__name__)
         return None
 
 
@@ -1568,16 +1541,15 @@ def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, st
     (#587). Remote (``://``) includes and ``-c``/``--constraint`` files are
     not followed, matching this project's existing offline-only scope.
     """
+    results: list[tuple[Path, int, str]] = []
+    files = dict(iter_requirements_files(req_path))
     seen: set[Path] = set()
 
-    def walk(file_path: Path, depth: int) -> list[tuple[Path, int, str]]:
-        if depth >= 10 or file_path in seen or not file_path.is_file():
-            return []
+    def walk(file_path: Path) -> None:
+        if file_path in seen or file_path not in files:
+            return
         seen.add(file_path)
-        content = _read_project_python_file(file_path)
-        if content is None:
-            return []
-        results: list[tuple[Path, int, str]] = []
+        content = files[file_path]
         for line_no, raw_line in enumerate(content.removeprefix("\ufeff").splitlines(), start=1):
             line = raw_line.strip()
             if not line or line.startswith("#"):
@@ -1592,7 +1564,7 @@ def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, st
                         continue
                     if directive.constraint:
                         continue
-                    results.extend(walk(include_path, depth + 1))
+                    walk(include_path)
                 continue
             if line.startswith(("-c ", "--constraint")):
                 continue
@@ -1604,9 +1576,9 @@ def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, st
             cleaned = line.split("#")[0].strip()
             if cleaned:
                 results.append((file_path, line_no, cleaned))
-        return results
 
-    return walk(req_path.resolve(), 0)
+    walk(req_path.absolute())
+    return results
 
 
 def _match_native_dependency_line(line: str, seen: set[str]) -> tuple[str, str] | None:
@@ -1797,6 +1769,8 @@ class Rule(TypedDict, total=False):
         "langgraph_anonymous_auth",
         "durable_nondeterminism",
         "unsupported_metadata_version",
+        "dev_storage_connection",
+        "linux_fx_version",
     ]
     label: str
     category: str

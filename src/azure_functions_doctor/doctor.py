@@ -177,7 +177,11 @@ class Doctor:
         # Config-based suppression / exclusion (issue #290). CLI selections
         # (profile, rules_path) take precedence for ruleset selection; the
         # config ``ignore``/``exclude`` layer on top of the resolved run.
-        doctor_config = load_doctor_config(self.project_path)
+        from azure_functions_doctor.inspection_gaps import collect_inspection_gaps
+
+        with collect_inspection_gaps() as config_gaps:
+            doctor_config = load_doctor_config(self.project_path)
+        self._inspection_gaps = config_gaps
         self.ignore_rules: set[str] = set(doctor_config["ignore"])
         self.exclude_globs: list[str] = list(doctor_config["exclude"])
         # Programming-model detection (#517) walks project files through the
@@ -192,7 +196,9 @@ class Doctor:
         # from a clean context, regardless of how detection here concludes.
         exclude_token = set_extra_excludes(self.project_path, self.exclude_globs)
         try:
-            self.programming_model: ProgrammingModel = self._detect_programming_model()
+            with collect_inspection_gaps() as source_gaps:
+                self.programming_model: ProgrammingModel = self._detect_programming_model()
+            self._inspection_gaps.extend(source_gaps)
         finally:
             reset_extra_excludes(exclude_token)
 
@@ -246,7 +252,7 @@ class Doctor:
         """Check for AST-level FunctionApp()/Blueprint() usage."""
         try:
             tree = ast.parse(source)
-        except SyntaxError:
+        except (SyntaxError, RecursionError, MemoryError, ValueError):
             return False
 
         discovered_aliases = _discover_functionapp_aliases(source)
@@ -382,6 +388,34 @@ class Doctor:
         return sorted(v2_rules, key=lambda r: r.get("check_order", 999))
 
     def run_all_checks(self, rules: list[Rule] | None = None) -> list[SectionResult]:
+        from azure_functions_doctor.inspection_gaps import (
+            collect_inspection_gaps,
+            incomplete_result,
+        )
+
+        with collect_inspection_gaps() as run_gaps:
+            results = self._run_all_checks(rules)
+        gaps = self._inspection_gaps + run_gaps
+        if gaps:
+            advisory = incomplete_result(gaps, self.project_path)
+            item: CheckResult = {
+                "rule_id": "inspection_incomplete",
+                "label": "Incomplete project inspection",
+                "value": advisory["detail"],
+                "status": "warn",
+                "severity": "warning",
+                "tier": "core",
+                "analysis": {"type": "deterministic"},
+                "file": advisory["file"],
+                "line": advisory["line"],
+                "locations": advisory["locations"],
+            }
+            results.append(
+                {"title": "Inspection", "category": "inspection", "status": "pass", "items": [item]}
+            )
+        return results
+
+    def _run_all_checks(self, rules: list[Rule] | None = None) -> list[SectionResult]:
         rules = self.load_rules() if rules is None else rules
         if self.profile is not None and self.profile != "full":
             if self.profile not in PROFILE_NAMES:
@@ -524,6 +558,14 @@ class Doctor:
                     item["column"] = result["column"]
                 if "locations" in result:
                     item["locations"] = result["locations"]
+
+                from azure_functions_doctor.safe_output import escape_controls
+
+                if "file" in item:
+                    item["file"] = escape_controls(item["file"])
+                for location in item.get("locations", []):
+                    if isinstance(location.get("file"), str):
+                        location["file"] = escape_controls(str(location["file"]))
 
                 section_result["items"].append(item)
 

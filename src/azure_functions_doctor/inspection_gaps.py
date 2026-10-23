@@ -48,6 +48,12 @@ def incomplete_result(gaps: list[InspectionGap], root: Path) -> "HandlerResult":
             "Fix: vendor/copy the file inside the project or run doctor from the monorepo "
             "root with --path."
         )
+        if gap.kind == "inspection limit":
+            message = (
+                "File was not inspected because it is unreadable, malformed or exceeds "
+                "inspection limits; dependency/source checks are incomplete. "
+                "Fix: use a regular UTF-8 file within the documented inspection bounds."
+            )
         locations.append(
             {"file": gap.file.relative_to(root).as_posix(), "line": gap.line, "message": message}
         )

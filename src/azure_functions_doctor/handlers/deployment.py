@@ -25,6 +25,7 @@ from azure_functions_doctor.handlers._helpers import (
     iter_project_files,
 )
 from azure_functions_doctor.handlers.runtime import _attach_catalog_evidence
+from azure_functions_doctor.inspection import read_inspection_json, read_inspection_text
 from azure_functions_doctor.safe_output import extension_value, version_value
 from azure_functions_doctor.target_resolver import (
     PYTHON_HOSTING_PLAN_MATRIX,
@@ -49,8 +50,8 @@ def _infra_declares_linux_fx_version(path: Path) -> bool:
         if infra.name == "local.settings.json":
             continue
         try:
-            text = infra.read_text(encoding="utf-8")
-        except OSError:
+            text = read_inspection_text(infra)
+        except (OSError, ValueError):
             continue
         if _LINUX_FX_KEY_RE.search(text):
             return True
@@ -507,7 +508,7 @@ class DeploymentHandlers:
                 "local.settings.json not present; FUNCTIONS_EXTENSION_VERSION check skipped",
             )
         try:
-            data = json.loads(settings_path.read_text(encoding="utf-8-sig"))
+            data = read_inspection_json(settings_path)
         except Exception as exc:
             return _handle_specific_exceptions("reading local.settings.json", exc)
         values = data.get("Values") if isinstance(data, dict) else None
@@ -554,8 +555,8 @@ class DeploymentHandlers:
             if bicep.name == "local.settings.json":
                 continue
             try:
-                text = bicep.read_text(encoding="utf-8")
-            except OSError:
+                text = read_inspection_text(bicep)
+            except (OSError, ValueError):
                 continue
             for match in pattern.finditer(text):
                 findings.append((str(bicep.relative_to(path)), match.group(1)))
@@ -614,8 +615,8 @@ class DeploymentHandlers:
         ]
         for candidate in sorted(candidates):
             try:
-                text = candidate.read_text(encoding="utf-8-sig")
-            except OSError:
+                text = read_inspection_text(candidate)
+            except (OSError, ValueError):
                 continue
             if "AzureWebJobsStorage" in text and emulator in text:
                 findings.append(str(candidate.relative_to(path)))
@@ -660,7 +661,7 @@ class DeploymentHandlers:
         if not host_path.exists():
             return _create_result("fail", "host.json not found")
         try:
-            host_data = json.loads(host_path.read_text(encoding="utf-8-sig"))
+            host_data = read_inspection_json(host_path)
         except Exception as exc:
             return _handle_specific_exceptions("reading host.json", exc)
         if _resolve_host_json_path(host_data, jsonpath) is _HOST_JSON_MISSING:
@@ -680,9 +681,9 @@ class DeploymentHandlers:
                 file="host.json",
             )
         try:
-            host_data = json.loads(host_path.read_text(encoding="utf-8-sig"))
+            host_data = read_inspection_json(host_path)
         except json.JSONDecodeError as exc:
-            msg = f"host.json is not valid JSON: {exc}"
+            msg = f"host.json is not valid JSON: {type(exc).__name__}"
             return _create_result("fail", msg, internal_error=True)
         except Exception as exc:
             return _handle_specific_exceptions("reading host.json", exc)
@@ -720,7 +721,8 @@ class DeploymentHandlers:
                     "--error-unmatch",
                     str(settings_path),
                 ],
-                capture_output=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 timeout=10,
             )
             tracked = result.returncode == 0
@@ -753,7 +755,7 @@ class DeploymentHandlers:
                 file="host.json",
             )
         try:
-            host_data = json.loads(host_path.read_text(encoding="utf-8-sig"))
+            host_data = read_inspection_json(host_path)
         except Exception as exc:
             return _handle_specific_exceptions("reading host.json", exc)
 

@@ -93,13 +93,13 @@ def test_discovered_outside_link_is_advisory_and_inside_link_is_followed(tmp_pat
     assert [gap.reference for gap in gaps] == ["outside.py"]
 
 
-def test_inside_symlink_include_keeps_normal_dependency_inspection(tmp_path: Path) -> None:
+def test_inside_symlink_include_is_visibly_refused(tmp_path: Path) -> None:
     (tmp_path / "common.txt").write_text("numpy\n")
     (tmp_path / "alias.txt").symlink_to(tmp_path / "common.txt")
     (tmp_path / "requirements.txt").write_text("-r alias.txt\n")
     result = HandlerRegistry().handle({"type": "native_dependency_risk"}, tmp_path)
-    assert "numpy" in result["detail"]
-    assert "incomplete" not in result["detail"]
+    assert "numpy" not in result["detail"]
+    assert "incomplete" in result["detail"]
 
 
 def test_known_dependency_finding_survives_incomplete_include(tmp_path: Path) -> None:

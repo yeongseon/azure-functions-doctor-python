@@ -494,7 +494,10 @@ def test_package_forbidden_req_file_read_exception() -> None:
                 raise ValueError("Simulated read error")
             return original_path(self, *args, **kwargs)
 
-        with patch.object(Path, "read_text", new=read_with_error):
+        with patch(
+            "azure_functions_doctor.handlers.dependencies.read_inspection_text",
+            side_effect=ValueError("Simulated read error"),
+        ):
             result = registry.handle(rule, tmp_path)
             assert result["status"] == "fail"
             assert "internal_error" in result
@@ -1023,7 +1026,10 @@ def test_package_forbidden_read_exception() -> None:
                 raise ValueError("Simulated read error")
             return original_path(self, *args, **kwargs)
 
-        with patch.object(Path, "read_text", new=read_with_error):
+        with patch(
+            "azure_functions_doctor.handlers.dependencies.read_inspection_text",
+            side_effect=ValueError("Simulated read error"),
+        ):
             result = registry.handle(rule, tmp_path)
             assert result["status"] == "fail"
             assert "internal_error" in result
@@ -2406,7 +2412,10 @@ def test_package_declared_read_exception() -> None:
                 raise PermissionError("Cannot read file")
             return original_read_text(self, *args, **kwargs)
 
-        with patch.object(Path, "read_text", mock_read_text):
+        with patch(
+            "azure_functions_doctor.handlers.dependencies.read_inspection_text",
+            side_effect=PermissionError("Cannot read file"),
+        ):
             rule = cast(
                 Rule,
                 {

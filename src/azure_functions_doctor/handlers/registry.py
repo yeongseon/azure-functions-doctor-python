@@ -110,7 +110,10 @@ class HandlerRegistry(
 
         try:
             with collect_inspection_gaps() as gaps:
-                result = handler(rule, path, context)
+                try:
+                    result = handler(rule, path, context)
+                except (OSError, ValueError, RecursionError, MemoryError) as exc:
+                    result = _handle_specific_exceptions(f"executing {check_type} check", exc)
             if not gaps:
                 return result
             advisory = incomplete_result(gaps, path.resolve())
