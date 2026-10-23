@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from contextlib import ExitStack
+from http.client import HTTPException
 import json
 import os
 from pathlib import Path
@@ -44,7 +45,7 @@ def wait_host(process: subprocess.Popen[str], url: str) -> None:
             with urlopen(url, timeout=2) as response:
                 if response.status == 200 and response.read() == b"doctor-host-smoke":
                     return
-        except URLError:
+        except (URLError, OSError, HTTPException):
             time.sleep(0.25)
     raise TimeoutError("Functions host exited or failed HTTP smoke readiness")
 
