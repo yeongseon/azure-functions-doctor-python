@@ -139,10 +139,19 @@ are not followed; out-of-root `-c` references are nevertheless reported.
 All project content readers use `read_inspection_text`: Python source and model
 detection, host/local settings JSON, infrastructure Bicep/JSON, requirements and
 their includes, pyproject TOML, `.python-version` and `.funcignore`. Agent report
-and Action summary JSON use the same boundary. It refuses symlinks (including
+JSON uses the same boundary. It refuses symlinks (including
 symlink ancestors), nonregular files/devices/FIFOs, binary NUL content, invalid
 UTF-8 and files over `MAX_FILE_BYTES` (4 MiB). No decoding fallback bypasses it.
-Discovery may yield in-root symlinks, but reading them is refused visibly.
+Discovery may yield in-root symlinks, but direct project reads refuse them visibly.
+Requirements manifests/includes are the compatibility exception: as on main,
+in-root symlinks are resolved after containment validation and their regular-file
+targets are bounded-read. Identity, de-duplication and locations use resolved paths;
+ordinary lexical paths still reach the reader without early symlink erasure.
+
+The Action summary reader is a separate implementation: it bounds reads to 4 MiB,
+requires regular non-symlink files, parses an object and accepts only integer counts
+from 0 through 1,000,000. It does not run the shared 100-level JSON precheck;
+stdlib parser recursion/memory failures become unavailable counts plus a warning.
 
 `MAX_JSON_DEPTH` is 100 levels; its string/escape-aware scan is linear time.
 TOML duplicate keys and parser resource failures are handled without echoing
@@ -172,7 +181,10 @@ kills the tool's process group. Windows process trees and descendants that escap
 the POSIX group are not sandboxed; executables and PATH remain operator-trusted.
 The reader is a separate process so inherited pipes cannot leave blocked reader threads.
 File names remain intentionally visible metadata, with control characters escaped
-in diagnostic output. Never put credentials in file or setting names.
+in diagnostic output. Canary privacy checks cover file contents, parser/exception
+payloads and their log text, not removal of filenames: a malformed
+`CANARY_SECRET_FILENAME.py` may appear in JSON/SARIF locations by design.
+Never put credentials in file or setting names.
 
 ## Infrastructure and examples
 

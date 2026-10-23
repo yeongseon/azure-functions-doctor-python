@@ -26,14 +26,20 @@ dependencies. Out-of-root references are skipped: includes are contained within
 the top-level manifest directory and discovered files must resolve within the
 selected project root. Rules depending on an excluded reference report incomplete
 inspection as a non-gating advisory warning, with its written path and file/line.
-Discovery can yield in-root symlinks; every content reader refuses symlinks and
-symlink ancestors, including requirements includes.
+Discovery can yield in-root symlinks; direct project content reads refuse symlinks
+and symlink ancestors. Requirements manifests/includes preserve main's behavior:
+in-root symlinks are resolved after containment checks and their regular targets
+are bounded-read. Resolved identity is shared by traversal, de-duplication and locations.
 
 All project readers use the strict UTF-8, regular-file-only (no devices/FIFOs),
 NUL-rejecting `read_inspection_text` boundary: Python/model detection, host/local
 settings JSON, Bicep/JSON infrastructure, requirements/includes, pyproject TOML,
-`.python-version` and `.funcignore`. Agent report and Action summary JSON are also
-bounded. `MAX_FILE_BYTES` is 4 MiB; `MAX_JSON_DEPTH` is 100 levels with a linear,
+`.python-version` and `.funcignore`. Agent report JSON uses that same reader.
+The Action separately bounds its summary sidecar to 4 MiB regular non-symlink
+files, requires an object, and validates integer counts in 0–1,000,000. It does not
+apply the shared JSON depth precheck; stdlib parse/resource failures become
+unavailable counts and a warning.
+`MAX_FILE_BYTES` is 4 MiB; `MAX_JSON_DEPTH` is 100 levels with a linear,
 string/escape-aware pre-scan. TOML duplicate keys and parser resource failures
 degrade gracefully. Include traversal is cycle-safe with
 `MAX_REQUIREMENTS_FILES` = 128, `MAX_REQUIREMENTS_BYTES` = 16 MiB cumulative UTF-8
@@ -54,7 +60,9 @@ See the repository [security policy](https://github.com/yeongseon/azure-function
 for verified boundaries, remaining limitations, release audit policy and
 production versus local/test-only assumptions. Do not embed secrets in filenames
 or setting names: those metadata remain intentionally visible; control characters
-are escaped in diagnostic output.
+are escaped in diagnostic output. Content/parser/exception/log canary guarantees
+do not mean filenames are removed: malformed `CANARY_SECRET_FILENAME.py` can
+appear in JSON/SARIF locations by design.
 
 ### Compatibility
 
