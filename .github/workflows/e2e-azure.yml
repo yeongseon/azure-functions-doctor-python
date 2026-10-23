@@ -160,9 +160,12 @@ jobs:
             sleep 15
           done
       - name: Run e2e tests
-        run: pytest tests/e2e -v --no-cov --html=e2e-report/report.html --self-contained-html
+        run: |
+          export E2E_EXPECTED_VERSION="${REQUESTED_VERSION:-$(python -c 'from importlib.metadata import version; print(version("azure-functions-doctor"))')}"
+          python -m tools.verification azure-e2e -v
         env:
           E2E_BASE_URL: https://${{ steps.names.outputs.app }}.azurewebsites.net
+          REQUESTED_VERSION: ${{ inputs.version }}
 
       - name: Record certification
         run: |
@@ -202,7 +205,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: e2e-report-${{ github.run_id }}-${{ github.run_attempt }}
-          path: e2e-report/
+          path: test-results/**
           retention-days: 30
 
   cleanup:

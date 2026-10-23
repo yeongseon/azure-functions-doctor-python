@@ -62,10 +62,23 @@ Use these commands to manage your development environment:
 | make format | Format code with `ruff format` |
 | make lint | Run `ruff` style checks and `mypy` |
 | make typecheck | Run mypy in strict mode |
-| make test | Run the full test suite |
+| make doctor | Read-only developer prerequisites, not the product diagnostic CLI |
+| make install / make install-ci | Hatch development / selected CI interpreter setup |
+| make format-check | Non-mutating formatting check |
+| make check | Complete non-mutating quality, types once, security and policy |
+| make test | Offline diagnostic-rule regression suite, coverage >=95% |
 | make cov | Run tests and generate a coverage report |
 | make security | Run bandit security scans |
-| make check-all | Run all formatting, linting, type checking, and tests |
+| make integration | Static CLI and managed real host/Azurite |
+| make verify / make check-all | Full local gate / exact compatibility alias |
+| make e2e-azure | Explicit deployed URL and expected candidate version |
+| make report | Render saved evidence only |
+| make clean / make clean-all | Generated artifacts / historical deep cleanup including `.venv` |
+
+Full verification requires `func` and Azurite; offline checks do not. The product
+`azure-functions-doctor doctor` diagnoses user projects independently of `make doctor`.
+Focused targets are partial. See [Development Guide](development.md#command-contract)
+for evidence statuses, ownership, and the local-versus-Azure boundary.
 
 ## Adding New Diagnostic Rules
 

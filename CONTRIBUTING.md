@@ -37,14 +37,13 @@ Recommended branch prefixes:
 Local development requires Python 3.11 and GNU Make because Hatch creates its
 default development environment with Python 3.11. The published package
 supports Python 3.11, 3.12, 3.13, and 3.14. No Azure subscription, Azure
-Functions Core Tools, Azurite, or Docker is required for the standard local
-verification commands.
+Functions Core Tools, Azurite, or Docker is required for `make check` or
+`make test`. Full local verification requires Core Tools (`func`) and Azurite.
 
-From a fresh clone, bootstrap the repository-managed virtual environment and
-install the Hatch environments:
+Install Hatch once in an isolated tool environment, then create the project
+development environment:
 
 ```bash
-make bootstrap
 make install
 ```
 
@@ -52,28 +51,84 @@ Then run the standard verification commands:
 
 ```bash
 make test
-make lint
-make typecheck
-make build
+make check
+make verify
 ```
 
-`make bootstrap` creates `.venv` and installs Hatch there; the remaining
-targets use that local Hatch installation automatically.
+Local commands use Hatch's Python 3.11 environment. Routine targets never upgrade
+pip or reinstall Hatch. `make bootstrap` only checks Hatch availability;
+`make install-ci` installs into CI's explicitly selected `PYTHON` without Hatch.
 
 ## Project Commands
 
-```bash
-make format      # Format code with ruff
-make lint        # Lint with ruff
-make typecheck   # Type check with mypy
-make test        # Run tests
-make cov         # Run tests with coverage
-make check-all   # Run the full local gate
-```
+| Command | Contract |
+| --- | --- |
+| `make install` | Create Hatch dev/docs environment and local hooks |
+| `make install-ci` | Install dev/docs extras into CI's selected interpreter |
+| `make doctor` | Read-only developer prerequisites; nonzero when required tools are missing |
+| `make format` / `make format-check` | Mutating Ruff formatting / non-mutating check |
+| `make check` | Ruff lint/format, strict mypy once, Bandit, workflow and lightweight docs policy |
+| `make test` | Offline regression suite including every diagnostic-rule test; coverage >=95% |
+| `make integration` | Static example CLI plus managed real Functions host and private Azurite |
+| `make verify` | Check + test + integration + installed-wheel CLI smoke + build + strict docs |
+| `make e2e-azure` | Explicitly configured deployed Azure URL and candidate identity; no provisioning |
+| `make report` | Render saved evidence only; never rerun checks |
+| `make clean` | Remove generated artifacts only; preserve environments and external data |
+
+`make check-all` is an exact backward-compatible alias of `make verify`.
+`make clean-all` retains historical deep cleanup, including `.venv` and bytecode.
+`lint`, `style`, `typecheck`, `security`, `cov`, `lint-workflows`, `cli-smoke`,
+`host-smoke`, `wheel-smoke`, `build`, and `docs` are focused/partial targets.
+`e2e-local` checks an already-running local app, not Azure certification.
+
+### Two different doctors
+
+`make doctor` checks this repository's **developer environment** without installing
+anything. It requires Python >=3.11, Hatch or an active venv, Ruff, mypy, pytest and
+Bandit. It reports `func`/Azurite as required only for host-smoke/integration/verify,
+and reports optional tooling separately. No Chrome, mermaid-cli or Docker is
+required by `check`; the existing structural Mermaid linter remains lightweight.
+
+`azure-functions-doctor doctor --path <app>` is the **product CLI**, which diagnoses
+an Azure Functions project. Its rule skips/optional findings are not pytest skips.
+CLI regression tests and the static/installed-wheel smoke lanes exercise it
+independently of the developer prerequisite checker.
+
+### Evidence and certification
+
+Generated, gitignored `test-results/` contains separate `test/`, `cli-smoke/`,
+`wheel-smoke/`, `host-smoke/`, `integration/`, `build/`, `docs/`, `verify/` and
+`azure-e2e/` lanes. Summaries include schema version, command, counts, status,
+exit code and supporting paths. Offline tests save JUnit and coverage XML;
+integration saves `junit/` and redacted logs; every lane saves environment metadata.
+Console and GitHub Job Summary render the same saved counts. CI uploads evidence
+with `if: always()`. Credentials, connection strings, headers, SAS and tokens are
+masked in verification evidence; this does not change product CLI output policy.
+
+PASS requires executed checks. Missing prerequisites/results, zero tests, all-skipped
+or any unexpected required skip are INCOMPLETE/nonzero. Failed assertions/processes
+are FAIL. Action integration, published `@v1` consumers and cookbook soak remain
+in their existing workflows and are NOT_APPLICABLE locally, never inferred PASS.
+
+The host runner owns temporary app/storage directories, unique loopback ports and
+process groups, and cleans only those resources on completion, timeout or signals.
+Wheel smoke builds a fresh candidate, records its SHA-256/version, installs it into
+an isolated temporary venv outside the checkout and executes the installed CLI.
+It reuses the selected environment's dependencies through a `.pth` for offline
+installation; the package import is asserted to come from the candidate wheel.
+
+`make e2e-azure` requires a deployed HTTPS `E2E_BASE_URL` (not localhost/private IP)
+and `E2E_EXPECTED_VERSION` matching the installed diagnostic CLI. It preflights
+before pytest and requires both existing remote-suite assertions to execute.
+These tests prove deployed HTTP plus local CLI diagnostics, **not a deployed doctor
+version endpoint**: `deployed_version_match` is NOT_APPLICABLE. Candidate version,
+installed-wheel identity and live-host execution remain distinct evidence.
+Release certification retains its existing ref/version record, OIDC, gates and
+exact-artifact upload; local verification never certifies Azure.
 
 Before opening a PR, run `ruff format --check <changed-python-files>` (or
 `ruff format <changed-python-files>` to fix them). `make format-check` checks
-`src` and `tests` without changing files. CI checks those same trees and also
+`src`, `tests` and the verification tool modules without changing files. CI checks those trees and also
 reports formatting failures on changed Python files in a dedicated step.
 
 ## GitHub Actions Pinning
@@ -109,8 +164,6 @@ context never drifts from the pinned commit.
 permitted in this repository and are flagged with an inline comment at
 the call site:
 
-- `pypa/gh-action-pypi-publish@release/v1` — PyPA-maintained stable
-  release channel; this pinning style is explicitly recommended upstream.
 - Local composite actions (`uses: ./...`) — versioned with the repo.
 
 When adding a new external Action, resolve the SHA with

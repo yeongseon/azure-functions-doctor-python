@@ -16,7 +16,6 @@ and release behavior stable across supported Python versions.
 
 ```bash
 make bootstrap
-source .venv/bin/activate
 make install
 make precommit-install
 ```
@@ -25,12 +24,52 @@ make precommit-install
 
 ```bash
 make format
-make lint
-make typecheck
+make doctor
+make check
 make test
-make security
-make check-all
+make verify
 ```
+
+Install Hatch once in an isolated tool environment. `bootstrap` only checks its
+availability; routine commands never upgrade pip or reinstall it. Local commands
+use Hatch's Python 3.11, while `make install-ci` uses CI's selected interpreter.
+
+### Command contract
+
+| Target | Meaning |
+| --- | --- |
+| `make install` / `make install-ci` | Hatch development setup / selected CI interpreter setup |
+| `make doctor` | Read-only developer tool check, nonzero for missing required tools |
+| `make format` / `make format-check` | Mutating formatting / non-mutating check |
+| `make check` | Lint, format, strict mypy once, Bandit and repository policy |
+| `make test` | Offline regressions, all diagnostic rules, coverage >=95% |
+| `make integration` | Static example CLI plus managed real host/private Azurite |
+| `make verify` | Check + test + integration + wheel CLI smoke + build + strict docs |
+| `make check-all` | Exact backward-compatible alias of verify |
+| `make e2e-azure` | Existing deployed HTTPS URL + expected candidate version; no provisioning |
+| `make report` | Saved evidence rendering, no reruns |
+| `make clean` / `make clean-all` | Generated artifacts only / historical deep cleanup including `.venv` |
+
+`make doctor` is **not** `azure-functions-doctor doctor`: the latter is the product
+CLI for Azure Functions projects. Both remain independently testable. Core Tools
+and Azurite are required only for host-smoke/integration/verify. Quality/offline
+tests require no browser, Docker, host or emulator. Focused `lint`, `typecheck`,
+`security`, `cov`, `cli-smoke`, `host-smoke`, `wheel-smoke`, `build`, `docs` and
+`lint-workflows` targets are partial; `e2e-local` is not Azure certification.
+
+Gitignored `test-results/` saves lane-specific summaries, redacted logs and
+environment metadata. `test/` also saves JUnit/coverage XML; `integration/` saves
+`junit/` and logs; `verify/` saves aggregate `lanes.json`. PASS requires execution;
+zero/all-skipped/unexpected skips or missing prerequisites are INCOMPLETE/nonzero.
+Workflow-only Action, published-v1 and cookbook lanes remain NOT_APPLICABLE locally.
+Wheel SHA-256/version, installed CLI and real host evidence are separate.
+
+Azure E2E requires `E2E_BASE_URL` and `E2E_EXPECTED_VERSION` matching the installed
+CLI before running tests. Both existing E2E assertions must execute. The deployed
+example has no doctor-version endpoint: deployed-version matching is explicitly
+NOT_APPLICABLE, not inferred from local CLI identity. See the root
+[Contributing Guide](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/CONTRIBUTING.md)
+for detailed evidence and lifecycle semantics.
 
 ## Project Areas
 
@@ -71,10 +110,9 @@ Recommended local sequence before opening a PR:
 
 ```bash
 make format
-make lint
-make typecheck
+make check
 make test
-make security
+make verify
 ```
 
 ## Adding a New Rule

@@ -1,7 +1,12 @@
 VENV_DIR := .venv
-PYTHON := $(VENV_DIR)/bin/python
-PIP := $(VENV_DIR)/bin/pip
-HATCH := $(VENV_DIR)/bin/hatch
+PYTHON ?= python
+HATCH ?= hatch
+MAINTENANCE_PYTHON ?= $(shell command -v python3.11 || command -v python3 || command -v python)
+ifeq ($(CI),)
+RUN := $(HATCH) run python
+else
+RUN := $(PYTHON)
+endif
 DEMO_TAPE := demo/doctor-demo.tape
 DEMO_IMAGE := azure-functions-doctor-demo-vhs
 DEMO_GIF := docs/assets/doctor-demo.gif
@@ -10,14 +15,7 @@ VERSIONED_DOCS := README.md llms.txt llms-full.txt docs/deployment.md
 
 .PHONY: bootstrap
 bootstrap:
-	@if [ ! -d "$(VENV_DIR)" ]; then \
-		echo "Creating virtual environment..."; \
-		python3 -m venv $(VENV_DIR); \
-	fi
-	@echo "Ensuring Hatch is installed in virtual environment..."
-	@$(PIP) install --upgrade pip > /dev/null
-	@$(PIP) install hatch > /dev/null
-	@echo "Hatch installed at $(HATCH)"
+	@command -v $(HATCH) >/dev/null || { echo "Install Hatch once in an isolated tool environment"; exit 1; }
 
 .PHONY: ensure-hatch
 ensure-hatch: bootstrap
@@ -30,6 +28,10 @@ install: ensure-hatch
 	else \
 		$(MAKE) precommit-install; \
 	fi
+
+.PHONY: install-ci
+install-ci:
+	@$(PYTHON) -m pip install -e ".[dev,docs]"
 
 .PHONY: shell
 shell: ensure-hatch
@@ -44,48 +46,59 @@ hatch-clean: ensure-hatch
 	@$(HATCH) env remove || echo "No hatch environment to remove"
 
 .PHONY: format
-format: ensure-hatch
-	@$(HATCH) run format
+format:
+	@$(RUN) -m ruff format src tests tools/verification*.py
 
 .PHONY: format-check
-format-check: ensure-hatch
-	@$(HATCH) run format-check
+format-check:
+	@$(RUN) -m ruff format --check src tests tools/verification*.py
 
 .PHONY: style
-style: ensure-hatch
-	@$(HATCH) run style
+style: format-check
+	@$(RUN) -m ruff check src tests tools/verification*.py
 
 .PHONY: typecheck
-typecheck: ensure-hatch
-	@$(HATCH) run typecheck
+typecheck:
+	@$(RUN) -m mypy src tests tools/verification*.py
 
 .PHONY: lint
-lint: ensure-hatch
-	@$(HATCH) run lint
+lint: style typecheck
 
 .PHONY: security
-security: ensure-hatch
-	@$(HATCH) run security
+security:
+	@$(RUN) -m bandit -r src
 
 .PHONY: check
-check: ensure-hatch
-	@$(MAKE) lint
-	@$(MAKE) typecheck
-	@echo "Lint and type check passed."
+check:
+	@$(RUN) -m tools.verification focused check -m tools.verification_quality
+
+.PHONY: check-quality
+check-quality: style typecheck security lint-workflows
+	@$(RUN) scripts/lint_mermaid.py
+	@$(RUN) scripts/gen_rule_inventory.py --check
+	@$(RUN) scripts/check_docs_consistency.py
 
 .PHONY: lint-workflows
-lint-workflows: ensure-hatch
-	@$(HATCH) run python tools/lint_release_workflows.py
-	@$(HATCH) run python tools/lint_workflow_pins.py
-	@$(HATCH) run python tools/lint_hatch_matrix.py
+lint-workflows:
+	@$(RUN) tools/lint_release_workflows.py
+	@$(RUN) tools/lint_workflow_pins.py
+	@$(RUN) tools/lint_hatch_matrix.py
 
 .PHONY: check-all
-check-all: ensure-hatch
-	@$(MAKE) lint-workflows
-	@$(MAKE) check
-	@$(MAKE) test
-	@$(MAKE) security
-	@echo "All checks passed including tests and security scan."
+check-all: verify
+
+.PHONY: integration verify report host-smoke cli-smoke wheel-smoke
+integration verify host-smoke:
+	@$(RUN) -m tools.verification $@
+
+report:
+	@$(MAINTENANCE_PYTHON) -m tools.verification_maintenance report
+
+cli-smoke:
+	@$(RUN) -m tools.verification_cli
+
+wheel-smoke:
+	@$(RUN) -m tools.verification_wheel
 
 .PHONY: precommit
 precommit: ensure-hatch
@@ -96,9 +109,8 @@ precommit-install: ensure-hatch
 	@$(HATCH) run precommit-install
 
 .PHONY: test
-test: ensure-hatch
-	@echo "Running tests..."
-	@$(HATCH) run test
+test:
+	@$(RUN) -m tools.verification test
 
 .PHONY: cov
 cov: ensure-hatch
@@ -107,18 +119,16 @@ cov: ensure-hatch
 	@echo "coverage.xml generated for Codecov upload."
 
 .PHONY: e2e-local
-e2e-local: ensure-hatch
-	@echo "Running e2e tests against local Azurite (E2E_BASE_URL=http://localhost:7071)..."
-	@E2E_BASE_URL=http://localhost:7071 $(HATCH) run e2e-azure
+e2e-local:
+	@E2E_BASE_URL=http://localhost:7071 E2E_EXPECTED_VERSION=$${E2E_EXPECTED_VERSION:-$$($(HATCH) version)} $(RUN) -m tools.verification local-e2e
 
 .PHONY: e2e-azure
-e2e-azure: ensure-hatch
-	@echo "Running e2e tests against Azure (E2E_BASE_URL must be set)..."
-	@$(HATCH) run e2e-azure
+e2e-azure:
+	@$(RUN) -m tools.verification azure-e2e
 
 .PHONY: build
-build: ensure-hatch
-	@$(HATCH) build
+build:
+	@$(RUN) -m tools.verification focused build -m build --no-isolation
 
 .PHONY: publish-test
 publish-test: ensure-hatch
@@ -135,15 +145,7 @@ version: ensure-hatch
 
 .PHONY: docs
 docs:
-	@if [ -n "$$CI" ]; then \
-		echo "CI detected: running MkDocs directly"; \
-		python -m pip install --upgrade pip > /dev/null 2>&1 || true; \
-		pip install "mkdocs<2.0" "mkdocs-material<10.0" "mkdocstrings[python]<1.0" > /dev/null 2>&1; \
-		mkdocs build; \
-	else \
-		$(MAKE) ensure-hatch > /dev/null; \
-		$(HATCH) run mkdocs build; \
-	fi
+	@$(RUN) -m tools.verification focused docs -m mkdocs build --strict
 
 .PHONY: docs-serve
 docs-serve: ensure-hatch
@@ -164,23 +166,22 @@ demo-image:
 
 .PHONY: doctor
 doctor:
-	@echo "Python version:" && $(PYTHON) --version
-	@echo "Installed packages:" && $(HATCH) env run pip list || echo "No hatch environment found"
-	@echo "Azure Function Core Tools version:" && func --version || echo "func not found"
-	@echo "Pre-commit hook installed:"
-	@if [ -f .git/hooks/pre-commit ]; then echo yes; else echo no; fi
+	@$(MAINTENANCE_PYTHON) -m tools.verification_maintenance doctor
 
 .PHONY: clean
 clean:
-	@rm -rf *.egg-info dist build __pycache__ .pytest_cache
+	@$(MAINTENANCE_PYTHON) -m tools.verification_maintenance clean
 
 .PHONY: clean-all
 clean-all: clean
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
 	@find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -delete
-	@rm -rf .mypy_cache .ruff_cache .pytest_cache .coverage coverage.xml htmlcov .DS_Store $(VENV_DIR) site
+	@rm -rf .DS_Store $(VENV_DIR)
 
 .PHONY: help
 help:
-	@echo "Available commands:" && \
-	grep -E '^\.PHONY: ' Makefile | cut -d ':' -f2 | xargs -n1 echo "  - make"
+	@echo "Canonical: install install-ci doctor format format-check check test integration verify e2e-azure report clean"
+	@echo "doctor: developer prerequisites only; product CLI: azure-functions-doctor doctor"
+	@echo "check-all: exact alias of verify; requires func and Azurite"
+	@echo "Focused/partial: lint style typecheck security lint-workflows cov cli-smoke wheel-smoke host-smoke build docs e2e-local"
+	@echo "Maintenance: bootstrap ensure-hatch shell reset hatch-clean clean-all precommit precommit-install publish-test sync-docs-version version docs-serve demo demo-image"

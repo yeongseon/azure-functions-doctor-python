@@ -21,6 +21,14 @@
 ## Validation
 - `make install`
 - `make test`
-- `make lint`
-- `make typecheck`
-- `make build`
+- `make doctor` checks developer prerequisites, not product project diagnostics.
+- `make check` runs complete non-mutating quality checks.
+- `make integration` runs static CLI and managed real host/Azurite smoke.
+- `make verify` is the full local gate; `make check-all` is its exact alias.
+- `make e2e-azure` separately requires a deployed URL and expected candidate version.
+- `make report` renders saved `test-results/` evidence without rerunning tests.
+- `make clean` removes generated artifacts; `clean-all` also removes `.venv`.
+
+The product `azure-functions-doctor doctor` remains independently tested. Missing
+prerequisites or unexpectedly skipped required assertions never pass. See the
+[Development Guide](development.md) for command and evidence boundaries.
