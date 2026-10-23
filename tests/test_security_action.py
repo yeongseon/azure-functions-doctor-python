@@ -40,8 +40,9 @@ def test_action_path_is_not_interpreted_as_shell(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("payload", ["oversized", "symlink", "token", "counts"])
+@pytest.mark.parametrize("output_path", ["report.json", "report\nPWNED=1"])
 def test_action_summary_is_bounded_and_untrusted_counts_are_rejected(
-    tmp_path: Path, payload: str
+    tmp_path: Path, payload: str, output_path: str
 ) -> None:
     # Given a real Bash action and a fake CLI replacing its private summary sidecar.
     action = Path("action.yml").read_text()
@@ -54,7 +55,7 @@ def test_action_summary_is_bounded_and_untrusted_counts_are_rejected(
         "import pathlib, sys\n"
         "p = pathlib.Path(sys.argv[sys.argv.index('--summary-json') + 1])\n"
         + {
-            "oversized": "p.write_text(' ' * (5 * 1024 * 1024))\n",
+            "oversized": "p.write_text(' ' * (5 * 1024 * 1024) + '{\"failed\":17}')\n",
             "symlink": "p.unlink(); p.symlink_to('/dev/zero')\n",
             "token": "p.write_text('CANARY_SECRET_ACTION')\n",
             "counts": 'p.write_text(\'{"failed":"CANARY_SECRET_ACTION\\\\nPWNED=1"}\')\n',
@@ -69,7 +70,7 @@ def test_action_summary_is_bounded_and_untrusted_counts_are_rejected(
         "INPUT_PATH": str(tmp_path),
         "INPUT_PROFILE": "deploy",
         "INPUT_FORMAT": "json",
-        "INPUT_OUTPUT": "report\nPWNED=1",
+        "INPUT_OUTPUT": output_path,
         "INPUT_UPLOAD_SARIF": "false",
         "INPUT_FAIL_ON_WARN": "false",
     }
