@@ -140,18 +140,63 @@ runs:
         DOCTOR_EXIT=$?
 
         echo "exit_code=${DOCTOR_EXIT}" >> "$GITHUB_OUTPUT"
-        echo "report_path=$(realpath "$OUTPUT")" >> "$GITHUB_OUTPUT"
-        echo "output_path=$OUTPUT" >> "$GITHUB_OUTPUT"
+        OUTPUT="$OUTPUT" python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import os
+        from pathlib import Path
+        output = os.environ["OUTPUT"]
+        if any(ord(char) < 32 or ord(char) == 127 for char in output):
+            print("report_path=")
+            print("output_path=")
+        else:
+            print("report_path=" + str(Path(output).absolute()))
+            print("output_path=" + output)
+        PY
 
         # Parse counts from the format-independent summary JSON
         FAILED=0
         WARNED=0
         PASSED=0
+        SUMMARY_VALID=false
         if [ -f "${SUMMARY_FILE}" ]; then
-          FAILED=$(python3 -c "import json; d=json.load(open('${SUMMARY_FILE}')); print(d.get('failed',0))" 2>/dev/null || echo "0")
-          WARNED=$(python3 -c "import json; d=json.load(open('${SUMMARY_FILE}')); print(d.get('warned',0))" 2>/dev/null || echo "0")
-          PASSED=$(python3 -c "import json; d=json.load(open('${SUMMARY_FILE}')); print(d.get('passed',0))" 2>/dev/null || echo "0")
+          COUNTS=$(SUMMARY_FILE="$SUMMARY_FILE" python3 - <<'PY'
+        import json
+        import os
+        from pathlib import Path
+        import stat
+        try:
+            path = Path(os.environ["SUMMARY_FILE"])
+            if path.is_symlink() or not stat.S_ISREG(path.lstat().st_mode):
+                raise OSError()
+            flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
+            with os.fdopen(os.open(path, flags), "rb") as stream:
+                info = os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_size > 4 * 1024 * 1024:
+                    raise OSError()
+                raw = stream.read(4 * 1024 * 1024 + 1)
+            if len(raw) > 4 * 1024 * 1024:
+                raise OSError()
+            data = json.loads(raw)
+            if not isinstance(data, dict):
+                raise ValueError()
+            counts = [data.get(key, 0) for key in ("failed", "warned", "passed")]
+            if any(type(value) is not int or not 0 <= value <= 1000000 for value in counts):
+                raise ValueError()
+            print(*counts)
+        except (OSError, ValueError, RecursionError, MemoryError):
+            print("unavailable unavailable unavailable")
+        PY
+          )
+          read -r FAILED WARNED PASSED <<< "$COUNTS"
+          if [ "$FAILED" != "unavailable" ]; then SUMMARY_VALID=true; fi
           rm -f "${SUMMARY_FILE}"
+        else
+          FAILED=unavailable
+          WARNED=unavailable
+          PASSED=unavailable
+        fi
+        echo "summary_valid=$SUMMARY_VALID" >> "$GITHUB_OUTPUT"
+        if [ "$SUMMARY_VALID" != "true" ]; then
+          echo "::warning::Doctor summary unavailable; inspection counts could not be read safely."
         fi
         echo "failed_count=${FAILED}" >> "$GITHUB_OUTPUT"
         echo "warned_count=${WARNED}" >> "$GITHUB_OUTPUT"
