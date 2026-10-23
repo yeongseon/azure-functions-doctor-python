@@ -13,7 +13,16 @@ from azure_functions_doctor.inspection import read_inspection_text
 
 
 @pytest.mark.parametrize("kind", ["native_dependency_risk", "unpinned_requirements"])
-@pytest.mark.parametrize("include", ["-r ../outside.txt", "--requirement=../outside.txt"])
+@pytest.mark.parametrize(
+    "include",
+    [
+        "-r ../outside.txt",
+        "--requirement=../outside.txt",
+        "-c ../outside.txt",
+        "--constraint=../outside.txt",
+        "absolute",
+    ],
+)
 def test_rule_ignores_requirements_outside_manifest(
     tmp_path: Path, kind: Literal["native_dependency_risk", "unpinned_requirements"], include: str
 ) -> None:
@@ -21,12 +30,25 @@ def test_rule_ignores_requirements_outside_manifest(
     root = tmp_path / "project"
     root.mkdir()
     (tmp_path / "outside.txt").write_text("numpy\n")
+    if include == "absolute":
+        include = f"-r {tmp_path / 'outside.txt'}"
     (root / "requirements.txt").write_text(include + "\n")
     # When either consumer evaluates its rule.
-    handler = getattr(HandlerRegistry(), f"_handle_{kind}")
-    result = handler({"type": "native_dependency_risk"}, root)
+    result = HandlerRegistry().handle(
+        {"type": "native_dependency_risk"}
+        if kind == "native_dependency_risk"
+        else {"type": "unpinned_requirements"},
+        root,
+    )
     # Then the outside declaration never enters findings.
-    assert result["status"] == "pass"
+    assert result["status"] == "fail"
+    assert result["severity"] == "warning"
+    assert result["gate"] is False
+    assert result["file"] == "requirements.txt"
+    assert result["line"] == 1
+    assert "not inspected" in result["detail"]
+    assert "--path" in result["detail"]
+    assert "numpy" not in result["detail"]
 
 
 def test_reader_and_model_detection_work_without_unix_flags(
