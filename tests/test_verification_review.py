@@ -170,11 +170,20 @@ def test_fresh_maintenance_creates_no_hatch_environment(tmp_path: Path) -> None:
     root = Path(__file__).resolve().parents[1]
     shutil.copytree(root / "tools", tmp_path / "tools")
     shutil.copyfile(root / "Makefile", tmp_path / "Makefile")
+    interpreter = tmp_path / "bare/bin/python"
+    subprocess.run(
+        [sys.executable, "-m", "venv", "--without-pip", str(tmp_path / "bare")], check=True
+    )
     environment = dict(os.environ, HATCH_DATA_DIR=str(tmp_path / "hatch-data"))
     environment.pop("CI", None)
+    environment.pop("VIRTUAL_ENV", None)
     for target in ("doctor", "report", "clean"):
         result = subprocess.run(
-            ["make", target], cwd=tmp_path, env=environment, capture_output=True, text=True
+            ["make", target, f"MAINTENANCE_PYTHON={interpreter}"],
+            cwd=tmp_path,
+            env=environment,
+            capture_output=True,
+            text=True,
         )
         if target == "doctor":
             assert result.returncode != 0
