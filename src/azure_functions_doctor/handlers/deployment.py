@@ -50,7 +50,7 @@ def _infra_declares_linux_fx_version(path: Path) -> bool:
         if infra.name == "local.settings.json":
             continue
         try:
-            text = read_inspection_text(infra)
+            text = read_inspection_text(infra, encoding="utf-8")
         except (OSError, ValueError):
             continue
         if _LINUX_FX_KEY_RE.search(text):
@@ -555,7 +555,7 @@ class DeploymentHandlers:
             if bicep.name == "local.settings.json":
                 continue
             try:
-                text = read_inspection_text(bicep)
+                text = read_inspection_text(bicep, encoding="utf-8")
             except (OSError, ValueError):
                 continue
             for match in pattern.finditer(text):

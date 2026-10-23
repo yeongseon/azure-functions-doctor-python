@@ -14,14 +14,18 @@ MAX_REQUIREMENTS_DEPTH: Final = 10
 
 
 def read_requirements_text(
-    path: Path, root: Path, *, encoding: Literal["utf-8", "utf-8-sig"] = "utf-8-sig"
+    path: Path,
+    root: Path,
+    *,
+    encoding: Literal["utf-8", "utf-8-sig"] = "utf-8-sig",
+    universal_newlines: bool = True,
 ) -> str:
     resolved = path.resolve()
     if not resolved.is_relative_to(root.resolve()):
         record_gap(InspectionGap(root.absolute() / "requirements.txt", 1, str(path)))
         raise OSError("Requirements manifest leaves the project root")
     target = resolved if any(part.is_symlink() for part in (path, *path.parents)) else path
-    return read_inspection_text(target, encoding=encoding)
+    return read_inspection_text(target, encoding=encoding, universal_newlines=universal_newlines)
 
 
 def iter_requirements_files(
@@ -46,7 +50,9 @@ def iter_requirements_files(
         seen.add(resolved)
         if content is None:
             try:
-                content = read_requirements_text(path, root)
+                content = read_requirements_text(
+                    path, root, universal_newlines=initial_content is not None
+                )
             except (OSError, ValueError):
                 return
         total += len(content.encode("utf-8"))

@@ -113,7 +113,7 @@ def resolve_python_target(
         python_version_file = project_path / ".python-version"
         if python_version_file.is_file():
             try:
-                content = read_inspection_text(python_version_file).strip()
+                content = read_inspection_text(python_version_file, encoding="utf-8").strip()
             except (OSError, ValueError):
                 content = ""
             match = _PYTHON_VERSION_RE.search(content)

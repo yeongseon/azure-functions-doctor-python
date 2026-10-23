@@ -374,7 +374,7 @@ class GenericHandlers:
         funcignore_patterns = (
             [
                 line.strip().rstrip("/")
-                for line in read_inspection_text(funcignore_path).splitlines()
+                for line in read_inspection_text(funcignore_path, encoding="utf-8").splitlines()
             ]
             if funcignore_path.is_file()
             else []

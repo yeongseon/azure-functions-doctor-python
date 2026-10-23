@@ -70,7 +70,7 @@ def _parse_finding(raw: JsonValue) -> AgentFinding:
 
 def _read_json(path: Path) -> dict[str, JsonValue]:
     try:
-        value = read_inspection_json(path)
+        value = read_inspection_json(path, encoding="utf-8")
     except (OSError, ValueError, RecursionError, MemoryError) as exc:
         raise AgentReportError(f"cannot read JSON report ({type(exc).__name__})") from None
     if not isinstance(value, dict):

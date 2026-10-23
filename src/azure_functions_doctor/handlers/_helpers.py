@@ -1352,7 +1352,7 @@ def _read_project_python_file(py_file: Path) -> str | None:
     try:
         if py_file.name == "requirements.txt" and py_file.is_symlink():
             return None
-        content = read_inspection_text(py_file)
+        content = read_inspection_text(py_file, universal_newlines=False)
         if py_file.suffix == ".py":
             check_python_parser(content, py_file)
         return content

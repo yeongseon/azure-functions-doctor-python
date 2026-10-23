@@ -146,7 +146,7 @@ def _shared_traversal() -> Callable[[Path, str | tuple[str, ...] | list[str]], I
 
 def _read_text(candidate: Path) -> str | None:
     try:
-        return read_inspection_text(candidate)
+        return read_inspection_text(candidate, universal_newlines=False)
     except (OSError, ValueError, UnicodeDecodeError):
         logger.debug("Skip unreadable infra file %s", candidate)
         return None

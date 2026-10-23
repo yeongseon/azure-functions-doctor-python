@@ -20,11 +20,15 @@ def refuse_inspection(path: Path) -> None:
 
 
 def read_inspection_text(
-    path: Path, *, encoding: Literal["utf-8", "utf-8-sig"] = "utf-8-sig"
+    path: Path,
+    *,
+    encoding: Literal["utf-8", "utf-8-sig"] = "utf-8-sig",
+    universal_newlines: bool = True,
 ) -> str:
     """Reject symlinks and nonregular files before a bounded, nonblocking read."""
     try:
-        return _read_text(path, encoding)
+        text = _read_text(path, encoding)
+        return text.replace("\r\n", "\n").replace("\r", "\n") if universal_newlines else text
     except FileNotFoundError:
         raise
     except (OSError, ValueError, MemoryError):
@@ -51,7 +55,7 @@ def _read_text(path: Path, encoding: Literal["utf-8", "utf-8-sig"]) -> str:
         data = stream.read(MAX_FILE_BYTES + 1)
     if len(data) > MAX_FILE_BYTES or b"\x00" in data:
         raise OSError("Inspection skips oversized or binary files")
-    return data.decode(encoding).replace("\r\n", "\n").replace("\r", "\n")
+    return data.decode(encoding)
 
 
 def parse_inspection_json(text: str, path: Path) -> JsonValue:
@@ -83,13 +87,15 @@ def parse_inspection_json(text: str, path: Path) -> JsonValue:
         raise
 
 
-def read_inspection_json(path: Path) -> JsonValue:
-    return parse_inspection_json(read_inspection_text(path), path)
+def read_inspection_json(
+    path: Path, *, encoding: Literal["utf-8", "utf-8-sig"] = "utf-8-sig"
+) -> JsonValue:
+    return parse_inspection_json(read_inspection_text(path, encoding=encoding), path)
 
 
 def read_inspection_toml(path: Path) -> dict[str, JsonValue]:
     try:
-        return tomllib.loads(read_inspection_text(path, encoding="utf-8"))
+        return tomllib.loads(read_inspection_text(path, encoding="utf-8", universal_newlines=False))
     except (ValueError, RecursionError, MemoryError) as exc:
         refuse_inspection(path)
         raise OSError(f"Inspection skips TOML ({type(exc).__name__})") from None
