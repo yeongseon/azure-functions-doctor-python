@@ -143,10 +143,25 @@ JSON uses the same boundary. It refuses symlinks (including
 symlink ancestors), nonregular files/devices/FIFOs, binary NUL content, invalid
 UTF-8 and files over `MAX_FILE_BYTES` (4 MiB). No decoding fallback bypasses it.
 Discovery may yield in-root symlinks, but direct project reads refuse them visibly.
-Requirements manifests/includes are the compatibility exception: as on main,
-in-root symlinks are resolved after containment validation and their regular-file
-targets are bounded-read. Identity, de-duplication and locations use resolved paths;
-ordinary lexical paths still reach the reader without early symlink erasure.
+Requirements package checks and include walkers retain main's consumer-specific
+alias behavior. Canonical identity/de-duplication is separate from include base:
+the declaration walker starts relative to the root alias directory; the located
+walker starts relative to the resolved root target. Included aliases use target
+directories. In-root targets are containment-checked and bounded-read. Integration
+helpers retain main's refusal of a symlinked root manifest. Direct project/source
+readers continue to refuse symlinks.
+
+Known, intentionally unchanged: package declaration/forbidden readers use UTF-8,
+not UTF-8-sig. A BOM before the root's first include directive hides that include
+from discovery on main; this PR preserves that gate outcome. Located and integration
+readers retain their existing BOM-stripping behavior. Fixing BOM directive handling
+belongs in a separate issue. BOM-prefixed TOML is stdlib-invalid and remains refused,
+now with visible incomplete-inspection evidence.
+
+Normal-input parity has been verified by 48 captured-main format/layout goldens
+and 308 sweep projects over three seeds (924 table/JSON/SARIF comparisons), not by
+an exhaustive proof for every possible project. Hostile NUL/invalid-UTF-8 inputs
+are outside that parity set and are refused visibly.
 
 The Action summary reader is a separate implementation: it bounds reads to 4 MiB,
 requires regular non-symlink files, parses an object and accepts only integer counts

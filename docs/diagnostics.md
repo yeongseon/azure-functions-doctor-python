@@ -27,9 +27,17 @@ the top-level manifest directory and discovered files must resolve within the
 selected project root. Rules depending on an excluded reference report incomplete
 inspection as a non-gating advisory warning, with its written path and file/line.
 Discovery can yield in-root symlinks; direct project content reads refuse symlinks
-and symlink ancestors. Requirements manifests/includes preserve main's behavior:
-in-root symlinks are resolved after containment checks and their regular targets
-are bounded-read. Resolved identity is shared by traversal, de-duplication and locations.
+and symlink ancestors. Requirements consumers preserve main's distinct behavior:
+declaration traversal starts relative to a root alias directory, located traversal
+starts relative to its resolved target, and included aliases use target directories.
+Canonical identity is separate from the include base. Integration dependency helpers
+retain refusal of a symlinked root manifest. Allowed in-root targets remain bounded-read.
+
+Known, intentionally unchanged: UTF-8 package readers retain a root BOM during
+directive discovery, so a BOM-prefixed first include remains missed as on main.
+Located/integration readers retain BOM stripping. A separate issue must address
+that existing include bug. Parity is verified by 48 captured-main goldens and
+308 projects over three sweep seeds, not an exhaustive compatibility claim.
 
 All project readers use the strict UTF-8, regular-file-only (no devices/FIFOs),
 NUL-rejecting `read_inspection_text` boundary: Python/model detection, host/local
