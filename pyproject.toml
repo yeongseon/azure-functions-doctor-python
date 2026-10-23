@@ -46,7 +46,7 @@ dev = [
     "pre-commit",
     "pytest",
     "pytest-cov",
-    "ruff==0.16.10",
+    "ruff==0.17.0",
     "requests",
     "types-requests",
 ]
