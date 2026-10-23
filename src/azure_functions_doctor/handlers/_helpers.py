@@ -1574,6 +1574,8 @@ def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, st
                 include_value = include_match.group(1).split(" #", 1)[0].strip().strip("'\"")
                 if "://" not in include_value:
                     include_path = (file_path.parent / include_value).resolve()
+                    if not include_path.is_relative_to(req_path.parent.resolve()):
+                        continue
                     results.extend(walk(include_path, depth + 1))
                 continue
             if line.startswith(("-c ", "--constraint")):
