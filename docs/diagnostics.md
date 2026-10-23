@@ -36,8 +36,12 @@ retain refusal of a symlinked root manifest. Allowed in-root targets remain boun
 Known, intentionally unchanged: UTF-8 package readers retain a root BOM during
 directive discovery, so a BOM-prefixed first include remains missed as on main.
 Located/integration readers retain BOM stripping. A separate issue must address
-that existing include bug. Parity is verified by 48 captured-main goldens and
-308 projects over three sweep seeds, not an exhaustive compatibility claim.
+that existing include bug; it is intentionally unchanged and tracked in
+[#626](https://github.com/yeongseon/azure-functions-doctor-python/issues/626).
+Parity is verified by 51 captured-main goldens and 328 encoding-sweep projects over
+three new seeds, not an exhaustive compatibility claim. `.funcignore` retains
+its first-pattern BOM as main does; raw versus universal newline handling and
+UTF-8 versus UTF-8-sig decoding are selected per reader, not silently unified.
 
 All project readers use the strict UTF-8, regular-file-only (no devices/FIFOs),
 NUL-rejecting `read_inspection_text` boundary: Python/model detection, host/local

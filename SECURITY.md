@@ -155,13 +155,21 @@ Known, intentionally unchanged: package declaration/forbidden readers use UTF-8,
 not UTF-8-sig. A BOM before the root's first include directive hides that include
 from discovery on main; this PR preserves that gate outcome. Located and integration
 readers retain their existing BOM-stripping behavior. Fixing BOM directive handling
-belongs in a separate issue. BOM-prefixed TOML is stdlib-invalid and remains refused,
+is intentionally unchanged; tracked in [#626](https://github.com/yeongseon/azure-functions-doctor-python/issues/626).
+BOM-prefixed TOML is stdlib-invalid and remains refused,
 now with visible incomplete-inspection evidence.
 
-Normal-input parity has been verified by 48 captured-main format/layout goldens
-and 308 sweep projects over three seeds (924 table/JSON/SARIF comparisons), not by
+Normal-input parity has been verified by 51 captured-main format/layout goldens
+and 328 encoding-sweep projects over three new seeds (984 table/JSON/SARIF comparisons), not by
 an exhaustive proof for every possible project. Hostile NUL/invalid-UTF-8 inputs
 are outside that parity set and are refused visibly.
+
+Encoding and newline behavior is explicit per reader: legacy UTF-8 consumers
+(`.funcignore`, package manifests, installed-version metadata and two infra-key
+scanners) retain BOMs; UTF-8-sig consumers remove them. Readers formerly using
+text-mode Path reads translate universal newlines; preexisting binary-backed
+source/deploy readers preserve raw CR/LF. TOML keeps binary-load UTF-8 semantics
+and lets tomllib handle CRLF rather than accepting lone CR through preprocessing.
 
 The Action summary reader is a separate implementation: it bounds reads to 4 MiB,
 requires regular non-symlink files, parses an object and accepts only integer counts
