@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import stat
 import tomllib
-from typing import Final, TypeAlias
+from typing import Final, Literal, TypeAlias
 
 from azure_functions_doctor.inspection_gaps import InspectionGap, record_gap
 
@@ -19,10 +19,12 @@ def refuse_inspection(path: Path) -> None:
     record_gap(InspectionGap(path.absolute(), 1, "", "inspection limit"))
 
 
-def read_inspection_text(path: Path) -> str:
+def read_inspection_text(
+    path: Path, *, encoding: Literal["utf-8", "utf-8-sig"] = "utf-8-sig"
+) -> str:
     """Reject symlinks and nonregular files before a bounded, nonblocking read."""
     try:
-        return _read_text(path)
+        return _read_text(path, encoding)
     except FileNotFoundError:
         raise
     except (OSError, ValueError, MemoryError):
@@ -30,7 +32,7 @@ def read_inspection_text(path: Path) -> str:
         raise
 
 
-def _read_text(path: Path) -> str:
+def _read_text(path: Path, encoding: Literal["utf-8", "utf-8-sig"]) -> str:
     if any(part.is_symlink() for part in (path, *path.parents)):
         raise OSError("Inspection skips symbolic links")
     if not stat.S_ISREG(path.lstat().st_mode):
@@ -49,7 +51,7 @@ def _read_text(path: Path) -> str:
         data = stream.read(MAX_FILE_BYTES + 1)
     if len(data) > MAX_FILE_BYTES or b"\x00" in data:
         raise OSError("Inspection skips oversized or binary files")
-    return data.decode("utf-8-sig")
+    return data.decode(encoding).replace("\r\n", "\n").replace("\r", "\n")
 
 
 def parse_inspection_json(text: str, path: Path) -> JsonValue:
@@ -87,7 +89,7 @@ def read_inspection_json(path: Path) -> JsonValue:
 
 def read_inspection_toml(path: Path) -> dict[str, JsonValue]:
     try:
-        return tomllib.loads(read_inspection_text(path))
+        return tomllib.loads(read_inspection_text(path, encoding="utf-8"))
     except (ValueError, RecursionError, MemoryError) as exc:
         refuse_inspection(path)
         raise OSError(f"Inspection skips TOML ({type(exc).__name__})") from None

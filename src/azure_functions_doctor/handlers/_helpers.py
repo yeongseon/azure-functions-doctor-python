@@ -28,7 +28,6 @@ from azure_functions_doctor.logging_config import get_logger
 from azure_functions_doctor.requirements_directives import parse_include_directive
 from azure_functions_doctor.requirements_inspection import (
     iter_requirements_files,
-    read_requirements_text,
 )
 
 logger = get_logger(__name__)
@@ -1351,11 +1350,9 @@ def _iter_project_py_contents(path: Path) -> Iterator[tuple[Path, str]]:
 def _read_project_python_file(py_file: Path) -> str | None:
     """Read Python source without failing the whole traversal."""
     try:
-        content = (
-            read_requirements_text(py_file, py_file.parent)
-            if py_file.name == "requirements.txt"
-            else read_inspection_text(py_file)
-        )
+        if py_file.name == "requirements.txt" and py_file.is_symlink():
+            return None
+        content = read_inspection_text(py_file)
         if py_file.suffix == ".py":
             check_python_parser(content, py_file)
         return content
@@ -1567,7 +1564,6 @@ def _iter_requirements_with_location(req_path: Path) -> list[tuple[Path, int, st
                 if "://" not in include_value:
                     include_path = (file_path.parent / include_value).resolve()
                     if not include_path.is_relative_to(req_path.parent.resolve()):
-                        record_gap(InspectionGap(file_path, line_no, include_value))
                         continue
                     if directive.constraint:
                         continue

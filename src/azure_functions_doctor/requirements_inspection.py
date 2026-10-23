@@ -2,7 +2,7 @@
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Final
+from typing import Final, Literal
 
 from azure_functions_doctor.inspection import read_inspection_text, refuse_inspection
 from azure_functions_doctor.inspection_gaps import InspectionGap, record_gap
@@ -13,13 +13,15 @@ MAX_REQUIREMENTS_BYTES: Final = 16 * 1024 * 1024
 MAX_REQUIREMENTS_DEPTH: Final = 10
 
 
-def read_requirements_text(path: Path, root: Path) -> str:
+def read_requirements_text(
+    path: Path, root: Path, *, encoding: Literal["utf-8", "utf-8-sig"] = "utf-8-sig"
+) -> str:
     resolved = path.resolve()
     if not resolved.is_relative_to(root.resolve()):
         record_gap(InspectionGap(root.absolute() / "requirements.txt", 1, str(path)))
         raise OSError("Requirements manifest leaves the project root")
     target = resolved if any(part.is_symlink() for part in (path, *path.parents)) else path
-    return read_inspection_text(target)
+    return read_inspection_text(target, encoding=encoding)
 
 
 def iter_requirements_files(
@@ -56,12 +58,13 @@ def iter_requirements_files(
             directive = parse_include_directive(line)
             if directive is None or "://" in directive.reference:
                 continue
-            include = resolved.parent / directive.reference
+            base = path.parent if depth == 0 and initial_content is not None else resolved.parent
+            include = base / directive.reference
             if not include.resolve().is_relative_to(root):
                 record_gap(InspectionGap(path.absolute(), line_no, directive.reference))
                 continue
             if directive.constraint:
                 continue
-            yield from walk(include, depth + 1)
+            yield from walk(include.resolve(), depth + 1)
 
     yield from walk(source.absolute(), 0, initial_content)

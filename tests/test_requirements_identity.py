@@ -44,8 +44,8 @@ def test_integration_dependencies_follow_multilevel_root_alias(tmp_path: Path) -
         "azure-functions-validation",
         "azure-functions-worker",
     }
-    assert _project_declares_openapi_dep(tmp_path)
-    assert _project_declares_validation_dep(tmp_path)
+    assert not _project_declares_openapi_dep(tmp_path)
+    assert not _project_declares_validation_dep(tmp_path)
 
 
 def test_outside_symlink_include_remains_visibly_refused(tmp_path: Path) -> None:

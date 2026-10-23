@@ -132,7 +132,7 @@ class DependencyHandlers:
                 f"{req_path} not found and '{package_name}' not declared in pyproject.toml",
             )
         try:
-            content = read_requirements_text(req_path, path)
+            content = read_requirements_text(req_path, path, encoding="utf-8")
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
         normalized = _parse_requirements_names(content, req_path)
@@ -173,7 +173,7 @@ class DependencyHandlers:
         if not req_path.exists():
             return _create_result("fail", f"{req_path} not found")
         try:
-            content = read_requirements_text(req_path, path)
+            content = read_requirements_text(req_path, path, encoding="utf-8")
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
         normalized = _parse_requirements_names(content, req_path)
