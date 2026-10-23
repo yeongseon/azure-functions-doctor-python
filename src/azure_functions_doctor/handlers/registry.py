@@ -120,7 +120,19 @@ class HandlerRegistry(
                 return {
                     **result,
                     "detail": result.get("detail", "") + "\n" + advisory["detail"],
-                    "locations": [*result.get("locations", []), *advisory["locations"]],
+                    "locations": [
+                        *result.get(
+                            "locations",
+                            [
+                                {
+                                    "file": result.get("file", "."),
+                                    "line": result.get("line"),
+                                    "message": result.get("detail", ""),
+                                }
+                            ],
+                        ),
+                        *advisory["locations"],
+                    ],
                 }
             return advisory
         except Exception as exc:

@@ -14,9 +14,9 @@ from azure_functions_doctor.handlers._helpers import (
     Rule,
     RuleContext,
     _create_result,
-    _detect_native_dependency_risks_for_project,
     _handle_specific_exceptions,
     _iter_requirements_with_location,
+    _match_native_dependency_line,
     _parse_requirements_names,
     _rule_handler,
     is_local_prebuilt_deployment,
@@ -196,8 +196,21 @@ class DependencyHandlers:
         req_path = path / Path(req_file)
         if not req_path.exists():
             return _create_result("skip", f"{req_file} not found; check skipped")
+        locations: list[dict[str, object]] = []
+        matches: list[tuple[str, str]] = []
+        seen: set[str] = set()
         try:
-            matches = _detect_native_dependency_risks_for_project(req_path)
+            for declaring_file, line_no, line in _iter_requirements_with_location(req_path):
+                match = _match_native_dependency_line(line, seen)
+                if match is not None:
+                    matches.append(match)
+                    locations.append(
+                        {
+                            "file": declaring_file.relative_to(path.resolve()).as_posix(),
+                            "line": line_no,
+                            "message": f"Native dependency {match[0]}: {match[1]}",
+                        }
+                    )
         except Exception as exc:
             return _handle_specific_exceptions(f"reading {req_file}", exc)
 
@@ -214,7 +227,7 @@ class DependencyHandlers:
         for package, hint in matches:
             if hint:
                 detail_lines.append(f"- {package}: {hint}")
-        return _create_result("fail", "\n".join(detail_lines))
+        return _create_result("fail", "\n".join(detail_lines), locations=locations)
 
     @_rule_handler
     def _handle_unpinned_requirements(
