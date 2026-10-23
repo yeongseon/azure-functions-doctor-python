@@ -69,7 +69,7 @@ def main() -> int:
                     "-m",
                     "pip",
                     "install",
-                    "--force-reinstall",
+                    "--ignore-installed",
                     "--no-deps",
                     "--no-index",
                     str(wheels[0]),

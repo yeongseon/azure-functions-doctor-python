@@ -114,7 +114,7 @@ def test_wheel_smoke_installs_candidate_when_parent_has_same_version(
             packages.mkdir(parents=True)
         elif "pip" in command:
             # Pip otherwise skips the wheel visible through the dependency .pth.
-            assert "--force-reinstall" in command
+            assert "--ignore-installed" in command
             assert "--no-deps" in command and "--no-index" in command
             installed = True
         log.parent.mkdir(parents=True, exist_ok=True)
