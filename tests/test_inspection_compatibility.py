@@ -29,7 +29,20 @@ print(json.dumps({'code': result.exit_code, 'output': result.output}))
 """
 
 
-@pytest.mark.parametrize("fixture", ["v2", "deploy", "langgraph"])
+@pytest.mark.parametrize(
+    "fixture",
+    [
+        "v2",
+        "deploy",
+        "langgraph",
+        "chain",
+        "dotdot",
+        "diamond",
+        "symlink",
+        "multilevel",
+        "root-symlink",
+    ],
+)
 @pytest.mark.parametrize("output_format", ["table", "json", "sarif"])
 def test_normal_project_matches_main_bytes(
     tmp_path: Path, fixture: str, output_format: str
@@ -55,6 +68,40 @@ def test_normal_project_matches_main_bytes(
     )
     (project / "requirements.txt").write_text("azure-functions==1.21.3\n-r common.txt\n")
     (project / "common.txt").write_text("requests==2.32.5\n")
+    if fixture in {"chain", "dotdot", "diamond", "symlink", "multilevel", "root-symlink"}:
+        (project / "sub").mkdir()
+        (project / "nested").mkdir()
+        (project / "common.txt").write_text("numpy\n")
+        requirements = "azure-functions==1.21.3\n"
+        if fixture in {"chain", "root-symlink"}:
+            requirements += "-r sub/child.txt\n"
+            (project / "sub/child.txt").write_text("requests==2.32.5\n-r ../common.txt\n")
+        elif fixture == "dotdot":
+            requirements += "-r nested/../common.txt\n"
+        elif fixture == "diamond":
+            requirements += "-r sub/left.txt\n-r sub/right.txt\n-r ./common.txt\n"
+            for branch in ("left", "right"):
+                (project / f"sub/{branch}.txt").write_text("-r ../common.txt\n")
+        elif fixture == "symlink":
+            (project / "alias.txt").symlink_to(project / "common.txt")
+            requirements += "-r alias.txt\n"
+        else:
+            requirements += "-r ./sub/child.txt\n-r sub/../common.txt\n"
+            (project / "sub/child.txt").write_text("-r ../nested/deps.txt\n-c ../constraints.txt\n")
+            (project / "nested/deps.txt").write_text(
+                "azure-functions-worker\nazure-functions-validation\n"
+                "azure-functions-logging[otel]\n-r ../common.txt\n"
+            )
+            (project / "constraints.txt").write_text("requests==2.32.5\n")
+            (project / "function_app.py").write_text(
+                "import azure.functions as func\n"
+                "from azure_functions_validation import validate_http\n"
+                "app=func.FunctionApp()\n@app.route(route='hello')\ndef hello(req): return 'ok'\n"
+            )
+        (project / "requirements.txt").write_text(requirements)
+        if fixture == "root-symlink":
+            (project / "requirements.txt").rename(project / "root-manifest.txt")
+            (project / "requirements.txt").symlink_to(project / "root-manifest.txt")
     (project / "pyproject.toml").write_text('[project]\nname="fixture"\ndependencies=[]\n')
     (project / "main.bicep").write_text("linuxFxVersion: 'Python|3.12'\n")
     if fixture == "deploy":
