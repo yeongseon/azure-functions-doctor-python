@@ -160,7 +160,7 @@ jobs:
             sleep 15
           done
       - name: Run e2e tests
-        run: pytest tests/e2e -v --no-cov --html=e2e-report/report.html --self-contained-html
+        run: pytest tests/e2e -m e2e -v --no-cov --html=e2e-report/report.html --self-contained-html
         env:
           E2E_BASE_URL: https://${{ steps.names.outputs.app }}.azurewebsites.net
 
