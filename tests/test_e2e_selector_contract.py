@@ -15,6 +15,9 @@ again:
 - The default library-wide suite (``pyproject.toml``'s ``addopts`` applies
   ``-m 'not e2e'`` unconditionally) must select neither of them, regardless
   of whether ``E2E_BASE_URL`` is set.
+
+A dedicated ``-m e2e`` run without ``E2E_BASE_URL`` must stop with a message
+instead of reporting the tests as skipped.
 """
 
 from __future__ import annotations
@@ -94,3 +97,20 @@ def test_azure_certification_command_collects_both_e2e_functions() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     for name in E2E_TEST_NAMES:
         assert name in result.stdout
+
+
+def test_unconfigured_dedicated_lane_stops_instead_of_skipping() -> None:
+    """``pytest -m e2e`` without ``E2E_BASE_URL`` must stop before any request
+    (exit 2, with a message), never report the tests as skipped."""
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "-m", "e2e", "tests/e2e/", "--no-cov"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        env=os.environ | {"E2E_BASE_URL": ""},
+        check=False,
+    )
+    output = result.stdout + result.stderr
+    assert result.returncode == 2, output
+    assert "E2E_BASE_URL is required for the E2E lane" in output
+    assert "skipped" not in output.lower()
