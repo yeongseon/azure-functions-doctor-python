@@ -10,14 +10,8 @@ VERSIONED_DOCS := README.md llms.txt llms-full.txt docs/deployment.md
 
 .PHONY: bootstrap
 bootstrap:
-	@if [ ! -d "$(VENV_DIR)" ]; then \
-		echo "Creating virtual environment..."; \
-		python3 -m venv $(VENV_DIR); \
-	fi
-	@echo "Ensuring Hatch is installed in virtual environment..."
-	@$(PIP) install --upgrade pip > /dev/null
-	@$(PIP) install hatch > /dev/null
-	@echo "Hatch installed at $(HATCH)"
+	@test -d "$(VENV_DIR)" || { echo "Creating virtual environment..."; python3 -m venv "$(VENV_DIR)"; }
+	@test -x "$(HATCH)" || { echo "Installing Hatch..."; "$(PIP)" install hatch > /dev/null; }
 
 .PHONY: ensure-hatch
 ensure-hatch: bootstrap
