@@ -99,9 +99,9 @@ The project includes a real Azure end-to-end test workflow that deploys an actua
 ### Workflow
 
 - **File**: `.github/workflows/e2e-azure.yml`
-- **Trigger**: Manual (`workflow_dispatch`) or weekly schedule (Mondays 02:00 UTC)
+- **Trigger**: Manual (`workflow_dispatch`), and as the `azure-e2e` release-certification gate that `publish-pypi.yml` calls (`workflow_call`) for every release tag; there is no schedule
 - **Infrastructure**: Linux Consumption plan (`Y1`/Dynamic) running Python 3.12, deployed by `infra/main.bicep` to the `koreacentral` region by default
-- **Note**: Linux Consumption is the legacy plan (retires 30 September 2028) and is used here only because it is the cheapest throwaway target for a weekly smoke run
+- **Note**: Linux Consumption is the legacy plan (retires 30 September 2028) and is used here only because it is the cheapest throwaway target for a short certification run
 - **Cleanup**: Resource group deleted immediately after tests (`if: always()`)
 
 ### Running E2E Tests
@@ -109,6 +109,14 @@ The project includes a real Azure end-to-end test workflow that deploys an actua
 ```bash
 gh workflow run e2e-azure.yml --ref main
 ```
+
+To run the two tests against an app that is already deployed:
+
+```bash
+E2E_BASE_URL=https://<app>.azurewebsites.net make e2e-azure
+```
+
+Both tests carry the `e2e` marker, which the default suite deselects (`-m 'not e2e'`), so the dedicated run selects them with `-m e2e` and skips the offline coverage gate (`--no-cov`). `E2E_BASE_URL` is required: when it is unset the run stops with exit code 2 and the message `E2E_BASE_URL is required for the E2E lane` before sending any request; the tests are never reported as skipped.
 
 ### Required Secrets & Variables
 
