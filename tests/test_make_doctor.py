@@ -12,6 +12,7 @@ import shlex
 import shutil
 import stat
 import subprocess
+import tomllib
 
 import pytest
 
@@ -69,3 +70,14 @@ def test_routine_targets_do_not_upgrade_pip(sandbox: Path) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     assert "hatch run test" in result.stdout
     assert "--upgrade pip" not in result.stdout
+
+
+def test_check_type_checks_once(sandbox: Path) -> None:
+    """``hatch run lint`` already ends with the type check, so ``check`` must not add another."""
+    result = _make(sandbox, "-n", "check")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.count("hatch run lint") == 1
+    assert "hatch run typecheck" not in result.stdout
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    scripts = pyproject["tool"]["hatch"]["envs"]["default"]["scripts"]
+    assert "hatch run typecheck" in scripts["lint"]
