@@ -90,6 +90,13 @@ make cov         # Run tests with coverage
 make check-all   # Run the full local gate
 ```
 
+`make doctor` checks this repository's prerequisites. It is **not** the product's
+`azure-functions-doctor doctor` command, which diagnoses Azure Functions projects. It
+only reads, and fails with a `MISSING` line when Hatch (`.venv/bin/hatch`, installed by
+`make bootstrap`), `python3.11` or `git` is missing; `func` and `azurite` are listed as
+optional (only a local Functions host needs them). `make e2e-azure` needs `E2E_BASE_URL`
+and stops before any request when it is unset.
+
 Before opening a PR, run `ruff format --check <changed-python-files>` (or
 `ruff format <changed-python-files>` to fix them). `make format-check` checks
 `src` and `tests` without changing files. CI checks those same trees and also
