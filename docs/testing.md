@@ -92,6 +92,17 @@ The test suite runs automatically on GitHub Actions with the following configura
 - **Python Versions**: 3.11, 3.12, 3.13, 3.14
 - **Workflow**: .github/workflows/ci-test.yml
 
+## What Each Lane Proves
+
+| Lane | Where it runs | A pass proves |
+| --- | --- | --- |
+| Offline tests | `make test`; the `test` and `minimum-dependencies` jobs in `ci-test.yml` | The source behaves as specified on each supported Python and at the minimum declared dependency versions, with the 95% coverage floor. No Azure, Functions host or deployed app is involved. |
+| Real host smoke | `host-smoke` in `ci-test.yml` (Python 3.11, 3.12) | The doctor passes on a minimal app, and that app starts under a real Functions host (Core Tools v4 and Azurite) and answers an HTTP request. Local emulation, not Azure. |
+| Installed-wheel CLI | the `artifact-*` jobs in `ci-test.yml`; `doctor-runtime-gate` in `publish-pypi.yml` | The built wheel installs on Python 3.11 (3.10 rejects it) and its `azure-functions-doctor` CLI runs on the example app from outside the checkout. |
+| Release-chain Azure E2E | `azure-e2e` in `publish-pypi.yml`, which runs `e2e-azure.yml`, for every release tag | The release commit's example app, which the doctor passes, deploys to a real Azure Function App and serves HTTP. |
+
+A local run is not Azure certification, including `make e2e-local` and `make e2e-azure` against an app you deployed yourself. Only `e2e-azure.yml` deploys to Azure, and the release chain runs it at every tag.
+
 ## Real Azure E2E Tests
 
 The project includes a real Azure end-to-end test workflow that deploys an actual Function App to Azure and validates HTTP endpoints.
