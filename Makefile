@@ -7,10 +7,11 @@ DEMO_GIF := docs/assets/doctor-demo.gif
 DEMO_FINAL_PNG := docs/assets/doctor-demo-final.png
 VERSIONED_DOCS := README.md llms.txt llms-full.txt docs/deployment.md
 
+# Hatch counts as installed only if it is an executable regular file; `-x` alone also accepts a directory.
 .PHONY: bootstrap
 bootstrap:
 	@test -d "$(VENV_DIR)" || { echo "Creating virtual environment..."; python3 -m venv "$(VENV_DIR)"; }
-	@test -x "$(HATCH)" || { echo "Installing Hatch..."; "$(PIP)" install hatch > /dev/null; }
+	@{ [ -f "$(HATCH)" ] && [ -x "$(HATCH)" ]; } || { echo "Installing Hatch..."; "$(PIP)" install hatch > /dev/null; }
 
 .PHONY: ensure-hatch
 ensure-hatch: bootstrap
@@ -183,12 +184,13 @@ demo-image:
 .PHONY: doctor
 doctor:
 	@missing=0; \
+	have() { p="$$(command -v "$$1")"; [ -f "$$p" ] && [ -x "$$p" ]; }; \
 	for tool in "$(HATCH)" python3.11 git; do \
-		if [ -x "$$(command -v "$$tool")" ]; then echo "ok       $$tool"; \
+		if have "$$tool"; then echo "ok       $$tool"; \
 		else echo "MISSING  $$tool (required)"; missing=1; fi; \
 	done; \
 	for tool in func azurite; do \
-		if [ -x "$$(command -v "$$tool")" ]; then echo "ok       $$tool"; \
+		if have "$$tool"; then echo "ok       $$tool"; \
 		else echo "missing  $$tool (optional: needed only to run a local Functions host)"; fi; \
 	done; \
 	exit $$missing

@@ -121,6 +121,20 @@ def test_doctor_treats_a_non_executable_hatch_as_missing(sandbox: Path) -> None:
     assert "MISSING  " in result.stdout
 
 
+def test_a_directory_at_the_hatch_path_is_not_an_installed_hatch(sandbox: Path) -> None:
+    """``-x`` is also true for a searchable directory, so only a regular file counts as Hatch."""
+    log = _pip_log(sandbox)
+    _install_tools(sandbox, {"hatch"})
+    hatch = sandbox / "venv/bin/hatch"
+    hatch.mkdir()
+    doctor = _make(sandbox, "doctor")
+    assert doctor.returncode != 0
+    assert f"MISSING  {hatch} (required)" in doctor.stdout
+    bootstrap = _make(sandbox, "bootstrap")
+    assert bootstrap.returncode == 0, bootstrap.stdout + bootstrap.stderr
+    assert log.read_text() == "install hatch\n"
+
+
 def test_doctor_neither_installs_nor_writes(sandbox: Path) -> None:
     log = _pip_log(sandbox)  # a stub pip and no Hatch: bootstrap would install here
     before = sorted(sandbox.rglob("*"))
