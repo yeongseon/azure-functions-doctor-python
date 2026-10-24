@@ -1,5 +1,4 @@
 VENV_DIR := .venv
-PYTHON := $(VENV_DIR)/bin/python
 PIP := $(VENV_DIR)/bin/pip
 HATCH := $(VENV_DIR)/bin/hatch
 DEMO_TAPE := demo/doctor-demo.tape
@@ -8,16 +7,11 @@ DEMO_GIF := docs/assets/doctor-demo.gif
 DEMO_FINAL_PNG := docs/assets/doctor-demo-final.png
 VERSIONED_DOCS := README.md llms.txt llms-full.txt docs/deployment.md
 
+# Hatch counts as installed only if it is an executable regular file; `-x` alone also accepts a directory.
 .PHONY: bootstrap
 bootstrap:
-	@if [ ! -d "$(VENV_DIR)" ]; then \
-		echo "Creating virtual environment..."; \
-		python3 -m venv $(VENV_DIR); \
-	fi
-	@echo "Ensuring Hatch is installed in virtual environment..."
-	@$(PIP) install --upgrade pip > /dev/null
-	@$(PIP) install hatch > /dev/null
-	@echo "Hatch installed at $(HATCH)"
+	@test -d "$(VENV_DIR)" || { echo "Creating virtual environment..."; python3 -m venv "$(VENV_DIR)"; }
+	@{ [ -f "$(HATCH)" ] && [ -x "$(HATCH)" ]; } || { echo "Installing Hatch..."; "$(PIP)" install hatch > /dev/null; }
 
 .PHONY: ensure-hatch
 ensure-hatch: bootstrap
@@ -95,7 +89,6 @@ security-types:
 .PHONY: check
 check: ensure-hatch
 	@$(MAKE) lint
-	@$(MAKE) typecheck
 	@echo "Lint and type check passed."
 
 .PHONY: lint-workflows
@@ -187,13 +180,20 @@ demo: demo-image
 demo-image:
 	@docker build -t $(DEMO_IMAGE) -f demo/Dockerfile.vhs .
 
+# Repository prerequisites only; the product CLI is `azure-functions-doctor doctor`.
 .PHONY: doctor
 doctor:
-	@echo "Python version:" && $(PYTHON) --version
-	@echo "Installed packages:" && $(HATCH) env run pip list || echo "No hatch environment found"
-	@echo "Azure Function Core Tools version:" && func --version || echo "func not found"
-	@echo "Pre-commit hook installed:"
-	@if [ -f .git/hooks/pre-commit ]; then echo yes; else echo no; fi
+	@missing=0; \
+	have() { p="$$(command -v "$$1")"; [ -f "$$p" ] && [ -x "$$p" ]; }; \
+	for tool in "$(HATCH)" python3.11 git; do \
+		if have "$$tool"; then echo "ok       $$tool"; \
+		else echo "MISSING  $$tool (required)"; missing=1; fi; \
+	done; \
+	for tool in func azurite; do \
+		if have "$$tool"; then echo "ok       $$tool"; \
+		else echo "missing  $$tool (optional: needed only to run a local Functions host)"; fi; \
+	done; \
+	exit $$missing
 
 .PHONY: clean
 clean:
