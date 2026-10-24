@@ -1,5 +1,4 @@
 VENV_DIR := .venv
-PYTHON := $(VENV_DIR)/bin/python
 PIP := $(VENV_DIR)/bin/pip
 HATCH := $(VENV_DIR)/bin/hatch
 DEMO_TAPE := demo/doctor-demo.tape
@@ -180,13 +179,19 @@ demo: demo-image
 demo-image:
 	@docker build -t $(DEMO_IMAGE) -f demo/Dockerfile.vhs .
 
+# Repository prerequisites only; the product CLI is `azure-functions-doctor doctor`.
 .PHONY: doctor
 doctor:
-	@echo "Python version:" && $(PYTHON) --version
-	@echo "Installed packages:" && $(HATCH) env run pip list || echo "No hatch environment found"
-	@echo "Azure Function Core Tools version:" && func --version || echo "func not found"
-	@echo "Pre-commit hook installed:"
-	@if [ -f .git/hooks/pre-commit ]; then echo yes; else echo no; fi
+	@missing=0; \
+	for tool in "$(HATCH)" python3.11 git; do \
+		if [ -x "$$(command -v "$$tool")" ]; then echo "ok       $$tool"; \
+		else echo "MISSING  $$tool (required)"; missing=1; fi; \
+	done; \
+	for tool in func azurite; do \
+		if [ -x "$$(command -v "$$tool")" ]; then echo "ok       $$tool"; \
+		else echo "missing  $$tool (optional: needed only to run a local Functions host)"; fi; \
+	done; \
+	exit $$missing
 
 .PHONY: clean
 clean:
