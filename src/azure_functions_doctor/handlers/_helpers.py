@@ -1766,6 +1766,7 @@ class Rule(TypedDict, total=False):
         "native_dependency_risk",
         "unpinned_requirements",
         "decorator_order",
+        "otel_activation",
         "endpoint_metadata",
         "openapi_version_mixing",
         "scan_before_spec",
