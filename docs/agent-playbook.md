@@ -21,8 +21,12 @@
 ## Pull Request Descriptions
 
 Follow `AGENTS.md` for concise PR titles, changes and actual validation.
-Only include review evidence for significant findings or high-risk changes under
-[review-evidence-policy.md](review-evidence-policy.md).
+Include additional review evidence for significant findings or high-risk changes under
+[review-evidence-policy.md](review-evidence-policy.md). Diagnostic rule, detection,
+and configuration changes also retain the representative-project validation record
+defined there, even when routine: profile, target runtime, configuration/suppression,
+expected statuses and exit result, display severity, required default, and any
+explicit gate override.
 
 ## Validation
 - `make install`
