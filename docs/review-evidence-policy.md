@@ -41,24 +41,16 @@ A review is evidence for the commit it evaluated — never for the PR as a whole
   aggregate or a resolved thread from a stale commit does not stand in for re-review of the
   current one.
 
-## Review budget
+## Review effort
 
-- Default: **two published AI review rounds per scoped PR/task.**
-- New commits do not reset the budget. Deduplicate by head SHA and purpose — re-requesting review
-  on an unrelated rebase is not a new round.
-- After budget exhaustion with findings still open, do not manufacture a third automated round.
-  Record the no-change outcome and leave the PR pending for an explicit maintainer decision, or
-  route to human review.
+Request additional review when the change or an unresolved finding warrants it. Do not prescribe a number of AI review rounds or create repetitive reviews for formatting-only changes. Preserve explicit maintainer review for high-risk changes.
 
 ## What to record per PR
 
-In the PR body (see the extended `pull_request_template.md` fields):
+For routine PRs, use a concise `Summary`, `Changes`, `Validation`, and `Related Issues` record. Report checks actually run, their results, and significant unresolved findings. Do not add empty review-evidence fields or agent-process logs.
 
-- Linked issue(s).
-- Risk category (see "R3 scope" below).
-- Review source and the exact commit SHA it evaluated.
-- Material findings and their disposition (fixed / acknowledged-wont-fix / deferred-with-issue).
-- Unresolved blockers, if any, with the reason merging anyway is acceptable (or "none").
+For high-risk changes in the R3 scope below, record the review source and the commit it evaluated, substantive findings and their disposition, and explicit maintainer authorization. These details may be kept in a brief dedicated section when necessary; do not mistake an AI reviewer for a human approver.
+
 - For diagnostic rule, detection, or configuration changes specifically: the profile, target
   runtime, configuration/suppression, and the expected `pass`/`warn`/`fail`/`skip` plus exit
   result on a representative consumer-project layout — including the display severity, the
@@ -66,9 +58,7 @@ In the PR body (see the extended `pull_request_template.md` fields):
   [docs/RULE_POLICY.md](RULE_POLICY.md)). A matched identifier or a green aggregate alone is not
   proof that a specific finding's severity/gate contract is correct.
 
-External contributors must not need an internal AI subscription, credentials, or local tooling to
-satisfy this — Copilot review runs automatically on PRs against this repository; a contributor
-without Copilot access simply records "no automated review available, human review requested."
+External contributors need no specific AI reviewer, paid tool, or subscription to follow these guidelines.
 
 ## R3 scope
 
