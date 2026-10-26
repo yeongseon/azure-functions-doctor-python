@@ -48,6 +48,14 @@ class ProjectHandlers:
         self, rule: Rule, path: Path, context: RuleContext | None = None
     ) -> HandlerResult:
         """Warn when decorators are stacked outside their expected inner order."""
+        from azure_functions_doctor.package_evidence import declares_package
+
+        if rule.get("id") == "check_decorator_order" and not declares_package(
+            path, "azure-functions-validation"
+        ):
+            return _create_result(
+                "skip", "Validation package not detected; decorator order skipped"
+            )
         condition = rule.get("condition", {})
         # ``decorators`` lists the expected order outermost-first. Only the first
         # and last entries are surfaced in the fix message below, which is exact
