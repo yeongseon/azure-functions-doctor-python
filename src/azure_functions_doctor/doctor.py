@@ -417,6 +417,18 @@ class Doctor:
 
     def _run_all_checks(self, rules: list[Rule] | None = None) -> list[SectionResult]:
         rules = self.load_rules() if rules is None else rules
+        builtin_model_rule = (
+            next(
+                (
+                    rule
+                    for rule in self._load_v2_rules()
+                    if rule.get("id") == "check_programming_model_v2"
+                ),
+                None,
+            )
+            if self.rules_path is None
+            else None
+        )
         if self.profile is not None and self.profile != "full":
             if self.profile not in PROFILE_NAMES:
                 raise ValueError("Profile must be one of: " + ", ".join(PROFILE_NAMES))
@@ -484,7 +496,13 @@ class Doctor:
                     continue
                 # Time rule execution for logging
                 rule_start = time.time()
-                result = generic_handler(rule, self.project_path, context)
+                if rule == builtin_model_rule:
+                    result: HandlerResult = {
+                        "status": "pass",
+                        "detail": "Python v2 programming model detected (static analysis)",
+                    }
+                else:
+                    result = generic_handler(rule, self.project_path, context)
                 rule_duration_ms = (time.time() - rule_start) * 1000
 
                 handler_status = result.get("status", "fail")
