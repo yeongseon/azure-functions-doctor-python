@@ -1,17 +1,10 @@
 <!-- Title: `type: description` or `type(scope): description`. See "Title Convention" in CONTRIBUTING.md. Link issues in the body (Closes #123), not in the title. -->
 
-## Related Issue
-
-Closes #
-
-<!-- Required. Open an issue first if one does not exist; a pull request
-     without a linked issue is rejected at review. -->
-
 ## Summary
 
 ## Changes
 
-## Testing
+## Validation
 
 - [ ] Not run (reason):
 - [ ] `hatch run test`
@@ -31,3 +24,7 @@ Closes #
 
 <!-- Extra review details are only needed for significant security, release, or policy changes.
      See docs/review-evidence-policy.md. Do not copy agent transcripts into PRs. -->
+
+## Related Issues
+
+<!-- Closes #123 for completed scope, or Refs #123 for partial scope. -->
