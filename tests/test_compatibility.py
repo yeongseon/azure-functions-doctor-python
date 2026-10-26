@@ -266,6 +266,7 @@ def test_runtime_v2_v3_v4_facts_present() -> None:
 
 
 def test_support_end_end_date_by_precision() -> None:
+    """Coarse published dates must not mark support ended before their final day."""
     assert SupportEnd(value="2026-09-14", precision="day").end_date() == date(2026, 9, 14)
     # Month precision resolves to the last day of the month.
     assert SupportEnd(value="2026-02", precision="month").end_date() == date(2026, 2, 28)
@@ -291,6 +292,7 @@ def test_effective_status_without_support_end_returns_baseline() -> None:
 
 
 def test_effective_status_malformed_support_end_returns_baseline() -> None:
+    """An unreadable date must not manufacture a new lifecycle status."""
     fact = Fact(
         fact_id="x",
         category="functions_runtime_lifecycle",
@@ -314,6 +316,7 @@ def test_effective_status_self_heals_across_end_date() -> None:
 
 
 def test_effective_status_future_unsupported_baseline_becomes_retiring() -> None:
+    """Evaluation before a recorded end date must not inherit a future unsupported verdict."""
     fact = Fact(
         fact_id="x",
         category="functions_runtime_lifecycle",

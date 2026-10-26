@@ -27,6 +27,7 @@ app = func.FunctionApp()
 
 
 def test_collect_register_functions_args_only_accepts_official_api() -> None:
+    """Unrelated loaders and dynamic factories must not falsely register an SDK Blueprint."""
     handlers = import_module("azure_functions_doctor.handlers")
     source = """
 import azure.functions as func
