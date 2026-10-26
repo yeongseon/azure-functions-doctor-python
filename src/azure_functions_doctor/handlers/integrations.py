@@ -248,6 +248,12 @@ class IntegrationHandlers:
         ``azure-functions-logging`` stays silent at runtime when activation is
         requested without OpenTelemetry installed, so doctor surfaces the mismatch.
         """
+        from azure_functions_doctor.package_evidence import declares_package
+
+        if rule.get("id") == "check_otel_trace_context_activation" and not declares_package(
+            path, "azure-functions-logging"
+        ):
+            return _create_result("skip", "Logging package not detected; OTel activation skipped")
         activations = _project_activates_trace_context(path)
         if not activations:
             return _create_result(
