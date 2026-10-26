@@ -250,6 +250,8 @@ jobs:
     name: Trigger cookbook e2e re-verification
     needs: [build, publish]
     runs-on: ubuntu-latest
+    # Dispatch authenticates only with the step-scoped cross-repo credential.
+    permissions: {}
     steps:
       - name: Dispatch sibling-release to cookbook
         env:
