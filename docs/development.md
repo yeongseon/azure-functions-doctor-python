@@ -77,6 +77,23 @@ make test
 make security
 ```
 
+### What each verification lane proves
+
+| Lane | Entry point | Evidence and limits |
+| --- | --- | --- |
+| Repository prerequisites | `make doctor` | Read-only tool discovery: Hatch, Python 3.11 and git are required; `func` and `azurite` are optional local-host tools. This is not the product command `azure-functions-doctor doctor`. |
+| Offline library and CLI tests | `make test` / `make check-all` | Deterministic diagnostics, CLI contracts and sample fixtures, with the 95% coverage floor. The default pytest selector excludes live E2E tests. No Azure certification is performed. |
+| Real local Functions host smoke | CI `host-smoke` in `ci-test.yml` | Runs the installed Doctor against `tests/host_smoke`, boots that app with Core Tools and Azurite on Python 3.11 and 3.12, then probes HTTP. This proves local host behavior, not Azure deployment. |
+| Installed-wheel compatibility | CI artifact jobs in `ci-test.yml` | Builds distribution artifacts, verifies Python 3.10 rejects the wheel, and installs it on Python 3.11 to exercise the installed CLI. This is packaging/runtime evidence, not Azure certification. |
+| Live E2E tests | `make e2e-azure` (delegates to Hatch's `e2e-azure` script) | Selects both `e2e` tests with `--no-cov`; `E2E_BASE_URL` must be set or the lane stops non-zero before requests. Running locally against a supplied URL does not create a release certification record. |
+| Release-chain Azure certification | `e2e-azure.yml`, called by `publish-pypi.yml` | Deploys to real Azure, runs both live E2E tests at the release ref, and uploads the `azure-cert` record. Publication depends on this gate along with the other release gates. |
+
+`make e2e-local` runs the same live E2E selector against
+`http://localhost:7071`; start an isolated local host before using it. It is
+not an Azure deployment or certification command. The E2E lane deliberately
+does not apply the offline coverage floor to its two tests; the offline
+coverage requirement remains unchanged.
+
 ## Adding a New Rule
 
 When adding or modifying a built-in check, keep the rule-first flow:
