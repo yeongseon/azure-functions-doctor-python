@@ -34,6 +34,7 @@ from azure_functions_doctor.handlers._helpers import (
     parse_target,
 )
 from azure_functions_doctor.inspection import read_inspection_json, read_inspection_text
+from azure_functions_doctor.source_cache import parse_source
 from azure_functions_doctor.target_resolver import (
     SUPPORTED_PYTHON_VERSIONS,
     is_supported_python_target,
@@ -184,7 +185,7 @@ class GenericHandlers:
                 if content is None:
                     continue
                 try:
-                    tree = ast.parse(content)
+                    tree = parse_source(content)
                 except SyntaxError:
                     continue
                 durable_import = any(
