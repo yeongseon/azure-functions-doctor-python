@@ -29,19 +29,5 @@ Closes #
 - [ ] Breaking change (describe the migration)
 - [ ] Documentation updated, or not needed because:
 
-## Review Evidence
-
-<!-- See docs/review-evidence-policy.md (advisory, not server-enforced). -->
-
-- [ ] Risk category: R3 (see policy's "R3 scope") / normal
-- Review source and reviewed commit SHA:
-- Material findings and disposition (fixed / acknowledged-wont-fix / deferred-with-issue):
-- Unresolved blockers (or "none"):
-
-## Checklist
-
-- [ ] I have performed a self-review of my code
-- [ ] I have added/updated tests where needed
-
-<!-- Version selection, tags, publication and repository labels are the
-     release owner's, not yours. -->
+<!-- Extra review details are only needed for significant security, release, or policy changes.
+     See docs/review-evidence-policy.md. Do not copy agent transcripts into PRs. -->
