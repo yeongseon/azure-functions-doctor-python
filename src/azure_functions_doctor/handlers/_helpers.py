@@ -29,6 +29,7 @@ from azure_functions_doctor.requirements_directives import parse_include_directi
 from azure_functions_doctor.requirements_inspection import (
     iter_requirements_files,
 )
+from azure_functions_doctor.source_cache import parse_source
 
 logger = get_logger(__name__)
 
@@ -278,7 +279,7 @@ def _source_contains_langgraph_functionapp_export(source: str) -> bool:
     arbitrary object's same-named attribute or a factory call.
     """
     try:
-        tree = ast.parse(source)
+        tree = parse_source(source)
     except SyntaxError:
         return False
 
@@ -320,7 +321,7 @@ def _discover_functionapp_aliases(source: str) -> set[str]:
     Returns the set of discovered names, or ``{"app"}`` when none are found.
     """
     try:
-        tree = ast.parse(source)
+        tree = parse_source(source)
     except SyntaxError:
         return {"app"}
 
@@ -346,7 +347,7 @@ def _discover_functionapp_aliases(source: str) -> set[str]:
 def _collect_blueprint_aliases(source: str) -> set[str]:
     """Extract variable names assigned a ``Blueprint()`` call."""
     try:
-        tree = ast.parse(source)
+        tree = parse_source(source)
     except SyntaxError:
         return set()
 
@@ -388,7 +389,7 @@ def _collect_register_functions_args(source: str) -> set[str]:
     only ``FunctionApp``).
     """
     try:
-        tree = ast.parse(source)
+        tree = parse_source(source)
     except SyntaxError:
         return set()
 
@@ -441,7 +442,7 @@ def _source_contains_blueprint_decorator(source: str, blueprint_aliases: set[str
         return set()
 
     try:
-        tree = ast.parse(source)
+        tree = parse_source(source)
     except SyntaxError:
         return set()
 
@@ -523,7 +524,7 @@ def _collect_unregistered_blueprint_aliases(path: Path) -> set[str]:
     parsed: dict[Path, ast.Module] = {}
     for py_file, content in project_contents:
         try:
-            parsed[py_file] = ast.parse(content)
+            parsed[py_file] = parse_source(content)
         except SyntaxError:
             continue
 
@@ -696,7 +697,7 @@ def _collect_inverted_decorator_order(
     inverted: list[tuple[str, int]] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
-            tree = ast.parse(content)
+            tree = parse_source(content)
         except SyntaxError:
             continue
         app_aliases = _discover_functionapp_aliases(content)
@@ -814,7 +815,7 @@ def _collect_routes_missing_validate_http_locations(
     uncovered: list[tuple[str, int, int | None, int]] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
-            tree = ast.parse(content)
+            tree = parse_source(content)
         except SyntaxError:
             continue
         app_aliases = _discover_functionapp_aliases(content)
@@ -901,7 +902,7 @@ def _collect_openapi_version_mixing(path: Path) -> dict[str, set[str]]:
     version_re = re.compile(r"^3\.(0|1|2)\.\d+$")
     for _py_file, content in _iter_project_py_contents(path):
         try:
-            tree = ast.parse(content)
+            tree = parse_source(content)
         except SyntaxError:
             continue
         for node in ast.walk(tree):
@@ -935,7 +936,7 @@ def _collect_scan_before_spec(
     spec_labels: list[str] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
-            tree = ast.parse(content)
+            tree = parse_source(content)
         except SyntaxError:
             continue
         scan_lines: list[int] = []
@@ -973,7 +974,7 @@ def _project_imports_langgraph(path: Path) -> bool:
     """Return True when any project module imports ``langgraph``."""
     for _py_file, content in _iter_project_py_contents(path):
         try:
-            tree = ast.parse(content)
+            tree = parse_source(content)
         except SyntaxError:
             continue
         for node in ast.walk(tree):
@@ -1001,7 +1002,7 @@ def _collect_anonymous_auth_routes(
     flagged: list[tuple[str, int]] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
-            tree = ast.parse(content)
+            tree = parse_source(content)
         except SyntaxError:
             continue
         app_aliases = _discover_functionapp_aliases(content)
@@ -1053,7 +1054,7 @@ def _collect_binding_connections(path: Path) -> list[tuple[str, str, int]]:
     references: list[tuple[str, str, int]] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
-            tree = ast.parse(content)
+            tree = parse_source(content)
         except SyntaxError:
             continue
         app_aliases = _discover_functionapp_aliases(content)
@@ -1098,7 +1099,7 @@ def _project_activates_trace_context(path: Path) -> list[str]:
     activations: list[str] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
-            tree = ast.parse(content)
+            tree = parse_source(content)
         except SyntaxError:
             continue
         label_base = str(py_file.relative_to(path))
@@ -1227,7 +1228,7 @@ def _collect_orchestrator_nondeterminism(
     flagged: list[tuple[str, int]] = []
     for py_file, content in _iter_project_py_contents(path):
         try:
-            tree = ast.parse(content)
+            tree = parse_source(content)
         except SyntaxError:
             continue
         for node in ast.walk(tree):
@@ -1311,7 +1312,7 @@ def _source_contains_ast(source: str, identifier: str) -> bool:
     # Merge in dynamically-discovered aliases
     identifiers |= _discover_functionapp_aliases(source)
     try:
-        tree = ast.parse(source)
+        tree = parse_source(source)
     except SyntaxError:
         return False
 

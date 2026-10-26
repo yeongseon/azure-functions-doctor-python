@@ -27,6 +27,7 @@ from azure_functions_doctor.handlers import (
     set_extra_excludes,
 )
 from azure_functions_doctor.logging_config import get_logger, log_rule_execution
+from azure_functions_doctor.source_cache import parse_source, source_cache
 
 logger = get_logger(__name__)
 
@@ -196,7 +197,7 @@ class Doctor:
         # from a clean context, regardless of how detection here concludes.
         exclude_token = set_extra_excludes(self.project_path, self.exclude_globs)
         try:
-            with collect_inspection_gaps() as source_gaps:
+            with collect_inspection_gaps() as source_gaps, source_cache():
                 self.programming_model: ProgrammingModel = self._detect_programming_model()
             self._inspection_gaps.extend(source_gaps)
         finally:
@@ -251,7 +252,7 @@ class Doctor:
     def _source_contains_v2_app_object(self, source: str) -> bool:
         """Check for AST-level FunctionApp()/Blueprint() usage."""
         try:
-            tree = ast.parse(source)
+            tree = parse_source(source)
         except (SyntaxError, RecursionError, MemoryError, ValueError):
             return False
 
@@ -393,7 +394,7 @@ class Doctor:
             incomplete_result,
         )
 
-        with collect_inspection_gaps() as run_gaps:
+        with collect_inspection_gaps() as run_gaps, source_cache():
             results = self._run_all_checks(rules)
         gaps = self._inspection_gaps + run_gaps
         if gaps:

@@ -9,6 +9,7 @@ import tomllib
 from typing import Final, Literal, TypeAlias
 
 from azure_functions_doctor.inspection_gaps import InspectionGap, record_gap
+from azure_functions_doctor.source_cache import parse_source
 
 MAX_FILE_BYTES: Final = 4 * 1024 * 1024
 MAX_JSON_DEPTH: Final = 100
@@ -112,7 +113,7 @@ def contained_inspection_path(root: Path, reference: str) -> Path:
 
 def check_python_parser(source: str, path: Path) -> None:
     try:
-        tree = ast.parse(source)
+        tree = parse_source(source)
         for _ in ast.walk(tree):
             continue
     except SyntaxError as exc:
