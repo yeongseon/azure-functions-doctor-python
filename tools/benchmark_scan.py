@@ -1,8 +1,10 @@
 """Count actual reads/parses and retain deterministic findings for scan comparisons."""
 
 import ast
+from contextlib import nullcontext
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 from time import perf_counter
@@ -15,7 +17,12 @@ from azure_functions_doctor.inspection import _read_text
 def main() -> None:
     project = Path(sys.argv[1]).resolve()
     for profile in ("minimal", "full"):
-        with patch("ast.parse", wraps=ast.parse) as parses, patch(
+        cache_scope = (
+            patch("azure_functions_doctor.doctor.source_cache", nullcontext)
+            if os.environ.get("DOCTOR_UNCACHED") == "1"
+            else nullcontext()
+        )
+        with cache_scope, patch("ast.parse", wraps=ast.parse) as parses, patch(
             "azure_functions_doctor.inspection._read_text", wraps=_read_text
         ) as reads:
             start = perf_counter()
