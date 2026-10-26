@@ -150,6 +150,7 @@ def test_unrecognized_sku_stays_unknown(tmp_path: Path) -> None:
 
 
 def test_flex_wins_over_legacy_sku_specificity(tmp_path: Path) -> None:
+    """Explicit Flex configuration must not be misclassified by another resource's SKU."""
     _write(
         tmp_path,
         "main.json",
@@ -480,6 +481,7 @@ def test_iac_beats_local_for_shared_field(tmp_path: Path) -> None:
 
 
 def test_iac_storage_beats_local_emulator_setting(tmp_path: Path) -> None:
+    """Local emulator defaults must not overwrite deployable storage evidence."""
     _write(
         tmp_path,
         "main.json",
@@ -501,6 +503,7 @@ def test_iac_storage_beats_local_emulator_setting(tmp_path: Path) -> None:
 
 
 def test_local_emulator_storage_is_fallback_when_iac_is_silent(tmp_path: Path) -> None:
+    """Keep local evidence available without pretending it came from deployment infrastructure."""
     _write(tmp_path, "main.json", json.dumps({"appSettings": []}))
     _write(
         tmp_path,

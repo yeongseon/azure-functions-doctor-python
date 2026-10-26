@@ -6,6 +6,7 @@ from azure_functions_doctor.profiles import profiles_for_rule, rule_matches_prof
 
 
 def test_profiles_for_rule_returns_required_core_membership_in_profile_order() -> None:
+    """Core gates belong to deployment preflight, not the developer-tooling-only profile."""
     # Given
     rule = {"id": "check_host_json", "required": True, "group": "core"}
 

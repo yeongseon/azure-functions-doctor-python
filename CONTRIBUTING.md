@@ -162,6 +162,13 @@ interpreted by your shell (notably zsh with `EXTENDED_GLOB`).
 
 ## Example Coverage Policy
 
+For non-obvious regression fixtures, add a short English purpose note describing
+the ambiguity or false-positive/false-negative boundary being protected (for
+example, conflicting infrastructure sources or lifecycle date precision).
+Prefer descriptive names for simple tests. Do not add boilerplate comments to
+every test or enforce a docstring count; keep assertions and fixture strictness
+unchanged when improving explanations.
+
 Examples are part of the supported API experience and should stay verified.
 
 - Keep one representative example for the minimal diagnostic check workflow.
