@@ -42,6 +42,33 @@ Deploying a broken Azure Functions app is expensive — the worker starts, the h
 - **Profile support** — `minimal`, `deploy`, `development`, or `full` rulesets depending on your needs
 - **Official GitHub Action** — `yeongseon/azure-functions-doctor@v1` for CI gates
 
+### Doctor, Core Tools, or azd?
+
+Use the tools together when you need both early diagnostics and runtime/deployment
+verification. Doctor is not a replacement for the Functions host or deployment tools.
+
+| Need | Doctor | Core Tools v4 (`func`) | Azure Developer CLI (`azd`) |
+| --- | --- | --- | --- |
+| Review a Python v2 project before starting it | Static checks such as `check_azure_functions_library`, `check_host_json_version`, `check_binding_connection_resolution` and `check_flex_runtime_config` | Creates/runs Functions projects; host startup can reveal configuration and indexing errors | Manages the project environment and infrastructure/deployment workflow |
+| Execute handlers and verify requests | Does not run application modules or serve requests | `func start` loads the project in the local Functions host; call its endpoints to test behavior | Can orchestrate project-specific hooks; not a substitute for testing handler behavior |
+| Provision or deploy | Reports supported configuration risks; does not provision, deploy or fix files | Supports publishing to an existing Function App | `azd provision` creates resources, `azd deploy` deploys code, and `azd up` combines provisioning and deployment |
+| Store preflight findings in CI | Table/JSON plus SARIF and JUnit reports; profiles select required and advisory checks | Host/tool logs provide runtime and publishing evidence | Deployment logs and project hooks provide workflow-specific evidence |
+
+**Native tools may be enough** when your existing host tests, deployment checks and
+project validation already cover the risks you care about. Add Doctor when you want
+repeatable, supported static preflight checks and report artifacts before those steps.
+This comparison describes intended roles, not a claim that `func` or `azd` never
+validate overlapping configuration.
+
+A typical sequence is Doctor preflight (`--profile deploy`), local execution with
+`func start` and endpoint tests, then your chosen deployment workflow (for example,
+`azd up` for an azd-configured project). A passing Doctor report does not prove cloud
+credentials, resource availability or runtime behavior. See the
+[rule catalog](docs/rule_inventory.md), [rule policy and heuristic limits](docs/RULE_POLICY.md),
+and [scope](#scope). Native command references:
+[Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-core-tools-reference?pivots=func-cli-v4)
+and [azd](https://learn.microsoft.com/azure/developer/azure-developer-cli/reference).
+
 ## Scope
 
 This repository targets the decorator-based Azure Functions Python v2 programming model only.
