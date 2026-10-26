@@ -49,6 +49,19 @@ def test_cookbook_dispatch_token_is_scoped_to_dispatch_step() -> None:
     assert 'if [ -z "${DISPATCH_TOKEN}" ]; then' in dispatch_step
 
 
+def test_cookbook_dispatch_has_no_ambient_github_token_permissions() -> None:
+    # Given the release workflow with a read-enabled default GITHUB_TOKEN.
+    workflow = (_REPO_ROOT / ".github/workflows/publish-pypi.yml").read_text(encoding="utf-8")
+
+    # When inspecting the dispatch-only job's explicit permission boundary.
+    notify_job = workflow.split("  notify-cookbook:\n", maxsplit=1)[1]
+    job_settings = notify_job.split("    steps:\n", maxsplit=1)[0]
+
+    # Then only its step-scoped cross-repo credential can authorize dispatch.
+    assert "    permissions: {}\n" in job_settings
+    assert "    needs: [build, publish]\n" in job_settings
+
+
 def test_detects_non_canonical_pin() -> None:
     text = "      - uses: actions/checkout@" + "0" * 40 + " # v7.0.1\n"
     errors = lint_mod.check_pins(text, "fake.yml")
