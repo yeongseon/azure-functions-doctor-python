@@ -1,17 +1,10 @@
 <!-- Title: `type: description` or `type(scope): description`. See "Title Convention" in CONTRIBUTING.md. Link issues in the body (Closes #123), not in the title. -->
 
-## Related Issue
-
-Closes #
-
-<!-- Required. Open an issue first if one does not exist; a pull request
-     without a linked issue is rejected at review. -->
-
 ## Summary
 
 ## Changes
 
-## Testing
+## Validation
 
 - [ ] Not run (reason):
 - [ ] `hatch run test`
@@ -36,19 +29,9 @@ Closes #
 - Affected consumers and scope (existing deployments, new/regenerated projects, versions, etc.):
 - Migration or mitigation (or "none", with explanation):
 
-## Review Evidence
+<!-- Extra review details are only needed for significant security, release, or policy changes.
+     See docs/review-evidence-policy.md. Do not copy agent transcripts into PRs. -->
 
-<!-- See docs/review-evidence-policy.md (advisory, not server-enforced). -->
+## Related Issues
 
-- [ ] Risk category: R3 (see policy's "R3 scope") / normal
-- Review source and reviewed commit SHA:
-- Material findings and disposition (fixed / acknowledged-wont-fix / deferred-with-issue):
-- Unresolved blockers (or "none"):
-
-## Checklist
-
-- [ ] I have performed a self-review of my code
-- [ ] I have added/updated tests where needed
-
-<!-- Version selection, tags, publication and repository labels are the
-     release owner's, not yours. -->
+<!-- Closes #123 for completed scope, or Refs #123 for partial scope. -->

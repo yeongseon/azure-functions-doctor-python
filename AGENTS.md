@@ -262,6 +262,17 @@ Use Makefile entry points only. Do not bypass the Makefile in CI or contributor 
 
 Titles for issues, pull requests, and commits follow the **Title Convention** in [`CONTRIBUTING.md`](CONTRIBUTING.md#title-convention), the single source of truth for the format and the allowed types.
 
+## Pull Request Writing
+
+Write issue, pull request, and commit titles using the repository's title convention in `CONTRIBUTING.md`. PR descriptions are for contributors and maintainers, not an internal agent transcript.
+
+- Explain what changed and why in plain English. Use a concise summary, important changes, actual validation results, and related issue links.
+- Include meaningful compatibility, safety, or migration details when relevant. For stacked PRs, state dependencies and merge order.
+- Preserve important test evidence and distinguish local checks from pending GitHub CI. Do not claim an unrun check passed.
+- Do not include routine agent-review attempts, tool availability reports, raw reasoning logs, empty risk fields, or elaborate audit vocabulary in the PR body. Keep substantial outstanding findings visible.
+- Apply these rules equally to Codex, Claude, OpenCode, Copilot, and human contributors. Review the saved PR title and body after posting.
+- Follow `docs/review-evidence-policy.md` for additional security-sensitive or publishing review requirements; required CI and maintainer decisions remain unchanged.
+
 ## Agent Rules
 
 When using AI-assisted development:
