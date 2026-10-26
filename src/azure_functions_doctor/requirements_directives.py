@@ -13,7 +13,7 @@ class IncludeDirective:
 def parse_include_directive(line: str) -> IncludeDirective | None:
     match = re.match(
         r"^(?:-(?P<short>[rc])|--(?P<long>requirement|constraint)(?:\s+|=))(?P<value>.+)$",
-        line.strip(),
+        line.removeprefix("\ufeff").strip(),
     )
     if match is None:
         return None
