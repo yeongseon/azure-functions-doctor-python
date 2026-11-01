@@ -40,7 +40,7 @@ import sys
 # drift lint enforces the canonical pins in the release-gate workflows.
 CANONICAL_ACTIONS: dict[str, tuple[str, str]] = {
     "actions/checkout": ("3d3c42e5aac5ba805825da76410c181273ba90b1", "v7.0.1"),
-    "actions/setup-python": ("5fda3b95a4ea91299a34e894583c3862153e4b97", "v7.0.0"),
+    "actions/setup-python": ("6d4fd22b20465ccc0f7354476588e8df7c9ca0e0", "v7.1.0"),
     "azure/login": ("a641126d1b8aa4d1fa005f4f92df94a3a4c4c906", "v3.1.0"),
     "actions/upload-artifact": ("ea165f8d65b6e75b540449e92b4886f43607fa02", "v4"),
     "actions/download-artifact": ("d3f86a106a0bac45b974a628896c90dbdf5c8093", "v4"),
