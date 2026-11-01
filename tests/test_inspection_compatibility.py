@@ -29,6 +29,50 @@ print(json.dumps({'code': result.exit_code, 'output': result.output}))
 """
 
 
+def _normalize_tool_version(output: str) -> str:
+    """Replace known report metadata only, without reserializing golden bytes."""
+    return re.sub(
+        r'("metadata"\s*:\s*\{\s*"tool_version"\s*:\s*"|'
+        r'"tool"\s*:\s*\{\s*"driver"\s*:\s*\{\s*'
+        r'"name"\s*:\s*"azure-functions-doctor"\s*,\s*"version"\s*:\s*")'
+        r'[^"\n]+(")',
+        r"\1<VERSION>\2",
+        output,
+    )
+
+
+@pytest.mark.parametrize("output_format", ["json", "sarif"])
+def test_golden_comparison_ignores_tool_version(output_format: str) -> None:
+    # Given a saved report and a release changing only its tool metadata.
+    expected = json.loads((BASELINES / f"v2-{output_format}.json").read_text())["output"]
+    actual = expected.replace('"tool_version": "<VERSION>"', '"tool_version": "9.8.7"')
+    actual = actual.replace('"version": "0.23.1"', '"version": "9.8.7"')
+    assert actual != expected
+    # When both sides use the same byte-preserving normalization.
+    normalized = _normalize_tool_version(actual)
+    # Then a tool-version bump is not a diagnostic regression.
+    assert normalized == _normalize_tool_version(expected)
+
+
+@pytest.mark.parametrize("output_format", ["json", "sarif"])
+@pytest.mark.parametrize("change", ["finding", "gate", "schema", "formatting"])
+def test_golden_comparison_detects_report_changes(output_format: str, change: str) -> None:
+    # Given a golden report with a semantic or formatting regression.
+    expected = json.loads((BASELINES / f"v2-{output_format}.json").read_text())["output"]
+    replacements = {
+        "finding": ('"check_native_dependency_risk"', '"changed_finding"'),
+        "gate": ('"gate_failed": false', '"gate_failed": true'),
+        "schema": ('"2.0"', '"99.0"') if output_format == "json" else ('"2.1.0"', '"99.0"'),
+        "formatting": ('\n  "', '\n   "'),
+    }
+    actual = expected.replace(*replacements[change])
+    assert actual != expected
+    # When tool-version metadata is normalized on both sides.
+    normalized = _normalize_tool_version(actual)
+    # Then the report change still fails the golden byte comparison.
+    assert normalized != _normalize_tool_version(expected)
+
+
 @pytest.mark.parametrize(
     "fixture",
     [
@@ -191,15 +235,17 @@ def test_normal_project_matches_main_bytes(
         r"Tool runtime: \d+\.\d+\.\d+", "Tool runtime: <PYTHON>", payload["output"]
     )
     payload["output"] = re.sub(
-        r'("(?:tool_version|python_version)": ")[^"]+("|$)',
+        r'("python_version": ")[^"]+("|$)',
         r"\1<VERSION>\2",
         payload["output"],
     )
+    payload["output"] = _normalize_tool_version(payload["output"])
     saved = BASELINES / f"{fixture}-{output_format}.json"
     if os.environ.get("DOCTOR_GOLDEN_RECORD") == "1":
         saved.write_text(json.dumps(payload, indent=2) + "\n")
     # Then bytes and exit codes equal the baseline, not a recomputed main import.
     expected = json.loads(saved.read_text())
+    expected["output"] = _normalize_tool_version(expected["output"])
     assert payload["code"] == expected["code"]
     assert payload["output"] == expected["output"], "\n".join(
         difflib.unified_diff(expected["output"].splitlines(), payload["output"].splitlines())
