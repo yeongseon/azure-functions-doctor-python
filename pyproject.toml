@@ -42,7 +42,7 @@ dev = [
     "build",
     "coverage",
     "hatch",
-    "mypy==2.4.0",
+    "mypy==2.4.1",
     "pre-commit",
     "pytest",
     "pytest-cov",
