@@ -28,8 +28,8 @@ Rules that keep the notes honest:
   GitHub API, or from a ``Co-authored-by`` trailer whose address is a GitHub
   ``<id>+<login>@users.noreply.github.com`` address. Bots and logins listed in
   ``non_human_logins`` are never credited; nothing is guessed.
-* "New Contributors" excludes the owner and lists an external human only when GitHub shows no earlier commit or
-  merged PR by that login before the previous release.
+* "New Contributors" excludes the owner. An external human is listed only
+  when GitHub verifies no earlier commit or merged PR by that login.
 * ``apply`` refuses to write when the new body drops a PR/commit reference the
   old body had, or loses a ``protected`` phrase from the config.
 
