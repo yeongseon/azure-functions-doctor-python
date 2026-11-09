@@ -132,12 +132,10 @@ Layout (empty sections are omitted):
 
 Credit rules:
 
-- `by @user` is taken from the merged PR author, the squash-commit author, or a `Co-authored-by`
-  trailer with a GitHub `<id>+<login>@users.noreply.github.com` address. Nothing is guessed.
-- Bots (`[bot]`, `app/…`) and the logins in `non_human_logins` of `.github/release-notes.json`
-  are never credited.
-- A login appears under **New Contributors** only when GitHub shows no earlier commit or merged
-  PR by that login before the previous release.
+- This is a primarily solo-maintained project: omit repetitive `by @yeongseon` on owner-authored changes, while retaining PR/issue references.
+- Credit verified external human contributors with `by @username`, even when their PR was squash-merged by the owner. Confirm authorship from merged PRs, commits, or trusted GitHub noreply co-author trailers.
+- Exclude bots and configured non-human accounts from human credits.
+- Show **New Contributors** only for verified first merged contributions from external humans; omit the section for owner-only releases.
 
 Release-specific statements that must never be lost (for example a release that was not
 published) are listed under `protected` in `.github/release-notes.json`; the tool fails instead of
