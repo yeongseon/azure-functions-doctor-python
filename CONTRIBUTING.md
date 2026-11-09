@@ -263,7 +263,14 @@ verification requirements have been satisfied. Contributors never need to bump a
 version or tag anything in an ordinary pull request.
 
 
-See `AGENTS.md` for the maintainer-only release procedure.
+For this primarily solo-maintained package, routine user-facing changes
+are normally bundled into **at most one planned release per week**, with
+no obligation to release during a quiet week. Urgent security, production
+regression and failed-candidate corrections can be shipped sooner after
+the maintainer records the reason in the Release PR.
+
+See [release cadence and emergency exceptions](docs/release_process.md#release-cadence)
+and `AGENTS.md` for the maintainer-only procedure.
 
 ## Code of Conduct
 
