@@ -1,0 +1,22 @@
+{
+  "repo": "yeongseon/azure-functions-doctor-python",
+  "owner_login": "yeongseon",
+  "legacy_repos": [
+    "yeongseon/azure-functions-doctor"
+  ],
+  "non_human_logins": [
+    "sisyphus-dev-ai"
+  ],
+  "protected": {
+    "v0.23.1": [
+      "fetch full history before advancing the v1 Action ref"
+    ]
+  },
+  "annotations": {
+    "v0.23.1": {
+      "notes": [
+        "This release fixes the release workflow step that advances the rolling `v1` ref of the GitHub Action (`yeongseon/azure-functions-doctor@v1`). That ref is separate from the Python package version: the package is versioned `0.23.1`, and `v1` is a moving Action major ref. Before the fix, advancing `v1` after the 0.23.0 release was rejected as non-fast-forward (#574)."
+      ]
+    }
+  }
+}
