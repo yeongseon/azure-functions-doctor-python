@@ -70,6 +70,29 @@ it does, or no Release PR will appear.
 
 ---
 
+## Release cadence
+
+**Default:** the maintainer batches routine user-facing changes into **at
+most one planned release per week**, and only when the package is ready.
+A quiet week requires no release. Ordinary development PRs continue to
+merge when approved; Release Please keeps the open Release PR updated.
+Merging that Release PR is a separate, explicit maintainer decision.
+
+**Out-of-cycle:** dangerous false diagnostic guidance, sensitive diagnostic output, broken GitHub Action behavior, or failed tagged candidate may justify
+an earlier patch. Before that merge, briefly document the affected users
+and why it cannot wait. Do not add an automated waiting period or force
+weekly releases just to satisfy a schedule.
+
+Before a routine release, verify the newest **actual PyPI distribution**
+separately from GitHub Release status, review the user-facing changes,
+compatibility and migration notes, pending near-term fixes, and readiness
+of all relevant package/consumer/Azure verification gates.
+This repository additionally reviews CLI diagnostic accuracy and security, plus the separate rolling v1 GitHub Action major ref.
+Preserve Release Please ownership of version/tags/CHANGELOG and keep all
+existing tag-specific verification and publication gates intact.
+
+---
+
 ## Step 3: The release workflow runs
 
 The tag starts `publish-pypi.yml`. Everything else is automatic:
