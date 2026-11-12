@@ -133,6 +133,37 @@ Create minimal config:
 }
 ```
 
+### Binding connection warning names an unconfigured setting
+
+Symptom: `check_binding_connection_resolution` warns that a trigger or binding
+references a connection that has no configured setting (for example
+`connection="MyStorage"`).
+
+Setting **name** versus setting **value**: the decorator's `connection=` argument is only
+the *name* of an app setting. The setting's *value* (a connection string, or the account
+details for an identity-based connection) holds the secret. Doctor checks that the name
+resolves; it never reads, prints, or validates the value. Do not paste real connection
+strings into source, docs, issues, or committed settings files.
+
+Reproduce with the checked-in fixture and fix it locally with safe placeholders:
+
+```bash
+azure-functions-doctor doctor --path examples/v2/broken-unresolved-connection --profile deploy
+cp -R examples/v2/broken-unresolved-connection /tmp/connection-fixed
+cp /tmp/connection-fixed/local.settings.sample.json /tmp/connection-fixed/local.settings.json
+azure-functions-doctor doctor --path /tmp/connection-fixed --profile deploy
+```
+
+The first run warns for `MyStorage`; the second does not, because `local.settings.json`
+now defines a `MyStorage` setting (value `UseDevelopmentStorage=true`, an emulator
+shorthand rather than a secret). An identity-based group such as
+`MyStorage__accountName` also satisfies the check. In Azure, define the same setting name
+in the Function App configuration (Key Vault reference or managed identity), and keep
+`local.settings.json` out of version control.
+
+Doctor does not repair settings automatically, and this check does not change the rule
+code or severity (a non-gating warning).
+
 ### Virtual environment check fails
 
 Activate a venv before running:
