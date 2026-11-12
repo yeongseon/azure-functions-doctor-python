@@ -171,6 +171,16 @@ def check_publish_needs(text: str, rel_path: str) -> list[str]:
     return errors
 
 
+def check_tag_gate(text: str, rel_path: str) -> list[str]:
+    """Assert the build job rejects tags off main / mismatching the source version."""
+    if "tools/audit_release_tags.py --tag" not in text:
+        return [
+            f"{rel_path}: the build job must run 'tools/audit_release_tags.py --tag' "
+            f"before building a release candidate"
+        ]
+    return []
+
+
 def lint(root: Path | None = None) -> list[str]:
     """Run all checks; return a flat list of human-readable violations."""
     root = root or _repo_root()
@@ -184,6 +194,7 @@ def lint(root: Path | None = None) -> list[str]:
         errors.extend(check_pins(text, rel))
         if rel.endswith("publish-pypi.yml"):
             errors.extend(check_publish_needs(text, rel))
+            errors.extend(check_tag_gate(text, rel))
     return errors
 
 
