@@ -8,11 +8,19 @@
     "sisyphus-dev-ai"
   ],
   "protected": {
+    "v0.16.4": [
+      "not a published package release"
+    ],
     "v0.23.1": [
       "fetch full history before advancing the v1 Action ref"
     ]
   },
   "annotations": {
+    "v0.16.4": {
+      "notes": [
+        "This tag is **not a published package release**. `v0.16.4` points at commit `2e45245`, whose source declares version `0.16.2` and which is not on `main`; the PyPI publication failed and no `0.16.4` distribution exists. Use `0.16.3` or later. The tag and this record are kept for audit history."
+      ]
+    },
     "v0.23.1": {
       "notes": [
         "This release fixes the release workflow step that advances the rolling `v1` ref of the GitHub Action (`yeongseon/azure-functions-doctor@v1`). That ref is separate from the Python package version: the package is versioned `0.23.1`, and `v1` is a moving Action major ref. Before the fix, advancing `v1` after the 0.23.0 release was rejected as non-fast-forward (#574)."
