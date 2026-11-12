@@ -1,7 +1,7 @@
 # Testing
 
 ## Overview
-Azure Functions Doctor uses pytest as its primary testing framework. The suite spans 40+ test modules covering the CLI, diagnostic handlers, rule registration, configuration management, and error handling.
+Azure Functions Doctor uses pytest as its primary testing framework. The suite spans more than 80 `tests/test_*.py` modules (85 at the time of writing) covering the CLI, diagnostic handlers, rule loading, programming-model detection, output contracts, inspection hardening, release/CI tooling and documentation guards.
 
 ## Running Tests
 You can execute the tests using the provided Makefile or by calling pytest directly.
@@ -13,33 +13,34 @@ python -m pytest tests/test_handler.py -v  # Run a specific test file
 ```
 
 ## Test Structure
-The codebase follows a modular test structure to ensure specific components are isolated and verified correctly.
+Tests live flat under `tests/`. The table lists **representative** modules by area; it is
+**non-exhaustive**, so list `tests/` (or run `python -m pytest --collect-only -q`) for the full set.
 
-| File | Description |
-|------|-------------|
-| test_handler_registry.py | Handler dispatch and per-type handler behavior |
-| test_handler_registry_extended.py | Extended handler-registry coverage and edge cases |
-| test_handler.py | Individual check handler implementations |
-| test_toolkit_rule_checks.py | DX Toolkit rule handlers (decorator order, endpoint metadata, OpenAPI, LangGraph, durable, metadata version) |
-| test_bugfix_issues.py | Regression tests for previously fixed issues |
-| test_cli.py | CLI command behavior, flags, and exit codes |
-| test_decorator_diagnostics.py | Decorator-order and related diagnostics |
-| test_programming_model_detection.py | v1 vs v2 programming-model detection |
-| test_error_handling.py | Error handling and edge cases |
-| test_doctor.py | Core diagnostic engine (Doctor runner) |
-| test_pyproject_dependency_manifest.py | pyproject.toml dependency-manifest handling |
-| test_blueprint_registration.py | Blueprint registration detection |
-| test_logging_config.py | Logging configuration |
-| test_examples.py | Example project smoke tests |
-| test_rule_loading.py | Rule JSON loading and validation |
-| test_condition_params.py | Condition parameter parsing |
-| test_native_dependency_risk.py | Native dependency risk detection |
-| test_release_workflow_pins.py | Release workflow SHA-pin verification |
-| test_target_resolver.py | Version resolution utilities |
-| test_rules_schema.py | Rules schema consistency |
-| test_api.py | Public API surface (`run_diagnostics`) |
-| test_public_api.py | Public API and version exports |
-| test_utils.py | Utility function tests |
+| Area | Representative modules | What they cover |
+|------|------------------------|-----------------|
+| Handlers and rule dispatch | `test_handler.py`, `test_handler_registry.py`, `test_handler_registry_extended.py`, `test_toolkit_rule_checks.py`, `test_condition_params.py` | Individual rule-type handlers and `HandlerRegistry` dispatch, including DX Toolkit heuristics |
+| Rule files | `test_rule_loading.py`, `test_rules_schema.py`, `test_profiles.py` | Built-in `v2.json` loading, `rules.schema.json` validity, profile selection |
+| Programming-model detection | `test_programming_model_detection.py`, `test_model_rule_consistency.py` | v1 / v2 / mixed / unknown classification and agreement between the preflight gate and the `Programming model v2` rule |
+| Rule behavior on projects | `test_blueprint_registration.py`, `test_decorator_diagnostics.py`, `test_native_dependency_risk.py`, `test_flex_*.py`, `test_runtime_*.py`, `test_python_runtime_lifecycle.py`, `test_catalog_verdict_matrix.py` | Per-rule positive/negative behavior on filesystem projects |
+| CLI and output contract | `test_cli.py`, `test_gate_severity_independence.py`, `test_output_contract_schema.py`, `test_finding_contract_v2.py`, `test_skip_status.py`, `test_api.py`, `test_public_api.py` | Flags, exit codes, JSON / SARIF / JUnit / table output, `skip` status, public API |
+| Inspection hardening | `test_inspection_*.py`, `test_requirements_*.py`, `test_inventory_*.py`, `test_security_*.py`, `test_traversal_governance.py` | Bounded, deterministic reading of project files and security evidence |
+| Examples | `test_examples.py` | The bundled `examples/v2/*` projects (healthy and `broken-*`) |
+| Regression guards | `test_bugfix_issues.py`, `test_scan_characterization.py`, `test_error_handling.py` | Previously fixed defects and scan isolation |
+| Release, CI and docs tooling | `test_release_workflow_pins.py`, `test_workflow_pin_hygiene.py`, `test_ci_classify_changes.py`, `test_release_notes.py`, `test_docs_consistency.py` | Workflow pin hygiene, change classification, release-note rendering, documentation drift guards |
+| Opt-in E2E selector | `test_e2e_selector_contract.py`, `tests/e2e/test_doctor_e2e.py` | The `e2e` marker selects exactly the two live E2E tests; the tests themselves need `E2E_BASE_URL` |
+
+## Fixture Families
+
+Choose the fixture by what the test must prove. All paths below exist in the repository.
+
+| Family | Location | Use it for |
+|--------|----------|------------|
+| Programming-model projects | `tests/fixtures/v1/`, `tests/fixtures/mixed/`, `tests/fixtures/unknown/` | Detection results and the non-v2 early-exit message. `v1` has a `function.json` function, `mixed` combines `function_app.py` with a legacy function, `unknown` contains only `.gitkeep` (no signals) |
+| Per-rule v2 projects | `tests/fixtures/v2/<case>/` (e.g. `decorator_order_correct`, `decorator_order_inverted`, `blueprint_registered`, `blueprint_unregistered`, `endpoint_metadata_covered`, `endpoint_metadata_missing`, `native_deps_present`, `pure_python_only`) | A positive and a negative project for one rule. The list is representative, not exhaustive |
+| Bundled example projects | `examples/v2/` (healthy: `http-trigger`, `timer-trigger`, `multi-trigger`, `blueprint`; defective: `broken-*`, `warn-*`) | End-to-end rule checks on realistic apps. `test_examples.py` requires each `broken-*` example to fail on the one rule it was designed for; the examples are also documentation, so keep them readable |
+| Recorded output baselines | `tests/fixtures/inspection-compatibility/*.json`, `native-main.json`, `requirements-main.b64` | Exact table / JSON / SARIF output compared by `test_inspection_compatibility.py` and the native-legacy tests |
+| Inline `tmp_path` projects | created inside the test | Small, self-describing cases (one file or one edge case); preferred when a fixture directory would be used by a single test |
+| Real-host smoke app | `tests/host_smoke/` | Not a unit fixture. It is the app the `host-smoke` CI job starts under a real Functions host |
 
 ## Test Patterns
 
@@ -86,6 +87,29 @@ When contributing new features or bug fixes, follow these guidelines:
 5. Mock external dependencies like the filesystem, executables, or network calls.
 6. If adding new diagnostic rules, include corresponding handler tests.
 
+## Adding a Test for a New Rule
+
+Use this checklist together with the rule steps in [Development](development.md#adding-a-new-rule):
+
+1. **Positive and negative project.** Provide one project where the rule passes and one where it does
+   not. Reuse an existing `tests/fixtures/v2/<case>/` pair or a `tmp_path` project; add a new
+   `tests/fixtures/v2/<case>/` directory only when several tests share it. Add an `examples/v2/broken-*`
+   project only when it also serves users as documentation (and extend `test_examples.py`).
+2. **Deterministic finding contract.** Assert the rule's `label`, `status` (`pass` / `warn` / `fail` /
+   `skip`) and, where relevant, `rule_id` and the user-facing hint. The same project must always
+   produce the same result; do not depend on the machine's installed packages, network, the clock or
+   the CI environment (see how `test_examples.py` excludes environment-dependent labels).
+3. **False-positive control.** Add at least one near-miss project that must **not** trigger the rule
+   (for example the `blueprint_unrelated_registration` and unimported-lookalike cases), in line with
+   [Rule Policy](RULE_POLICY.md).
+4. **Right lane.** Rule findings belong in the offline unit tests above. Do not put them in `tests/e2e/`
+   or `tests/host_smoke/`: those lanes only prove deployment and host behavior (next section).
+5. **Keep drift guards green.** If a built-in rule is added or removed, regenerate
+   `docs/rule_inventory.md` with `python scripts/gen_rule_inventory.py` and run
+   `python scripts/check_docs_consistency.py`; `test_docs_consistency.py` also checks the README rule
+   count against `v2.json`.
+6. **Coverage.** The coverage floor is 95% (`fail_under = 95` in `pyproject.toml`).
+
 ## CI Test Matrix
 The test suite runs automatically on GitHub Actions with the following configuration:
 - **OS**: ubuntu-latest
@@ -100,6 +124,26 @@ The test suite runs automatically on GitHub Actions with the following configura
 | Real host smoke | `host-smoke` in `ci-test.yml` (Python 3.11, 3.12) | The doctor passes on a minimal app, and that app starts under a real Functions host (Core Tools v4 and Azurite) and answers an HTTP request. Local emulation, not Azure. |
 | Installed-wheel CLI | the `artifact-*` jobs in `ci-test.yml`; `doctor-runtime-gate` in `publish-pypi.yml` | The built wheel installs on Python 3.11 (3.10 rejects it) and its `azure-functions-doctor` CLI runs on the example app from outside the checkout. |
 | Release-chain Azure E2E | `azure-e2e` in `publish-pypi.yml`, which runs `e2e-azure.yml`, for every release tag | The release commit's example app, which the doctor passes, deploys to a real Azure Function App and serves HTTP. |
+
+### What each lane does not prove
+
+- **Offline tests** do not prove that an app starts on a Functions host or works on Azure; a rule finding
+  is a static, offline judgment about project files and configuration.
+- **Real host smoke** covers only the single `tests/host_smoke/` app on local emulation (Core Tools and
+  Azurite); it does not exercise individual diagnostic rules or Azure.
+- **Installed-wheel CLI** proves packaging and the CLI entry point on one example app, not rule coverage.
+- **Release-chain Azure E2E** proves the release commit's example app deploys and serves HTTP on one Linux
+  Consumption app; it does not validate every rule or other hosting plans. The two tests in
+  `tests/e2e/test_doctor_e2e.py` are marked `e2e` and deselected from the default suite.
+
+### Scan performance probe (opt-in)
+
+`tools/benchmark_scan.py <project-path>` is a manual probe, not a test and not part of any CI job.
+For the `minimal` and `full` profiles it prints, as JSON, the number of source reads and AST parses,
+elapsed seconds and a SHA-256 digest of the ordered findings; `DOCTOR_UNCACHED=1` disables the parse
+cache for comparison. Equal digests show a change did not alter findings; timings from single runs are
+indicative only. See [Scan performance](scan-performance.md). It is intentionally kept, and a pass or
+fail of the suite says nothing about scan speed.
 
 A local run is not Azure certification, including `make e2e-local` and `make e2e-azure` against an app you deployed yourself. Only `e2e-azure.yml` deploys to Azure, and the release chain runs it at every tag.
 
