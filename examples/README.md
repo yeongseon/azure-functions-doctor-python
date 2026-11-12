@@ -34,6 +34,7 @@ Intentionally misconfigured projects that demonstrate specific rule failures.
 | Unsupported Linux runtime | `examples/v2/broken-linux-fx-version` | `check_linux_fx_version` in Bicep |
 | Unresolved binding connection | `examples/v2/broken-unresolved-connection` | Located `check_binding_connection_resolution` warning |
 | Nondeterministic orchestrator | `examples/v2/warn-nondeterministic-orchestrator` | Located `check_durable_nondeterminism` failure |
+| pyproject-only dependencies | `examples/v2/pyproject-only-dependencies` | `check_requirements_txt` and `check_azure_functions_library` fail under `remote-build`, pass under `--deployment-mode local` |
 
 ## Run Diagnostics
 
