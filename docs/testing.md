@@ -103,7 +103,7 @@ Use this checklist together with the rule steps in [Development](development.md#
    (for example the `blueprint_unrelated_registration` and unimported-lookalike cases), in line with
    [Rule Policy](RULE_POLICY.md).
 4. **Right lane.** Rule findings belong in the offline unit tests above. Do not put them in `tests/e2e/`
-   or `tests/host_smoke/`: those lanes only prove deployment and host behavior (next section).
+   or `tests/host_smoke/`: those lanes only prove deployment and host behavior (see "What Each Lane Proves" below).
 5. **Keep drift guards green.** If a built-in rule is added or removed, regenerate
    `docs/rule_inventory.md` with `python scripts/gen_rule_inventory.py` and run
    `python scripts/check_docs_consistency.py`; `test_docs_consistency.py` also checks the README rule
