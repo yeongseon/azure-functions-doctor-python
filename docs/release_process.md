@@ -103,7 +103,7 @@ build -> lib-tests -> doctor-runtime-gate -> azure-e2e -> publish
 
 | Tier | Catches |
 |---|---|
-| `build` | tag/`__version__` mismatch; produces the one artifact that is later uploaded |
+| `build` | a tag that is not an ancestor of `origin/main`, or whose tagged `__version__` differs from the tag (`tools/audit_release_tags.py --tag`, then the existing tag/`__version__` check); produces the one artifact that is later uploaded |
 | `lib-tests` | library unit regressions |
 | `doctor-runtime-gate` | installs the candidate wheel, asserts the installed version matches the release, then runs the package's own CLI (`azure-functions-doctor doctor --path examples/v2/http-trigger --profile minimal`) from the installed wheel. Unlike a host-boot smoke, this imports and exercises this package's primary runtime surface (the diagnostic CLI) end to end. |
 | `azure-e2e` | cloud-only drift — deploys to real Azure, runs the live e2e suite, uploads an `azure-cert` record |
@@ -191,6 +191,37 @@ These Makefile targets are **deleted**, not merely discouraged, so nothing can c
 for the version, changelog, or tags — or push an ungated artifact to PyPI.
 
 `make publish-test` (TestPyPI) is unaffected.
+
+---
+
+## Release tag audit
+
+`tools/audit_release_tags.py` is a stdlib-only, **read-only** check (git data only; no network, token,
+tag move or release edit). A `vX.Y.Z` tag is a package release tag and must satisfy both:
+
+1. the version declared in the source **at the tagged commit** equals `X.Y.Z`
+   (`src/azure_functions_doctor/__init__.py`; early history falls back to a static `pyproject.toml`
+   `version`); and
+2. the tagged commit is an ancestor of `origin/main`.
+
+The moving GitHub Action major ref (`v1`, `v2`, ...) is classified as `action-ref`, is never compared
+with a package version, and is not a Python package release.
+
+```bash
+python tools/audit_release_tags.py --tag v0.23.1      # gate mode; exits 1 on any defect
+python tools/audit_release_tags.py --all [--json]     # version-by-version audit of every local tag
+```
+
+- **Gate mode** runs in the `build` job of `publish-pypi.yml` before a candidate is built, so a
+  mismatched or off-main tag fails before any artifact exists. It never honours exceptions.
+- **Audit mode** runs in the `quality` job of `ci-test.yml` (pull requests and `main`). Verified
+  historical defects are listed in `KNOWN_EXCEPTIONS` in the tool, each pinned to the tagged commit
+  SHA and the exact defect set, so a re-pointed tag or a *new* defect is still a failure. Add an
+  exception only with evidence and a tracking issue; never to make a new release pass.
+- The audit does not query PyPI or GitHub Releases. A successful GitHub Release is not proof of
+  distribution: confirm PyPI separately (`https://pypi.org/pypi/azure-functions-doctor/json`).
+- A rejected tag is a failed candidate, not a reason to move it. Follow the [Recovery](#recovery) table:
+  fix forward and let Release Please cut the next version.
 
 ---
 

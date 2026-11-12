@@ -72,6 +72,9 @@ jobs:
           python tools/lint_workflow_pins.py
           python tools/lint_hatch_matrix.py
 
+      - name: Audit release tags (read-only; known historical exceptions only)
+        run: python tools/audit_release_tags.py --all --main-ref origin/main
+
       - name: Ruff style check
         run: |
           ruff check src tests
