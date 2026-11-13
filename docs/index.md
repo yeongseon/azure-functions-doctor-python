@@ -98,6 +98,8 @@ def has_required_failures(path: str) -> bool:
 - [Rule Inventory](rule_inventory.md)
 - [Deploy-Risk Rule Pages](rules/check_python_runtime_lifecycle.md) — one page per runtime/deployment rule; error messages land on the rule
 - [Minimal Profile](minimal_profile.md)
+- [Profile Comparison](profile_comparison.md)
+- [Runtime Hosting Matrix](runtime_hosting_matrix.md)
 - [JSON Output Contract](json_output_contract.md)
 - [Handlers](handlers.md)
 

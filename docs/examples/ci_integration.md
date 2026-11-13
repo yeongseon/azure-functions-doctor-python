@@ -93,6 +93,39 @@ If you want to always upload artifacts before failing, split gate and report ste
         run: exit 1
 ```
 
+## Summary counts with `--summary-json`
+
+`--summary-json <file>` writes a small counts-only file next to whatever `--format`
+produces. Reading it avoids parsing terminal text. It has exactly five keys: `passed`,
+`warned`, `failed`, `skipped` (integers) and `gate_failed` (boolean, true when a required
+check failed). It has no timestamp, so counts for a fixed project and profile are stable.
+
+```bash
+azure-functions-doctor doctor --path examples/v2/broken-missing-host-json --profile minimal --summary-json doctor-summary.json
+python examples/github-actions/read_doctor_summary.py doctor-summary.json
+```
+
+For that example the summary is `{"passed": 4, "warned": 0, "failed": 2, "skipped": 0,
+"gate_failed": true}` and doctor exits `1`; for `examples/v2/http-trigger` it is
+`{"passed": 6, "warned": 0, "failed": 0, "skipped": 0, "gate_failed": false}` and doctor
+exits `0`. (Counts are for `--profile minimal`; other profiles select other rules.)
+
+Use the exit status and the summary together: doctor's exit code is `1` exactly when
+`gate_failed` is true, so a job can gate on the exit code and still publish the counts.
+`failed` counts every check displayed as a failure; only `gate_failed` decides the exit
+status (a rule can display as a failure without gating, or as a warning and still gate), so
+do not derive the gate from `failed` alone. The rule severity model is unchanged.
+
+```bash
+azure-functions-doctor doctor --profile minimal --summary-json doctor-summary.json; code=$?
+python examples/github-actions/read_doctor_summary.py doctor-summary.json || true  # print counts
+exit "$code"
+```
+
+`read_doctor_summary.py` validates the file (exact keys, integer counts) and exits `0`,
+`1` (required failure) or `2` (unreadable or invalid file). `tests/test_summary_json_example.py`
+runs these commands offline.
+
 ## Parse JSON to produce summary
 
 ### Python parser snippet
@@ -284,6 +317,33 @@ Run doctor from the VS Code command palette via a workspace task:
 ```
 
 Run it with **Terminal → Run Task → Azure Functions Doctor**. The JSON report is written to `doctor.json` in the workspace root for inspection.
+
+## Credential-free SARIF artifact
+
+If you only need the SARIF file as a build artifact (no Code Scanning upload, no
+`security-events: write`, no secrets, no Azure login), use
+[`examples/github-actions/azure-functions-sarif-artifact.yml`](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/examples/github-actions/azure-functions-sarif-artifact.yml).
+It runs doctor on the known-broken synthetic project `examples/v2/broken-missing-host-json`:
+
+```bash
+azure-functions-doctor doctor --path examples/v2/broken-missing-host-json --profile minimal --format sarif --output doctor.sarif
+python examples/github-actions/check_sarif_shape.py doctor.sarif
+```
+
+- **Expected exit code:** doctor exits with exit code `1` for this example because required
+  checks fail. The workflow disables `errexit` (`set +e`) so the run does not stop there,
+  records the exit code, and re-raises it in the last step.
+- **Keeping the file:** the artifact upload step uses `if: always()`, so `doctor.sarif` is
+  preserved even when findings fail the job.
+- **Validation is structural, not the full SARIF schema.** The official SARIF 2.1.0 JSON
+  Schema is large and would need a network fetch, so `check_sarif_shape.py` (standard
+  library only) checks the version, tool driver, unique rule ids, result levels, messages,
+  `ruleId` references, and location URIs. It is not full schema validation; use a
+  schema-aware tool when you need that.
+- Severity mappings, upload permissions and issue-creation behavior are unchanged.
+
+`tests/test_sarif_ci_example.py` runs the workflow's doctor command offline and checks the
+output with the same validator.
 
 ## SARIF upload to GitHub Code Scanning
 
