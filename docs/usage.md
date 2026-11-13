@@ -166,7 +166,9 @@ Monorepo app path:
 azure-functions-doctor doctor --path ./services/payments-function
 ```
 
-Use explicit paths in CI to avoid accidental root-level checks.
+Use explicit paths in CI to avoid accidental root-level checks. Doctor does not
+discover apps in a monorepo; run it once per app. See the two-app walkthrough in
+[`examples/monorepo`](https://github.com/yeongseon/azure-functions-doctor-python/tree/main/examples/monorepo).
 
 ## Profile behavior
 
