@@ -66,12 +66,21 @@ azure-functions-doctor doctor --path ./correct/project/path
 
 ### Problem: unknown profile error
 
-Only `minimal` and `full` are valid profile values.
+Only four profile values are valid. Pick the one that matches what you want to check:
+
+| Profile | When to use it |
+| --- | --- |
+| `minimal` | Required (gating) checks only; low-noise merge gates. |
+| `deploy` | Azure runtime, hosting-plan, and deployment correctness; skips local developer-environment checks. |
+| `development` | Local developer-environment checks (virtual environment, Python executable, Core Tools, `local.settings.json`). |
+| `full` | Every check; the behavior when `--profile` is omitted. |
+
+See [Profile behavior](usage.md#profile-behavior) for details.
 
 Action:
 
 ```bash
-azure-functions-doctor doctor --profile minimal
+azure-functions-doctor doctor --profile deploy
 ```
 
 ### Problem: invalid format error
