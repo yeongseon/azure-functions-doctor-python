@@ -39,6 +39,7 @@ nav:
       - Rule Inventory: rule_inventory.md
       - Minimal Profile: minimal_profile.md
       - Profile Comparison: profile_comparison.md
+      - Runtime Hosting Matrix: runtime_hosting_matrix.md
       - JSON Output Contract: json_output_contract.md
       - Handlers: handlers.md
   - Deployment:
