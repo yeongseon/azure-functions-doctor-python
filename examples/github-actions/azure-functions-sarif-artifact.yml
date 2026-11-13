@@ -1,0 +1,62 @@
+# azure-functions-sarif-artifact.yml
+#
+# Credential-free example: run azure-functions-doctor against a known-broken synthetic
+# example, write SARIF, check its structure offline, and keep the file as a workflow
+# artifact even though doctor exits non-zero. No secrets, no Azure login, and no upload to
+# GitHub Code Scanning (so no `security-events: write` permission is needed).
+#
+# Expected result for this demo: doctor exits 1 (required checks fail on
+# examples/v2/broken-missing-host-json), the structural check passes, and the SARIF
+# artifact is uploaded. For your own project, point `--path` at it and keep the final
+# step, which re-raises doctor's real exit code.
+#
+# Action pinning guidance: like the other files here this is a copy-paste template, so
+# `uses:` references use floating major tags. Pin to commit SHAs in your own repository.
+
+name: Azure Functions SARIF Artifact
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  doctor-sarif:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install doctor
+        run: python -m pip install azure-functions-doctor
+
+      - name: Run doctor and write SARIF (do not stop on findings)
+        id: doctor
+        run: |
+          set +e
+          azure-functions-doctor doctor --path examples/v2/broken-missing-host-json --profile minimal --format sarif --output doctor.sarif
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Check SARIF structure offline
+        run: python examples/github-actions/check_sarif_shape.py doctor.sarif
+
+      - name: Keep SARIF even when findings fail the run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-sarif
+          path: doctor.sarif
+          if-no-files-found: error
+
+      - name: Re-raise doctor exit code
+        env:
+          DOCTOR_EXIT: ${{ steps.doctor.outputs.exit_code }}
+        # Demo only: exit 1 is the expected result for the broken example.
+        # In your repository replace this body with: exit "$DOCTOR_EXIT"
+        run: test "$DOCTOR_EXIT" = "1"
