@@ -38,6 +38,7 @@ nav:
           - Pinned requirements: rules/check_unpinned_requirements.md
       - Rule Inventory: rule_inventory.md
       - Minimal Profile: minimal_profile.md
+      - Profile Comparison: profile_comparison.md
       - JSON Output Contract: json_output_contract.md
       - Handlers: handlers.md
   - Deployment:

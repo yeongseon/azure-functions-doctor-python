@@ -318,6 +318,33 @@ Run doctor from the VS Code command palette via a workspace task:
 
 Run it with **Terminal → Run Task → Azure Functions Doctor**. The JSON report is written to `doctor.json` in the workspace root for inspection.
 
+## Credential-free SARIF artifact
+
+If you only need the SARIF file as a build artifact (no Code Scanning upload, no
+`security-events: write`, no secrets, no Azure login), use
+[`examples/github-actions/azure-functions-sarif-artifact.yml`](https://github.com/yeongseon/azure-functions-doctor-python/blob/main/examples/github-actions/azure-functions-sarif-artifact.yml).
+It runs doctor on the known-broken synthetic project `examples/v2/broken-missing-host-json`:
+
+```bash
+azure-functions-doctor doctor --path examples/v2/broken-missing-host-json --profile minimal --format sarif --output doctor.sarif
+python examples/github-actions/check_sarif_shape.py doctor.sarif
+```
+
+- **Expected exit code:** doctor exits with exit code `1` for this example because required
+  checks fail. The workflow disables `errexit` (`set +e`) so the run does not stop there,
+  records the exit code, and re-raises it in the last step.
+- **Keeping the file:** the artifact upload step uses `if: always()`, so `doctor.sarif` is
+  preserved even when findings fail the job.
+- **Validation is structural, not the full SARIF schema.** The official SARIF 2.1.0 JSON
+  Schema is large and would need a network fetch, so `check_sarif_shape.py` (standard
+  library only) checks the version, tool driver, unique rule ids, result levels, messages,
+  `ruleId` references, and location URIs. It is not full schema validation; use a
+  schema-aware tool when you need that.
+- Severity mappings, upload permissions and issue-creation behavior are unchanged.
+
+`tests/test_sarif_ci_example.py` runs the workflow's doctor command offline and checks the
+output with the same validator.
+
 ## SARIF upload to GitHub Code Scanning
 
 Upload doctor results as SARIF to surface findings in the GitHub Security tab:

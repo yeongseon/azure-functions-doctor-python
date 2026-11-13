@@ -10,6 +10,7 @@ from typer.core import TyperGroup, TyperOption
 from typer.main import get_command
 
 from azure_functions_doctor.cli import SUPPORTED_DEPLOYMENT_MODES, cli
+from azure_functions_doctor.profiles import PROFILE_NAMES
 from azure_functions_doctor.target_resolver import SUPPORTED_HOSTING_PLANS
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -97,3 +98,16 @@ def test_usage_documents_all_context_values() -> None:
     # Then: both option rows list every accepted value
     assert deployment_values == set(SUPPORTED_DEPLOYMENT_MODES)
     assert hosting_values == set(SUPPORTED_HOSTING_PLANS)
+
+
+def test_troubleshooting_unknown_profile_lists_every_runtime_profile() -> None:
+    # Given: the profile names the runtime accepts and the troubleshooting entry
+    troubleshooting = (ROOT / "docs" / "troubleshooting.md").read_text(encoding="utf-8")
+    entry = troubleshooting.split("### Problem: unknown profile error")[1]
+    section = entry.split("### Problem:")[0]
+
+    # When: the profile table rows are parsed
+    documented = set(re.findall(r"^\| `(\w+)` \|", section, flags=re.MULTILINE))
+
+    # Then: the page lists exactly the runtime profiles, no more and no fewer
+    assert documented == set(PROFILE_NAMES)

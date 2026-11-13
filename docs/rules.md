@@ -343,6 +343,7 @@ Found unwanted files: ['tests/', '.venv']
 - **Why it matters:** Aligns binding extensions with the current supported bundle.
 - **How to fix:** Update the `extensionBundle.version` range to the v4 range.
 - **Severity:** Warning only (`required: false`).
+- **Offline fixtures:** `tests/fixtures/v2/extension_bundle_v4_supported` (`[4.*, 5.0.0)`, passes) and `tests/fixtures/v2/extension_bundle_v4_overbroad` (`[4.0.0, 6.0.0)`, warns with the `[4.*, 5.0.0)` remediation). Run only these checks with `pytest tests/test_extension_bundle_fixtures.py --no-cov`, or inspect one with `azure-functions-doctor doctor --path tests/fixtures/v2/extension_bundle_v4_overbroad`. No Azure access is required.
 
 ## 23) `check_decorator_order`
 
