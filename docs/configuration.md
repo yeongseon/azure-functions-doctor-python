@@ -185,7 +185,7 @@ azure-functions-doctor doctor --format table --summary-json artifacts/summary.js
 The file contains the counts for the run, for example:
 
 ```json
-{"passed": 23, "warned": 3, "failed": 0, "skipped": 15}
+{"passed": 23, "warned": 3, "failed": 0, "skipped": 15, "gate_failed": false}
 ```
 
 That is enough for a CI badge or a job summary without parsing the full report.
