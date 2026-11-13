@@ -38,6 +38,7 @@ Intentionally misconfigured projects that demonstrate specific rule failures.
 | Flex deployment storage | `examples/v2/broken-flex-deployment-storage` | `check_flex_deployment_storage` (warn): no container or auth declared |
 | Flex deprecated settings | `examples/v2/broken-flex-deprecated-settings` | `check_flex_deprecated_settings` (warn): legacy app settings declared |
 | Flex unsupported runtime | `examples/v2/broken-flex-runtime-config` | `check_flex_runtime_config` (fail): python 3.9 declared |
+| pyproject-only dependencies | `examples/v2/pyproject-only-dependencies` | `check_requirements_txt` and `check_azure_functions_library` fail under `remote-build`, pass under `--deployment-mode local` |
 
 ## Run Diagnostics
 

@@ -205,6 +205,29 @@ Azure, so they stop reporting problems that do not apply to your pipeline.
 azure-functions-doctor doctor --deployment-mode container
 ```
 
+### Deployment mode comparison
+
+`examples/v2/pyproject-only-dependencies` is a synthetic project that declares its
+dependencies only in `pyproject.toml` (no `requirements.txt`). The same files give
+different dependency results depending on `--deployment-mode`:
+
+```bash
+azure-functions-doctor doctor --path examples/v2/pyproject-only-dependencies --profile minimal
+azure-functions-doctor doctor --path examples/v2/pyproject-only-dependencies --profile minimal --deployment-mode local
+```
+
+| `--deployment-mode` | `check_requirements_txt` | `check_azure_functions_library` | Exit code |
+| --- | --- | --- | --- |
+| `remote-build` (default) | `fail`: Azure remote build installs from `requirements.txt`, never `pyproject.toml` | `fail`: package is only declared in `pyproject.toml` | `1` |
+| `local` / `local-prebuilt` / `container` | `pass`: dependencies declared in `pyproject.toml` (local/prebuilt deployment) | `pass` | `0` |
+
+The change is evidence-based: it comes from `is_local_prebuilt_deployment`, which
+treats these three modes (or a vendored `.python_packages` directory) as resolving
+dependencies outside the Azure remote build. This is a static check of where
+dependencies are *declared*. Doctor does not build, install, or deploy anything, so a
+`pass` here is not Azure certification that your packaging pipeline works.
+`tests/test_deployment_mode_comparison.py` keeps this table in sync with the CLI.
+
 ## Hosting plan configuration
 
 `--hosting-plan` declares the Azure hosting plan you are targeting so that
