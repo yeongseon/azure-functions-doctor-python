@@ -66,7 +66,7 @@ azure-functions-doctor doctor --target-python 3.12
 | `--debug` | flag | `false` | Enable debug logging for troubleshooting. |
 | `--profile` | enum | `full` behavior | Rule profile: `minimal` (required gating checks), `deploy` (Azure runtime/hosting/deployment correctness), `development` (local dev-environment checks), or `full` (all rules). |
 | `--rules` | path | unset | Custom rules file path. |
-| `--summary-json` | path | unset | Write a JSON summary containing `passed`, `warned`, and `failed` counts to this path. |
+| `--summary-json` | path | unset | Write a JSON summary containing `passed`, `warned`, `failed`, and `skipped` counts plus a boolean `gate_failed` to this path. |
 | `--target-python` | string | unset | Override the Azure Functions target Python runtime: `3.10`, `3.11`, `3.12`, `3.13`, `3.14`. Python 3.10 remains analyzable but is end-of-support; Python 3.14 is GA. On the Linux Consumption plan, the maximum supported version is `3.12`. |
 | `--deployment-mode` | enum | `remote-build` | Deployment mode for dependency checks: `remote-build` (Azure installs from `requirements.txt`), `local` or `local-prebuilt` (dependencies prebuilt/vendored locally, e.g. `.python_packages`), or `container` (dependencies baked into a custom container image). |
 | `--hosting-plan` | enum | unset | Target Azure hosting plan for Python-version validation: `linux-consumption` (caps at Python 3.12), `flex-consumption`, `premium`, or `dedicated`. |
@@ -166,7 +166,9 @@ Monorepo app path:
 azure-functions-doctor doctor --path ./services/payments-function
 ```
 
-Use explicit paths in CI to avoid accidental root-level checks.
+Use explicit paths in CI to avoid accidental root-level checks. Doctor does not
+discover apps in a monorepo; run it once per app. See the two-app walkthrough in
+[`examples/monorepo`](https://github.com/yeongseon/azure-functions-doctor-python/tree/main/examples/monorepo).
 
 ## Profile behavior
 

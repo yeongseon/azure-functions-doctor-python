@@ -12,7 +12,7 @@ Azure Functions Doctor ships with examples for the **Azure Functions Python v2 p
 | Blueprint | `examples/v2/blueprint` | Modular app using `func.Blueprint`. |
 | Flex Consumption | `examples/v2/flex-consumption` | Healthy Flex Consumption app: runtime config, app settings, deployment storage and dev-storage checks all pass. |
 
-Each passing example includes:
+The HTTP, timer, multi-trigger and blueprint examples each include (the Flex Consumption example is leaner: no `.funcignore` or `.gitignore`, and it adds `main.json`):
 - `function_app.py` — v2 decorator-based trigger(s)
 - `host.json` — extensionBundle v4
 - `requirements.txt`
@@ -35,13 +35,12 @@ Intentionally misconfigured projects that demonstrate specific rule failures.
 | Unsupported Linux runtime | `examples/v2/broken-linux-fx-version` | `check_linux_fx_version` in Bicep |
 | Unresolved binding connection | `examples/v2/broken-unresolved-connection` | Located `check_binding_connection_resolution` warning |
 | Nondeterministic orchestrator | `examples/v2/warn-nondeterministic-orchestrator` | Located `check_durable_nondeterminism` failure |
-| Unsupported Flex runtime | `examples/v2/broken-flex-runtime-config` | `check_flex_runtime_config` fails: python 3.9 is outside the supported 3.10-3.14 range |
-| Deprecated Flex app settings | `examples/v2/broken-flex-deprecated-settings` | `check_flex_deprecated_settings` warns: `FUNCTIONS_WORKER_RUNTIME` and `SCM_DO_BUILD_DURING_DEPLOYMENT` are ignored on Flex |
-| Flex deployment storage | `examples/v2/broken-flex-deployment-storage` | `check_flex_deployment_storage` warns: no container URL or authentication declared |
-| Dev storage in deployable infra | `examples/v2/broken-dev-storage-leak` | `check_dev_storage_connection` warns: `UseDevelopmentStorage=true` in a Bicep template |
-| Legacy extension version | `examples/v2/broken-legacy-extension-version` | `check_functions_extension_version` warns on the `~3` pin, and the runtime lifecycle check fails |
-
-The Flex, dev-storage and extension-version examples read the files checked in beside them (`main.bicep`, `main.json`, `local.settings.json`), so a result describes what the project declares. It says nothing about the state of a deployed resource, and none of them needs an Azure subscription. Each example's own `README.md` explains its rule.
+| Dev-storage emulator in infra | `examples/v2/broken-dev-storage-leak` | `check_dev_storage_connection` (warn): `UseDevelopmentStorage=true` in `main.bicep` |
+| Flex deployment storage | `examples/v2/broken-flex-deployment-storage` | `check_flex_deployment_storage` (warn): no container or auth declared |
+| Flex deprecated settings | `examples/v2/broken-flex-deprecated-settings` | `check_flex_deprecated_settings` (warn): legacy app settings declared |
+| Flex unsupported runtime | `examples/v2/broken-flex-runtime-config` | `check_flex_runtime_config` (fail): python 3.9 is outside the supported 3.10-3.14 range |
+| Legacy extension version | `examples/v2/broken-legacy-extension-version` | `check_functions_extension_version` (warn) on the `~3` pin; the runtime lifecycle check also fails |
+| pyproject-only dependencies | `examples/v2/pyproject-only-dependencies` | `check_requirements_txt` and `check_azure_functions_library` fail under `remote-build`, pass under `--deployment-mode local` |
 
 ## Run Diagnostics
 
@@ -51,16 +50,42 @@ azure-functions-doctor doctor --path examples/v2/http-trigger
 azure-functions-doctor doctor --path examples/v2/timer-trigger
 azure-functions-doctor doctor --path examples/v2/multi-trigger
 azure-functions-doctor doctor --path examples/v2/blueprint
-azure-functions-doctor doctor --path examples/v2/flex-consumption
+azure-functions-doctor doctor --path examples/v2/flex-consumption --profile deploy
 
 # Broken examples (expect specific failures)
 azure-functions-doctor doctor --path examples/v2/broken-missing-host-json
 azure-functions-doctor doctor --path examples/v2/broken-missing-requirements
 azure-functions-doctor doctor --path examples/v2/broken-missing-azure-functions
 azure-functions-doctor doctor --path examples/v2/broken-no-v2-decorators
-azure-functions-doctor doctor --path examples/v2/broken-flex-runtime-config
-azure-functions-doctor doctor --path examples/v2/broken-flex-deprecated-settings
-azure-functions-doctor doctor --path examples/v2/broken-flex-deployment-storage
+
+# Flex Consumption, dev-storage and extension-version examples (static infra/config checks)
 azure-functions-doctor doctor --path examples/v2/broken-dev-storage-leak
+azure-functions-doctor doctor --path examples/v2/broken-flex-deployment-storage
+azure-functions-doctor doctor --path examples/v2/broken-flex-deprecated-settings
+azure-functions-doctor doctor --path examples/v2/broken-flex-runtime-config
 azure-functions-doctor doctor --path examples/v2/broken-legacy-extension-version
 ```
+
+### Warnings versus failures in the Flex and storage examples
+
+These examples are read-only: Doctor parses the checked-in `main.bicep` /
+`main.json` and `local.settings.json` files. It never contacts Azure, so none of
+the findings (and none of these examples needs an Azure subscription) means a real resource failed or was misconfigured in a subscription.
+Each finding describes configuration the template *declares*.
+
+- `(warn)` rows are optional-rule warnings about declared configuration; the
+  command still exits `0`.
+- `check_flex_runtime_config` is a required-rule `fail` for the declared
+  runtime (python 3.9); it makes the command exit `1`.
+- `broken-legacy-extension-version` also fails the runtime lifecycle check, because
+  the `~3` runtime is past end-of-support; that makes the command exit `1`. Each
+  example's own `README.md` explains its rule.
+- Other warnings in the output (for example `check_venv`, `check_app_insights`,
+  `.funcignore`, `local.settings.json` git tracking) depend on your machine and
+  checkout and are not what these examples demonstrate.
+
+`tests/test_examples_index.py` verifies that every `(warn)`/`(fail)` row above
+matches the status Doctor reports for that rule on the fixture, and
+`tests/test_examples_readme_index.py` verifies that every directory under
+`examples/v2` is listed here and that each Flex, dev-storage and
+extension-version row names the same rule as the example's own README.
