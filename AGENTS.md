@@ -304,6 +304,10 @@ Titles for issues, pull requests, and commits follow the **Title Convention** in
 
 ## Pull Request Writing
 
+- Make the title identify the concrete component and change in plain English; do not use unexplained internal risk codes (such as `R3`), review-round counters, phase IDs, or vague process jargon. Retain established technical terms and the Conventional Commit type, scope, and breaking-change marker.
+- Make the description understandable without reading prior agent sessions or linked issues. Describe the actual risk and affected behavior in words, separate published changes from planned or local-only work, and preserve required review evidence and explicit maintainer authorization.
+- When creating, updating, or reviewing a PR, check the title and description for these points and correct unclear wording before merge. Do not change release-generated or dependency-bot titles solely for style.
+
 Write issue, pull request, and commit titles using the repository's title convention in `CONTRIBUTING.md`. PR descriptions are for contributors and maintainers, not an internal agent transcript.
 
 - Explain what changed and why in plain English. Use a concise summary, important changes, actual validation results, and related issue links.
